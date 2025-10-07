@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+[tool.poetry]
+name = "castmail2list"
+version = "0.1.0"
+description = "Super-simple mailing list broadcasting emails from an IMAP account to a list of subscribers"
+repository = "https://github.com/mxmehl/castmail2list"
+authors = ["Max Mehl <mail@mehl.mx>"]
+readme = "README.md"
+keywords = []
+license = "GPL-3.0-only"
+classifiers = []
+
+[tool.poetry.scripts]
+# cast2maillist = ""
+
+[tool.poetry.dependencies]
+python = "^3.10"
+flask = "^3.1.2"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^6.1.0"
+pylint = "^3.3.9"
+black = "^25.9.0"
+mypy = "^1.18.2"
+bump-my-version = "^1.2.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# FORMATTING settings
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 100
+
+# MYPY settings
+[tool.mypy]
+files = ["castmail2list/*.py"]
+disable_error_code = ["import-untyped"]
+
+# Bump-My-Version
+[tool.bumpversion]
+commit = true
+tag = true
+allow_dirty = false
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+regex = true
+search = "^version = \"{current_version}\""
+replace = "version = \"{new_version}\""
