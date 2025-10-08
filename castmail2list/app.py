@@ -8,7 +8,8 @@ from flask import Flask
 
 from .config import Config
 from .imap_worker import poll_imap
-from .models import List, Message, db
+from .models import db
+from .views import init_routes
 
 dictConfig(
     {
@@ -39,17 +40,8 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    @app.route("/")
-    def index():
-        lists = List.query.all()
-        return "<h2>Lists</h2>" + "<br>".join(
-            [f"{l.name} ({len(l.subscribers)} subs)" for l in lists]
-        )
-
-    @app.route("/messages")
-    def messages():
-        msgs = Message.query.order_by(Message.received_at.desc()).limit(20).all()
-        return "<br>".join([f"{m.received_at} - {m.subject}" for m in msgs])
+    # Import routes
+    init_routes(app)
 
     # start background IMAP thread
     t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
