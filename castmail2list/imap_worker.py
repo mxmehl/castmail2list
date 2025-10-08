@@ -1,13 +1,13 @@
 """IMAP worker for CastMail2List"""
 
-import email
-import imaplib
 import logging
 import time
-from email.policy import default
+
+from imap_tools import AND, MailBox
+from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_mail
-from .models import Message, db
+from .models import Message, Subscriber, db
 
 
 def poll_imap(app):
@@ -29,39 +29,62 @@ def process_new_messages(app) -> None:
     Args:
         app: Flask app context
     """
-    logging.debug("Checking for new messages...")
+    logging.info("Checking for new messages...")
     cfg = app.config
-    imap = imaplib.IMAP4_SSL(cfg["IMAP_HOST"])
-    imap.login(cfg["IMAP_USER"], cfg["IMAP_PASS"])
-    imap.select(cfg["IMAP_FOLDER"])
-    _, data = imap.search(None, "UNSEEN")
-    for num in data[0].split():
-        _, msg_data = imap.fetch(num, "(RFC822)")
-        raw = msg_data[0][1]
-        msg = email.message_from_bytes(raw, policy=default)
 
-        # store message
-        m = Message(
-            list_id=1,  # for now, single list
-            subject=msg["subject"],
-            from_addr=msg["from"],
-            raw=raw.decode(errors="ignore"),
-        )
-        db.session.add(m)
-        db.session.commit()
+    # Use imap_tools MailBox instead of imaplib
+    with MailBox(cfg["IMAP_HOST"]).login(cfg["IMAP_USER"], cfg["IMAP_PASS"]) as mailbox:
+        # Select folder
+        mailbox.folder.set(cfg["IMAP_FOLDER"])
 
-        # send to subscribers
-        subscribers = app.db_session.query(app.models.Subscriber).filter_by(list_id=1).all()
-        for s in subscribers:
-            send_mail(
-                cfg,
-                s.email,
-                msg["subject"],
-                msg.get_body(preferencelist="plain").get_content(),
-                cfg["IMAP_USER"],
-            )
+        # Fetch unseen messages
+        for msg in mailbox.fetch(AND(seen=False)):
+            logging.debug("Processing message: %s", msg.subject)
+            logging.info(msg.headers)
 
-        imap.store(num, "+FLAGS", "\\Seen")
+            # Store message in database
+            m = Message()
+            m.list_id = 1  # for now, single list
+            m.message_id = msg.headers.get("message-id", ())[0].strip("<>")
+            m.subject = msg.subject
+            m.from_addr = msg.from_
+            m.raw = str(msg.obj)  # Get raw RFC822 message
+            db.session.add(m)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                logging.warning(
+                    "Message %s already processed (Message-ID %s exists in DB), skipping",
+                    msg.uid,
+                    m.message_id,
+                )
+                # Mark message as seen to avoid reprocessing
+                mailbox.flag(msg.uid, ["\\Seen"], True)
+                continue
 
-    imap.close()
-    imap.logout()
+            # Get subscribers for this list
+            subscribers = Subscriber.query.filter_by(list_id=1).all()
+
+            # Send to subscribers
+            for subscriber in subscribers:
+                try:
+                    # Get plain text content
+                    content = msg.text or msg.html or "No content available"
+
+                    send_mail(
+                        cfg,
+                        subscriber.email,
+                        msg.subject,
+                        content,
+                        cfg["IMAP_USER"],
+                    )
+                    logging.debug("Sent message to %s", subscriber.email)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error("Failed to send message to %s: %s", subscriber.email, e)
+
+            # Mark message as seen
+            mailbox.flag(msg.uid, ["\\Seen"], True)
+            logging.debug("Marked message %s as seen", msg.uid)
+
+    logging.debug("Finished checking for new messages")
