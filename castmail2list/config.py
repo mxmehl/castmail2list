@@ -14,3 +14,5 @@ class Config:
     SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")
     SMTP_USER = os.getenv("SMTP_USER", "test-list@***REMOVED***")
     SMTP_PASS = os.getenv("SMTP_PASS", "testtest123")
+
+    POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))  # seconds
