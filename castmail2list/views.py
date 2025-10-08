@@ -31,7 +31,7 @@ def init_routes(app: Flask):
                 imap_port=request.form.get("imap_port", Config.IMAP_DEFAULT_PORT),
                 imap_user=request.form.get("imap_user", ""),
                 imap_pass=request.form.get("imap_pass", Config.IMAP_DEFAULT_PASS),
-                from_addr=request.form.get("from_addr", Config.IMAP_LIST_FROM),
+                from_addr=request.form.get("from_addr", ""),
             )
             db.session.add(l)
             db.session.commit()
@@ -56,7 +56,7 @@ def init_routes(app: Flask):
           IMAP Port: <input name="imap_port" value="{{ config.IMAP_DEFAULT_PORT }}"><br>
           IMAP User: <input name="imap_user"><br>
           IMAP Pass: <input name="imap_pass" value="{{ config.IMAP_DEFAULT_PASS }}"><br>
-          From Address: <input name="from_addr" value="{{ config.IMAP_LIST_FROM }}"><br>
+          From Address: <input name="from_addr"><br>
           <input type="submit" value="Add List">
         </form>
         """, lists=lists, config=Config)
