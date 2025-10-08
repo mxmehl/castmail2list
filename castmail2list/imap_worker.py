@@ -1,14 +1,13 @@
+"""IMAP worker for CastMail2List"""
+
 import email
 import imaplib
 import logging
-import threading
 import time
 from email.policy import default
 
-from flask import current_app
-
 from .mailer import send_mail
-from .models import List, Message, db
+from .models import Message, db
 
 
 def poll_imap(app):
@@ -17,20 +16,27 @@ def poll_imap(app):
         while True:
             try:
                 process_new_messages(app)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logging.error("IMAP worker error: %s", e)
             time.sleep(app.config["POLL_INTERVAL"])
 
 
-def process_new_messages(app):
+def process_new_messages(app) -> None:
+    """
+    Check IMAP for new messages, store them in the DB, and send to subscribers.
+    Called periodically by poll_imap().
+
+    Args:
+        app: Flask app context
+    """
     logging.debug("Checking for new messages...")
     cfg = app.config
     imap = imaplib.IMAP4_SSL(cfg["IMAP_HOST"])
     imap.login(cfg["IMAP_USER"], cfg["IMAP_PASS"])
     imap.select(cfg["IMAP_FOLDER"])
-    typ, data = imap.search(None, "UNSEEN")
+    _, data = imap.search(None, "UNSEEN")
     for num in data[0].split():
-        typ, msg_data = imap.fetch(num, "(RFC822)")
+        _, msg_data = imap.fetch(num, "(RFC822)")
         raw = msg_data[0][1]
         msg = email.message_from_bytes(raw, policy=default)
 
