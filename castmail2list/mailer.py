@@ -49,7 +49,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
                 if self.smtp_starttls:
                     server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
-                server.sendmail(self.smtp_from, recipient, msg.as_string())
+                server.sendmail(from_addr=self.smtp_from, to_addrs=recipient, msg=msg.as_string())
             logging.info("Email sent to %s", recipient)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
