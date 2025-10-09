@@ -43,5 +43,6 @@ class Message(Model):  # pylint: disable=too-few-public-methods
     message_id = db.Column(db.String, unique=True)
     subject = db.Column(db.String)
     from_addr = db.Column(db.String)
+    headers = db.Column(db.Text)
     raw = db.Column(db.Text)  # for now, store full RFC822 text
     received_at = db.Column(db.DateTime, default=datetime.utcnow)
