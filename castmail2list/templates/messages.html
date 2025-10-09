@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Recent Messages{% endblock %}
+{% block content %}
+<h2>Recent Messages</h2>
+<ul>
+    {% for m in messages %}
+        <li>
+            <b>{{ m.subject }}</b> from {{ m.from_addr }} ({{ m.received_at }})
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

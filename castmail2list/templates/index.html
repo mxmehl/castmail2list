@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Mailing Lists{% endblock %}
+{% block content %}
+<h2>Mailing Lists</h2>
+<ul>
+    {% for l in lists %}
+        <li>
+            {{ l.name }} ({{ l.address }})
+            <a href="{{ url_for('edit_list', list_id=l.id) }}">Edit</a>
+            <a href="{{ url_for('manage_subs', list_id=l.id) }}">Subscribers</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}CastMail2List{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a> |
+        <a href="{{ url_for('messages') }}">Messages</a> |
+        <a href="{{ url_for('settings') }}">Settings</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html>

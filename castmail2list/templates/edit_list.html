@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Edit List{% endblock %}
+{% block content %}
+<h2>Edit List</h2>
+<form method="post">
+    Name: <input name="name" value="{{ l.name }}"><br>
+    Address: <input name="address" value="{{ l.address }}"><br>
+    IMAP Host: <input name="imap_host" value="{{ l.imap_host }}"><br>
+    IMAP Port: <input name="imap_port" value="{{ l.imap_port }}"><br>
+    IMAP User: <input name="imap_user" value="{{ l.imap_user }}"><br>
+    IMAP Pass: <input name="imap_pass" value="{{ l.imap_pass }}"><br>
+    From Address: <input name="from_addr" value="{{ l.from_addr }}"><br>
+    <input type="submit" value="Save">
+</form>
+<a href="{{ url_for('settings') }}">Back to settings</a>
+{% endblock %}
