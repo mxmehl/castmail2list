@@ -4,7 +4,12 @@
 <h2>Subscribers for {{ l.name }}</h2>
 <ul>
     {% for s in l.subscribers %}
-        <li>{{ s.email }}</li>
+        <li>
+            {{ s.email }}
+            <form method="post" style="display:inline">
+                <button type="submit" name="delete" value="{{ s.id }}" onclick="return confirm('Delete subscriber {{ s.email }}?')">Delete</button>
+            </form>
+        </li>
     {% endfor %}
 </ul>
 <form method="post">
