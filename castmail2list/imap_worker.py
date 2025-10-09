@@ -1,6 +1,7 @@
 """IMAP worker for CastMail2List"""
 
 import logging
+import os
 import time
 
 from imap_tools import MailBox
@@ -10,10 +11,22 @@ from .mailer import Mail
 from .models import List, Message, Subscriber, db
 
 
+def run_only_once(app):
+    """Ensure that something is only run once if Flask is run in Debug mode. Check if Flask is run
+    in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is"""
+    logging.debug("FLASK_DEBUG=%s, WERKZEUG_RUN_MAIN=%s", app.debug, os.getenv("WERKZEUG_RUN_MAIN"))
+
+    if not app.debug:
+        return True
+    if app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true":
+        return True
+    return False
+
+
 def poll_imap(app):
     """Runs forever in a thread, polling once per minute."""
     with app.app_context():
-        while True:
+        while run_only_once(app):
             try:
                 process_new_messages(app)
             except Exception as e:  # pylint: disable=broad-except
