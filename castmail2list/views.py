@@ -7,7 +7,7 @@ from .forms import MailingListForm, SubscriberAddForm, SubscriberDeleteForm
 from .models import List, Message, Subscriber, db
 
 
-def init_routes(app: Flask):
+def init_routes(app: Flask):  # pylint: disable=too-many-statements
     """Initialize Flask routes"""
 
     @app.route("/")
@@ -52,7 +52,11 @@ def init_routes(app: Flask):
         form = MailingListForm(obj=mailing_list)
 
         if form.validate_on_submit():
+            # Only update imap_pass if a new value is provided
+            old_pass = mailing_list.imap_pass
             form.populate_obj(mailing_list)
+            if not form.imap_pass.data:
+                mailing_list.imap_pass = old_pass
             db.session.commit()
             flash(f'List "{mailing_list.name}" updated successfully!', "success")
             return redirect(url_for("lists"))
