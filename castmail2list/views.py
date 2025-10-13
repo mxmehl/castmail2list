@@ -1,8 +1,9 @@
 """Flask routes for castmail2list application"""
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for
 
 from .config import Config
+from .forms import MailingListForm, SubscriberAddForm, SubscriberDeleteForm
 from .models import List, Message, Subscriber, db
 
 
@@ -21,54 +22,77 @@ def init_routes(app: Flask):
 
     @app.route("/settings", methods=["GET", "POST"])
     def settings():
-        if request.method == "POST":
-            # Add new list
-            l = List(
-                name=request.form["name"],
-                address=request.form["address"],
-                imap_host=request.form.get("imap_host", Config.IMAP_DEFAULT_HOST),
-                imap_port=request.form.get("imap_port", Config.IMAP_DEFAULT_PORT),
-                imap_user=request.form.get("imap_user", ""),
-                imap_pass=request.form.get("imap_pass", Config.IMAP_DEFAULT_PASS),
-                from_addr=request.form.get("from_addr", ""),
+        form = MailingListForm()
+
+        if form.validate_on_submit():
+            new_list = List(
+                name=form.name.data,
+                address=form.address.data,
+                imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
+                imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
+                imap_user=form.imap_user.data or "",
+                imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
+                from_addr=form.from_addr.data or "",
             )
-            db.session.add(l)
+            db.session.add(new_list)
             db.session.commit()
+            flash(f'Mailing list "{new_list.name}" created successfully!', 'success')
             return redirect(url_for("settings"))
+
         lists = List.query.all()
-        return render_template("settings.html", lists=lists, config=Config)
+        return render_template("settings.html", lists=lists, config=Config, form=form)
 
     @app.route("/settings/<int:list_id>/edit", methods=["GET", "POST"])
     def edit_list(list_id):
-        l = List.query.get_or_404(list_id)
-        if request.method == "POST":
-            l.name = request.form["name"]
-            l.address = request.form["address"]
-            l.imap_host = request.form["imap_host"]
-            l.imap_port = request.form["imap_port"]
-            l.imap_user = request.form["imap_user"]
-            l.imap_pass = request.form["imap_pass"]
-            l.from_addr = request.form["from_addr"]
+        mailing_list = List.query.get_or_404(list_id)
+        form = MailingListForm(obj=mailing_list)
+
+        if form.validate_on_submit():
+            form.populate_obj(mailing_list)
             db.session.commit()
+            flash(f'List "{mailing_list.name}" updated successfully!', 'success')
             return redirect(url_for("settings"))
-        return render_template("edit_list.html", l=l)
+
+        return render_template("edit_list.html", mailing_list=mailing_list, form=form)
 
     @app.route("/settings/<int:list_id>/subscribers", methods=["GET", "POST"])
     def manage_subs(list_id):
-        l = List.query.get_or_404(list_id)
-        if request.method == "POST":
-            if "delete" in request.form:
-                # Delete subscriber
-                sub_id = int(request.form["delete"])
-                sub = Subscriber.query.get_or_404(sub_id)
-                if sub.list_id == l.id:
-                    db.session.delete(sub)
-                    db.session.commit()
+        mailing_list = List.query.get_or_404(list_id)
+        add_form = SubscriberAddForm()
+        delete_form = SubscriberDeleteForm()
+
+        # Handle adding subscribers
+        if add_form.validate_on_submit():
+            email = add_form.email.data
+            existing_subscriber = Subscriber.query.filter_by(
+                list_id=mailing_list.id,
+                email=email
+            ).first()
+
+            if not existing_subscriber:
+                new_subscriber = Subscriber(list_id=mailing_list.id, email=email)
+                db.session.add(new_subscriber)
+                db.session.commit()
+                flash(f'Successfully added "{email}" to the list!', 'success')
             else:
-                # Add subscriber
-                email = request.form["email"]
-                if not any(s.email == email for s in l.subscribers):
-                    db.session.add(Subscriber(list_id=l.id, email=email))
-                    db.session.commit()
+                flash(f'Email "{email}" is already subscribed to this list.', 'warning')
+
             return redirect(url_for("manage_subs", list_id=list_id))
-        return render_template("subscribers.html", l=l)
+
+        # Handle removing subscribers
+        if delete_form.validate_on_submit():
+            sub_id = int(delete_form.subscriber_id.data)
+            subscriber = Subscriber.query.get_or_404(sub_id)
+
+            if subscriber.list_id == mailing_list.id:
+                email = subscriber.email
+                db.session.delete(subscriber)
+                db.session.commit()
+                flash(f'Successfully removed "{email}" from the list!', 'success')
+
+            return redirect(url_for("manage_subs", list_id=list_id))
+
+        return render_template("subscribers.html",
+                             mailing_list=mailing_list,
+                             add_form=add_form,
+                             delete_form=delete_form)
