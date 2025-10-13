@@ -29,10 +29,10 @@ class SubscriberAddForm(FlaskForm):
     name = StringField('Name', validators=[Optional(), Length(max=100)])
     email = EmailField('Email Address', validators=[DataRequired(), Email()])
     comment = StringField('Comment', validators=[Optional(), Length(max=100)])
-    add_subscriber = SubmitField('Add Subscriber')
+    submit = SubmitField('Save Subscriber')
 
 
 class SubscriberDeleteForm(FlaskForm):
     """Form for removing subscribers"""
     subscriber_id = HiddenField('Subscriber ID', validators=[DataRequired()])
-    delete_subscriber = SubmitField('Remove from list')
+    submit = SubmitField('Remove from list')
