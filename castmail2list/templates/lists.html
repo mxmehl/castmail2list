@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Lists - CastMail2List{% endblock %}
+
+{% block content %}
+<h2>Mailing Lists</h2>
+
+<a href="{{ url_for('add_list') }}">
+    Add new List
+</a>
+
+{% if lists %}
+<ul>
+    {% for list in lists %}
+    <li>{{ list.name }} &lt;{{ list.address }}&gt;
+        <a href="{{ url_for('edit_list', list_id=list.id) }}" role="button" class="outline">Edit</a>
+        <a href="{{ url_for('manage_subs', list_id=list.id) }}" role="button" class="outline secondary">Manage Subscribers ({{ list.subscribers|length }})</a>
+    </li>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No mailing lists configured yet.</p>
+{% endif %}
+{% endblock %}

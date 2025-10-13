@@ -3,51 +3,44 @@
 {% block title %}Subscribers - {{ mailing_list.name }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Subscribers for "{{ mailing_list.name }}"</h2>
-    <a href="{{ url_for('settings') }}" class="btn btn-secondary">Back to Settings</a>
+
+<h2>Subscribers for "{{ mailing_list.name }}"</h2>
+
+<h3>Add Subscriber</h3>
+<form method="POST">
+    {{ add_form.hidden_tag() }}
+
+    {{ add_form.email.label }}
+    {{ add_form.email }}
+    {% if add_form.email.errors %}
+    <div class="text-danger">
+        {% for error in add_form.email.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ add_form.add_subscriber }}
+</form>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <h4>Add Subscriber</h4>
+<h3>Current Subscribers ({{ mailing_list.subscribers|length }})</h3>
+{% if mailing_list.subscribers %}
+<div>
+    {% for subscriber in mailing_list.subscribers %}
+    <div>
+        <span>{{ subscriber.email }}</span>
         <form method="POST">
-            {{ add_form.hidden_tag() }}
-
-            <div class="mb-3">
-                {{ add_form.email.label(class="form-label") }}
-                {{ add_form.email(class="form-control") }}
-                {% if add_form.email.errors %}
-                    <div class="text-danger">
-                        {% for error in add_form.email.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            {{ add_form.add_subscriber(class="btn btn-primary") }}
+            {{ delete_form.hidden_tag() }}
+            {{ delete_form.subscriber_id(value=subscriber.id) }}
+            {{ delete_form.delete_subscriber(onclick="return confirm('Are you sure you want to remove this subscriber?')") }}
         </form>
     </div>
-
-    <div class="col-md-8">
-        <h4>Current Subscribers ({{ mailing_list.subscribers|length }})</h4>
-        {% if mailing_list.subscribers %}
-            <div class="list-group">
-                {% for subscriber in mailing_list.subscribers %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ subscriber.email }}</span>
-                        <form method="POST" class="d-inline">
-                            {{ delete_form.hidden_tag() }}
-                            {{ delete_form.subscriber_id(value=subscriber.id) }}
-                            {{ delete_form.delete_subscriber(class="btn btn-sm btn-outline-danger", onclick="return confirm('Are you sure you want to remove this subscriber?')") }}
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-muted">No subscribers yet.</p>
-        {% endif %}
-    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No subscribers yet.</p>
+{% endif %}
+</div>
 </div>
 {% endblock %}

@@ -20,8 +20,13 @@ def init_routes(app: Flask):
         msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).limit(20).all()
         return render_template("messages.html", messages=msgs)
 
-    @app.route("/settings", methods=["GET", "POST"])
-    def settings():
+    @app.route("/lists", methods=["GET"])
+    def lists():
+        lists = List.query.all()
+        return render_template("lists.html", lists=lists, config=Config)
+
+    @app.route("/lists/add", methods=["GET", "POST"])
+    def add_list():
         form = MailingListForm()
 
         if form.validate_on_submit():
@@ -36,13 +41,12 @@ def init_routes(app: Flask):
             )
             db.session.add(new_list)
             db.session.commit()
-            flash(f'Mailing list "{new_list.name}" created successfully!', 'success')
-            return redirect(url_for("settings"))
+            flash(f'Mailing list "{new_list.name}" created successfully!', "success")
+            return redirect(url_for("lists"))
 
-        lists = List.query.all()
-        return render_template("settings.html", lists=lists, config=Config, form=form)
+        return render_template("add_list.html", config=Config, form=form)
 
-    @app.route("/settings/<int:list_id>/edit", methods=["GET", "POST"])
+    @app.route("/lists/<int:list_id>/edit", methods=["GET", "POST"])
     def edit_list(list_id):
         mailing_list = List.query.get_or_404(list_id)
         form = MailingListForm(obj=mailing_list)
@@ -50,12 +54,12 @@ def init_routes(app: Flask):
         if form.validate_on_submit():
             form.populate_obj(mailing_list)
             db.session.commit()
-            flash(f'List "{mailing_list.name}" updated successfully!', 'success')
-            return redirect(url_for("settings"))
+            flash(f'List "{mailing_list.name}" updated successfully!', "success")
+            return redirect(url_for("lists"))
 
         return render_template("edit_list.html", mailing_list=mailing_list, form=form)
 
-    @app.route("/settings/<int:list_id>/subscribers", methods=["GET", "POST"])
+    @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
     def manage_subs(list_id):
         mailing_list = List.query.get_or_404(list_id)
         add_form = SubscriberAddForm()
@@ -65,17 +69,16 @@ def init_routes(app: Flask):
         if add_form.validate_on_submit():
             email = add_form.email.data
             existing_subscriber = Subscriber.query.filter_by(
-                list_id=mailing_list.id,
-                email=email
+                list_id=mailing_list.id, email=email
             ).first()
 
             if not existing_subscriber:
                 new_subscriber = Subscriber(list_id=mailing_list.id, email=email)
                 db.session.add(new_subscriber)
                 db.session.commit()
-                flash(f'Successfully added "{email}" to the list!', 'success')
+                flash(f'Successfully added "{email}" to the list!', "success")
             else:
-                flash(f'Email "{email}" is already subscribed to this list.', 'warning')
+                flash(f'Email "{email}" is already subscribed to this list.', "warning")
 
             return redirect(url_for("manage_subs", list_id=list_id))
 
@@ -88,11 +91,13 @@ def init_routes(app: Flask):
                 email = subscriber.email
                 db.session.delete(subscriber)
                 db.session.commit()
-                flash(f'Successfully removed "{email}" from the list!', 'success')
+                flash(f'Successfully removed "{email}" from the list!', "success")
 
             return redirect(url_for("manage_subs", list_id=list_id))
 
-        return render_template("subscribers.html",
-                             mailing_list=mailing_list,
-                             add_form=add_form,
-                             delete_form=delete_form)
+        return render_template(
+            "subscribers.html",
+            mailing_list=mailing_list,
+            add_form=add_form,
+            delete_form=delete_form,
+        )

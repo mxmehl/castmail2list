@@ -3,120 +3,86 @@
 {% block title %}Edit List - {{ mailing_list.name }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Edit List: {{ mailing_list.name }}</h2>
-    <a href="{{ url_for('settings') }}" class="btn btn-secondary">Back to Settings</a>
-</div>
+<h2>Edit List: {{ mailing_list.name }}</h2>
 
-<div class="row">
-    <div class="col-md-8">
-        <form method="POST">
-            {{ form.hidden_tag() }}
+<a href="{{ url_for('manage_subs', list_id=mailing_list.id) }}">
+    Manage Subscribers
+</a>
 
-            <div class="mb-3">
-                {{ form.name.label(class="form-label") }}
-                {{ form.name(class="form-control") }}
-                {% if form.name.errors %}
-                    <div class="text-danger">
-                        {% for error in form.name.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
+<form method="POST">
+    {{ form.hidden_tag() }}
 
-            <div class="mb-3">
-                {{ form.address.label(class="form-label") }}
-                {{ form.address(class="form-control") }}
-                {% if form.address.errors %}
-                    <div class="text-danger">
-                        {% for error in form.address.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.imap_host.label(class="form-label") }}
-                {{ form.imap_host(class="form-control") }}
-                {% if form.imap_host.errors %}
-                    <div class="text-danger">
-                        {% for error in form.imap_host.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.imap_port.label(class="form-label") }}
-                {{ form.imap_port(class="form-control") }}
-                {% if form.imap_port.errors %}
-                    <div class="text-danger">
-                        {% for error in form.imap_port.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.imap_user.label(class="form-label") }}
-                {{ form.imap_user(class="form-control") }}
-                {% if form.imap_user.errors %}
-                    <div class="text-danger">
-                        {% for error in form.imap_user.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.imap_pass.label(class="form-label") }}
-                {{ form.imap_pass(class="form-control") }}
-                {% if form.imap_pass.errors %}
-                    <div class="text-danger">
-                        {% for error in form.imap_pass.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                {{ form.from_addr.label(class="form-label") }}
-                {{ form.from_addr(class="form-control") }}
-                {% if form.from_addr.errors %}
-                    <div class="text-danger">
-                        {% for error in form.from_addr.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                {{ form.submit(class="btn btn-primary me-md-2") }}
-                <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary">Cancel</a>
-            </div>
-        </form>
+    {{ form.name.label }}
+    {{ form.name }}
+    {% if form.name.errors %}
+    <div class="text-danger">
+        {% for error in form.name.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
     </div>
+    {% endif %}
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-title">List Information</h6>
-                <p class="card-text">
-                    <strong>Current subscribers:</strong> {{ mailing_list.subscribers|length }}<br>
-                    <strong>Created:</strong> {{ mailing_list.id }}
-                </p>
-                <a href="{{ url_for('manage_subs', list_id=mailing_list.id) }}" class="btn btn-sm btn-outline-primary">
-                    Manage Subscribers
-                </a>
-            </div>
-        </div>
+    {{ form.address.label }}
+    {{ form.address }}
+    {% if form.address.errors %}
+    <div class="text-danger">
+        {% for error in form.address.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    {{ form.imap_host.label }}
+    {{ form.imap_host }}
+    {% if form.imap_host.errors %}
+    <div class="text-danger">
+        {% for error in form.imap_host.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.imap_port.label }}
+    {{ form.imap_port }}
+    {% if form.imap_port.errors %}
+    <div class="text-danger">
+        {% for error in form.imap_port.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.imap_user.label }}
+    {{ form.imap_user }}
+    {% if form.imap_user.errors %}
+    <div class="text-danger">
+        {% for error in form.imap_user.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.imap_pass.label }}
+    {{ form.imap_pass }}
+    {% if form.imap_pass.errors %}
+    <div class="text-danger">
+        {% for error in form.imap_pass.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.from_addr.label }}
+    {{ form.from_addr }}
+    {% if form.from_addr.errors %}
+    <div class="text-danger">
+        {% for error in form.from_addr.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.submit }}
+</form>
 </div>
 {% endblock %}
