@@ -101,3 +101,11 @@ def init_routes(app: Flask):
             add_form=add_form,
             delete_form=delete_form,
         )
+
+    @app.route("/lists/<int:list_id>/delete", methods=["GET"])
+    def delete_list(list_id):
+        mailing_list = List.query.get_or_404(list_id)
+        db.session.delete(mailing_list)
+        db.session.commit()
+        flash(f'List "{mailing_list.name}" deleted successfully!', "success")
+        return redirect(url_for("lists"))

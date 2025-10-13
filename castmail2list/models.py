@@ -11,13 +11,18 @@ if TYPE_CHECKING:
 else:
     Model = db.Model
 
+
 class List(Model):  # pylint: disable=too-few-public-methods
     """A mailing list"""
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, unique=True)
     address = db.Column(db.String)
-    subscribers = db.relationship("Subscriber", backref="list", lazy=True)
+    subscribers = db.relationship(
+        "Subscriber", backref="list", lazy=True, cascade="all, delete-orphan"
+    )
+    # Cascade delete messages as well
+    messages = db.relationship("Message", backref="list", lazy=True, cascade="all, delete-orphan")
 
     # Technical settings per list
     imap_host = db.Column(db.String)
@@ -32,7 +37,9 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
 
     id = db.Column(db.Integer, primary_key=True)
     list_id = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=False)
+    name = db.Column(db.String)
     email = db.Column(db.String, nullable=False)
+    comment = db.Column(db.String)
 
 
 class Message(Model):  # pylint: disable=too-few-public-methods

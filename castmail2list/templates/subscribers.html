@@ -8,36 +8,52 @@
 
 <h3>Add Subscriber</h3>
 <form method="POST">
-    {{ add_form.hidden_tag() }}
+    <fieldset role="group">
+        {{ add_form.hidden_tag() }}
 
-    {{ add_form.email.label }}
-    {{ add_form.email }}
-    {% if add_form.email.errors %}
-    <div class="text-danger">
-        {% for error in add_form.email.errors %}
-        <small>{{ error }}</small>
-        {% endfor %}
-    </div>
-    {% endif %}
+        {{ add_form.name(placeholder=add_form.name.label.text) }}
 
-    {{ add_form.add_subscriber }}
+        {{ add_form.email(placeholder=add_form.email.label.text) }}
+
+        {{ add_form.comment(placeholder=add_form.comment.label.text) }}
+        {% if add_form.email.errors %}
+        <div class="text-danger">
+            {% for error in add_form.email.errors %}
+            <small>{{ error }}</small>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {{ add_form.add_subscriber }}
+    </fieldset>
 </form>
-</div>
 
 <h3>Current Subscribers ({{ mailing_list.subscribers|length }})</h3>
 {% if mailing_list.subscribers %}
-<div>
-    {% for subscriber in mailing_list.subscribers %}
-    <div>
-        <span>{{ subscriber.email }}</span>
-        <form method="POST">
-            {{ delete_form.hidden_tag() }}
-            {{ delete_form.subscriber_id(value=subscriber.id) }}
-            {{ delete_form.delete_subscriber(onclick="return confirm('Are you sure you want to remove this subscriber?')") }}
-        </form>
-    </div>
-    {% endfor %}
-</div>
+<table class="striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Comment</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for subscriber in mailing_list.subscribers %}
+            <td>{{ subscriber.name if subscriber.name }}</td>
+            <td>{{ subscriber.email }}</td>
+            <td>{{ subscriber.comment if subscriber.comment }}</td>
+            <td>
+                <form method="POST">
+                    {{ delete_form.hidden_tag() }}
+                    {{ delete_form.subscriber_id(value=subscriber.id) }}
+                    {{ delete_form.delete_subscriber(onclick="return confirm('Are you sure you want to remove this subscriber?')") }}
+                </form>
+            </td>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
 <p class="text-muted">No subscribers yet.</p>
 {% endif %}
