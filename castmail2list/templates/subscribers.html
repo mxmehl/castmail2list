@@ -41,22 +41,21 @@
     </thead>
     <tbody>
         {% for subscriber in mailing_list.subscribers %}
+        <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>{{ subscriber.email }}</td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
             <td>
-                <form method="POST">
+                <form method="POST" action="{{ url_for('delete_subscriber', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" style="display:inline;">
                     {{ delete_form.hidden_tag() }}
-                    {{ delete_form.subscriber_id(value=subscriber.id) }}
-                    {{ delete_form.delete_subscriber(onclick="return confirm('Are you sure you want to remove this subscriber?')") }}
+                    <button type="submit" onclick="return confirm('Are you sure you want to remove this subscriber?')">Remove</button>
                 </form>
             </td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
 <p class="text-muted">No subscribers yet.</p>
 {% endif %}
-</div>
-</div>
 {% endblock %}
