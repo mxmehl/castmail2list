@@ -9,8 +9,7 @@ from imap_tools import MailBox
 from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
-from castmail2list.mailer import send_msg_to_subscribers
-
+from .mailer import send_msg_to_subscribers
 from .models import List, Message, Subscriber, db
 
 REQUIRED_FOLDERS_ENVS = ["IMAP_FOLDER_INBOX", "IMAP_FOLDER_PROCESSED", "IMAP_FOLDER_BOUNCES"]
@@ -126,7 +125,9 @@ def check_all_lists_for_messages(app: Flask) -> None:
                     # Get subscribers for this list, and send the message to them
                     subscribers = Subscriber.query.filter_by(list_id=ml.id).all()
                     logging.debug("Found %d subscribers: %s", len(subscribers), subscribers)
-                    send_msg_to_subscribers(app=app, msg=msg, ml=ml, subscribers=subscribers, mailbox=mailbox)
+                    send_msg_to_subscribers(
+                        app=app, msg=msg, ml=ml, subscribers=subscribers, mailbox=mailbox
+                    )
 
                     # Mark message as seen and move to Processed folder
                     mark_msg_as_processed(app=app, mailbox=mailbox, msg=msg)
