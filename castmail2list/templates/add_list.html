@@ -12,23 +12,9 @@
 
   {{ form.name.label }}
   {{ form.name }}
-  {% if form.name.errors %}
-  <div class="text-danger">
-    {% for error in form.name.errors %}
-    <small>{{ error }}</small>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   {{ form.address.label }}
   {{ form.address }}
-  {% if form.address.errors %}
-  <div class="text-danger">
-    {% for error in form.address.errors %}
-    <small>{{ error }}</small>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   {{ form.imap_host.label }}
   {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}

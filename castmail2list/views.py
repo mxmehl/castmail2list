@@ -44,6 +44,12 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             flash(f'Mailing list "{new_list.name}" created successfully!', "success")
             return redirect(url_for("lists"))
 
+        # Flash on form errors
+        if form.submit.data and form.errors:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+
         return render_template("add_list.html", config=Config, form=form)
 
     @app.route("/lists/<int:list_id>/edit", methods=["GET", "POST"])
@@ -66,13 +72,13 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
     @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
     def manage_subs(list_id):
         mailing_list = List.query.get_or_404(list_id)
-        add_form = SubscriberAddForm()
+        form = SubscriberAddForm()
 
         # Handle adding subscribers
-        if add_form.submit.data and add_form.validate_on_submit():
-            name = add_form.name.data
-            email = add_form.email.data
-            comment = add_form.comment.data
+        if form.submit.data and form.validate_on_submit():
+            name = form.name.data
+            email = form.email.data
+            comment = form.comment.data
             # Check if subscriber already exists, identified by email and list_id
             existing_subscriber = Subscriber.query.filter_by(
                 list_id=mailing_list.id, email=email
@@ -90,10 +96,16 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
             return redirect(url_for("manage_subs", list_id=list_id))
 
+        # Flash on form errors
+        if form.submit.data and form.errors:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+
         return render_template(
             "subscribers.html",
             mailing_list=mailing_list,
-            add_form=add_form,
+            add_form=form,
         )
 
     @app.route("/lists/<int:list_id>/delete", methods=["GET"])
