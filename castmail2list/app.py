@@ -6,6 +6,7 @@ from logging.config import dictConfig
 
 from flask import Flask
 from flask_migrate import Migrate
+from sassutils.wsgi import SassMiddleware
 
 from .config import Config
 from .imap_worker import poll_imap
@@ -39,13 +40,25 @@ def create_app() -> Flask:
     """Create Flask app"""
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Database
     db.init_app(app)
-
-    # Initialize Flask-Migrate
     Migrate(app, db)
-
     with app.app_context():
         db.create_all()
+
+    # Settings for SCSS conversion
+    app.wsgi_app = SassMiddleware(  # type: ignore
+        app.wsgi_app,
+        {
+            "castmail2list": {
+                "sass_path": "static/scss",
+                "css_path": "static/css",
+                "wsgi_path": "/static/css",
+                "strip_extension": False,
+            }
+        },
+    )
 
     # Import routes
     init_routes(app)
