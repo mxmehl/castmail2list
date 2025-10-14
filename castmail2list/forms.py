@@ -1,13 +1,25 @@
 """Flask-WTF forms for castmail2list application"""
 
 from flask_wtf import FlaskForm
-from wtforms import EmailField, IntegerField, PasswordField, StringField, SubmitField
+from wtforms import (
+    EmailField,
+    IntegerField,
+    PasswordField,
+    RadioField,
+    StringField,
+    SubmitField,
+)
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
 
 
 class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""
 
+    mode = RadioField(
+        "Mode",
+        choices=[("broadcast", "Broadcast List"), ("group", "Group List")],
+        default="broadcast",
+    )
     name = StringField("List Name", validators=[DataRequired(), Length(min=1, max=100)])
     address = EmailField("List Email Address", validators=[DataRequired(), Email()])
     imap_host = StringField("IMAP Server", validators=[Optional(), Length(max=200)])
