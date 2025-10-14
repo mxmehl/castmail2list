@@ -30,6 +30,16 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         form = MailingListForm()
 
         if form.validate_on_submit():
+            # Convert line-separated input to comma-separated for storage
+            allowed_senders_data = ""
+            if form.allowed_senders.data:
+                emails = [
+                    email.strip()
+                    for email in form.allowed_senders.data.strip().split("\n")
+                    if email.strip()
+                ]
+                allowed_senders_data = ", ".join(emails)
+
             new_list = List(
                 mode=form.mode.data,
                 name=form.name.data,
@@ -39,6 +49,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
                 imap_user=form.imap_user.data or "",
                 imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
                 from_addr=form.from_addr.data or "",
+                allowed_senders=allowed_senders_data or "",
             )
             db.session.add(new_list)
             db.session.commit()
@@ -64,6 +75,18 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             form.populate_obj(mailing_list)
             if not form.imap_pass.data:
                 mailing_list.imap_pass = old_pass
+
+            # Convert line-separated input to comma-separated for storage
+            if form.allowed_senders.data:
+                emails = [
+                    email.strip()
+                    for email in form.allowed_senders.data.strip().split(",")
+                    if email.strip()
+                ]
+                mailing_list.allowed_senders = ", ".join(emails)
+            else:
+                mailing_list.allowed_senders = ""
+
             db.session.commit()
             flash(f'List "{mailing_list.name}" updated successfully!', "success")
             return redirect(url_for("lists"))

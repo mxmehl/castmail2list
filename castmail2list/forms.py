@@ -27,6 +27,11 @@ class MailingListForm(FlaskForm):
     imap_user = StringField("IMAP Username", validators=[Optional(), Length(max=200)])
     imap_pass = PasswordField("IMAP Password", validators=[Optional()])
     from_addr = EmailField("From Address", validators=[Optional(), Email()])
+    allowed_senders = StringField(
+        "Allowed Senders",
+        validators=[Optional()],
+        description="Enter email addresses, separated by commas. Only relevant in Broadcast mode.",
+    )
     submit = SubmitField("Save List")
 
 

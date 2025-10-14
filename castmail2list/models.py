@@ -31,6 +31,7 @@ class List(Model):  # pylint: disable=too-few-public-methods
     imap_user = db.Column(db.String)
     imap_pass = db.Column(db.String)
     from_addr = db.Column(db.String)
+    allowed_senders: str = db.Column(db.Text)  # Comma-separated list of allowed sender emails
 
 
 class Subscriber(Model):  # pylint: disable=too-few-public-methods

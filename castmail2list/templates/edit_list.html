@@ -38,6 +38,10 @@
     {{ form.from_addr.label }}
     {{ form.from_addr }}
 
+    {{ form.allowed_senders.label }}
+    {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
+    <small>{{ form.allowed_senders.description }}</small>
+
     {{ form.submit }}
 </form>
 </div>
