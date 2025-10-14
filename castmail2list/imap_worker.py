@@ -106,10 +106,10 @@ def send_msg_to_subscribers(
 
             mail = Mail(
                 smtp_server=app.config["SMTP_HOST"],
-                smtp_port=587,
+                smtp_port=int(app.config["SMTP_PORT"]),
                 smtp_user=app.config["SMTP_USER"],
                 smtp_password=app.config["SMTP_PASS"],
-                smtp_starttls=True,
+                smtp_starttls=app.config["SMTP_STARTTLS"],
                 smtp_from=ml.from_addr,
             )
             mail.send_email(
