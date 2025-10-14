@@ -5,6 +5,8 @@
 {% block content %}
 <h2>Edit Subscriber</h2>
 
+{%- include "flash.html" %} {# Show flash messages #}
+
 <p>On list: {{ mailing_list.name }}</p>
 
 <form method="POST">

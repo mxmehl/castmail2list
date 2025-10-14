@@ -5,6 +5,8 @@
 {% block content %}
 <h2>Add a New List</h2>
 
+{%- include "flash.html" %} {# Show flash messages #}
+
 <form method="POST">
   {{ form.hidden_tag() }}
 

@@ -70,13 +70,18 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         # Handle adding subscribers
         if add_form.submit.data and add_form.validate_on_submit():
+            name = add_form.name.data
             email = add_form.email.data
+            comment = add_form.comment.data
+            # Check if subscriber already exists, identified by email and list_id
             existing_subscriber = Subscriber.query.filter_by(
                 list_id=mailing_list.id, email=email
             ).first()
 
             if not existing_subscriber:
-                new_subscriber = Subscriber(list_id=mailing_list.id, email=email)
+                new_subscriber = Subscriber(
+                    list_id=mailing_list.id, name=name, email=email, comment=comment
+                )
                 db.session.add(new_subscriber)
                 db.session.commit()
                 flash(f'Successfully added "{email}" to the list!', "success")

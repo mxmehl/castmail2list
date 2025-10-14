@@ -6,6 +6,8 @@
 
 <h2>Subscribers for "{{ mailing_list.name }}"</h2>
 
+{%- include "flash.html" %} {# Show flash messages #}
+
 <h3>Add Subscriber</h3>
 <form method="POST">
     <fieldset role="group">
