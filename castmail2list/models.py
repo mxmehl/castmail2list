@@ -25,6 +25,7 @@ class List(Model):  # pylint: disable=too-few-public-methods
     messages = db.relationship("Message", backref="list", lazy=True, cascade="all, delete-orphan")
 
     # Technical settings per list
+    mode = db.Column(db.String)
     imap_host = db.Column(db.String)
     imap_port = db.Column(db.String)
     imap_user = db.Column(db.String)
