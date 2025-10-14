@@ -5,6 +5,7 @@ from flask import Flask, flash, redirect, render_template, url_for
 from .config import Config
 from .forms import MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, db
+from .utils import flash_form_errors, normalize_email_list  # <-- import helpers
 
 
 def init_routes(app: Flask):  # pylint: disable=too-many-statements
@@ -30,15 +31,8 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         form = MailingListForm()
 
         if form.validate_on_submit():
-            # Convert line-separated input to comma-separated for storage
-            allowed_senders_data = ""
-            if form.allowed_senders.data:
-                emails = [
-                    email.strip()
-                    for email in form.allowed_senders.data.strip().split("\n")
-                    if email.strip()
-                ]
-                allowed_senders_data = ", ".join(emails)
+            # Convert input to comma-separated for storage
+            allowed_senders_data = normalize_email_list(form.allowed_senders.data)
 
             new_list = List(
                 mode=form.mode.data,
@@ -58,9 +52,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         # Flash on form errors
         if form.submit.data and form.errors:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+            flash_form_errors(form)
 
         return render_template("add_list.html", config=Config, form=form)
 
@@ -76,16 +68,8 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             if not form.imap_pass.data:
                 mailing_list.imap_pass = old_pass
 
-            # Convert line-separated input to comma-separated for storage
-            if form.allowed_senders.data:
-                emails = [
-                    email.strip()
-                    for email in form.allowed_senders.data.strip().split(",")
-                    if email.strip()
-                ]
-                mailing_list.allowed_senders = ", ".join(emails)
-            else:
-                mailing_list.allowed_senders = ""
+            # Convert input to comma-separated for storage
+            mailing_list.allowed_senders = normalize_email_list(form.allowed_senders.data)
 
             db.session.commit()
             flash(f'List "{mailing_list.name}" updated successfully!', "success")
@@ -93,9 +77,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         # Flash on form errors
         if form.submit.data and form.errors:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+            flash_form_errors(form)
 
         return render_template("edit_list.html", mailing_list=mailing_list, form=form)
 
@@ -128,9 +110,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         # Flash on form errors
         if form.submit.data and form.errors:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+            flash_form_errors(form)
 
         return render_template(
             "subscribers.html",
@@ -172,9 +152,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         # Flash on form errors
         if form.submit.data and form.errors:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+            flash_form_errors(form)
 
         return render_template(
             "edit_subscriber.html", mailing_list=mailing_list, form=form, subscriber=subscriber
