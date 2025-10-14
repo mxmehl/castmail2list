@@ -8,36 +8,41 @@
 {%- include "flash.html" %} {# Show flash messages #}
 
 <form method="POST">
-  {{ form.hidden_tag() }}
+    {{ form.hidden_tag() }}
 
-  {{ form.mode.label }}
-  {{ form.mode }}
+    {{ form.mode.label }}
+    {{ form.mode }}
 
-  {{ form.name.label }}
-  {{ form.name }}
+    {{ form.name.label }}
+    {{ form.name }}
 
-  {{ form.address.label }}
-  {{ form.address }}
+    {{ form.address.label }}
+    {{ form.address }}
 
-  {{ form.imap_host.label }}
-  {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
+    {{ form.imap_host.label }}
+    {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
 
-  {{ form.imap_port.label }}
-  {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
+    {{ form.imap_port.label }}
+    {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
 
-  {{ form.imap_user.label }}
-  {{ form.imap_user }}
+    {{ form.imap_user.label }}
+    {{ form.imap_user }}
 
-  {{ form.imap_pass.label }}
-  {{ form.imap_pass }}
+    {{ form.imap_pass.label }}
+    {{ form.imap_pass }}
 
-  {{ form.from_addr.label }}
-  {{ form.from_addr }}
+    {{ form.from_addr.label }}
+    {{ form.from_addr }}
 
-  {{ form.allowed_senders.label }}
-  {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
-  <small>{{ form.allowed_senders.description }}</small>
+    <fieldset>
+        {{ form.only_subscribers_send(role="switch") }}
+        {{ form.only_subscribers_send.label }}
+    </fieldset>
 
-  {{ form.submit }}
+    {{ form.allowed_senders.label }}
+    {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
+    <small>{{ form.allowed_senders.description }}</small>
+
+    {{ form.submit }}
 </form>
 {% endblock %}
