@@ -45,6 +45,10 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         text_message: str = "",
         html_message: str = "",
         attachments: list[MailAttachment] | None = None,
+        reply_to: str = "",
+        original_mid: str = "",
+        references: tuple = (),
+        in_reply_to: tuple = (),
     ) -> bytes:
         """
         Sends an email using a Jinja2 template. Returns sent message as bytes
@@ -78,6 +82,11 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         msg["List-Id"] = f"<{list_address.replace('@', '.')}>"
         msg["X-Mailer"] = "CastMail2List"
         msg["Precedence"] = "list"
+        msg["Original-Message-ID"] = original_mid
+        msg["In-Reply-To"] = in_reply_to[0] if in_reply_to else original_mid
+        msg["References"] = " ".join(references + (original_mid,))
+        if reply_to:
+            msg["Reply-To"] = reply_to
 
         # --- Add body parts ---
         if isinstance(msg, MIMEMultipart):
@@ -169,14 +178,20 @@ def send_msg_to_subscribers(
 
     # Depending on list mode, prepare headers
     if ml.mode == "broadcast":
+        # From: Use the list's From address if set, otherwise the list address itself
         from_header = ml.from_addr or ml.address
+        # Reply-To: No Reply-To, sender is the expected recipient of replies
+        reply_to = ""
     elif ml.mode == "group":
+        # From: Use "Sender Name via List Name <list@address>" format if possible
         if not msg.from_values:
             logging.error("No valid From header in message %s, cannot send", msg.uid)
             return
         from_header = (
             f"{msg.from_values.name or msg.from_values.email} via {ml.name} <{ml.address}>"
         )
+        # Reply-To: Set to list address to avoid replies going to all subscribers
+        reply_to = ml.address
     else:
         logging.error("Unknown list mode %s for list %s", ml.mode, ml.name)
         return
@@ -201,6 +216,10 @@ def send_msg_to_subscribers(
                 html_message=msg.html or "",
                 recipient=subscriber.email,
                 attachments=msg.attachments,
+                reply_to=reply_to,
+                original_mid=msg.headers.get("message-id", ())[0],
+                references=msg.headers.get("references", ()),
+                in_reply_to=msg.headers.get("in-reply-to", ()),
             )
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                 tmpfile.write(msg.obj.as_string())
