@@ -3,6 +3,8 @@
 import logging
 import os
 import time
+import traceback
+import uuid
 
 from flask import Flask
 from imap_tools import MailBox
@@ -34,7 +36,7 @@ def poll_imap(app):
             try:
                 check_all_lists_for_messages(app)
             except Exception as e:  # pylint: disable=broad-except
-                logging.error("IMAP worker error: %s", e)
+                logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
             time.sleep(app.config["POLL_INTERVAL"])
 
 
@@ -71,7 +73,7 @@ def process_imap_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: List) -
     # Store message in database
     m = Message()
     m.list_id = ml.id
-    m.message_id = msg.headers.get("message-id", ())[0].strip("<>")
+    m.message_id = next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
     m.subject = msg.subject
     m.from_addr = msg.from_
     m.headers = str(msg.headers)
@@ -132,6 +134,8 @@ def check_all_lists_for_messages(app: Flask) -> None:
                     # Mark message as seen and move to Processed folder
                     mark_msg_as_processed(app=app, mailbox=mailbox, msg=msg)
         except Exception as e:  # pylint: disable=broad-except
-            logging.error("Error processing list %s: %s", ml.name, e)
+            logging.error(
+                "Error processing list %s: %s\nTraceback: %s", ml.name, e, traceback.format_exc()
+            )
 
     logging.debug("Finished checking for new messages")
