@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Recent Messages{% endblock %}
+{% block title %}{{ _('Recent Messages') }}{% endblock %}
 {% block content %}
-<h2>Recent Messages</h2>
+<h2>{{ _('Recent Messages') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
 <ul>
     {% for m in messages %}
     <li>
-        <b>{{ m.subject }}</b> from {{ m.from_addr }} ({{ m.received_at }})
+        <b>{{ m.subject }}</b> {{ _('from') }} {{ m.from_addr }} ({{ m.received_at }})
     </li>
     {% endfor %}
 </ul>

@@ -10,6 +10,9 @@ class Config:  # pylint: disable=too-few-public-methods
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
 
+    # General settings
+    LANGUAGE = "en"  # Supported languages: "en", "de"
+
     # IMAP settings and defaults (used as defaults for new lists)
     IMAP_DEFAULT_HOST = os.getenv("IMAP_DEFAULT_HOST", "***REMOVED***")
     IMAP_DEFAULT_PORT = os.getenv("IMAP_DEFAULT_PORT", "993")

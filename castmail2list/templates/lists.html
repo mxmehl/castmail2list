@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Lists - CastMail2List{% endblock %}
+{% block title %}{{ _('Lists') }} - CastMail2List{% endblock %}
 
 {% block content %}
-<h2>Mailing Lists</h2>
+<h2>{{ _('Mailing Lists') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
 <a href="{{ url_for('add_list') }}" role="button" class="outline">
-    Add new List
+    {{ _('Add new List') }}
 </a>
 
 {% if lists %}
 <table class="striped">
     <thead>
         <tr>
-            <th>List Name</th>
-            <th>List Address</th>
-            <th>Actions</th>
+            <th>{{ _('List Name') }}</th>
+            <th>{{ _('List Address') }}</th>
+            <th>{{ _('Actions') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -26,9 +26,9 @@
         <td>{{ list.name }}</td>
         <td>{{ list.address }}</td>
         <td>
-            <a href="{{ url_for('edit_list', list_id=list.id) }}" role="button" class="outline">Edit</a>
-            <a href="{{ url_for('manage_subs', list_id=list.id) }}" role="button" class="outline secondary">Manage Subscribers ({{ list.subscribers|length }})</a>
-            <a href="{{ url_for('delete_list', list_id=list.id) }}" role="button" class="outline secondary" onclick="return confirm('Are you sure you want to delete the list {{ list.name }} <{{ list.address }}>?')">Delete List</a>
+            <a href="{{ url_for('edit_list', list_id=list.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
+            <a href="{{ url_for('manage_subs', list_id=list.id) }}" role="button" class="outline secondary">{{ _('Manage Subscribers') }} ({{ list.subscribers|length }})</a>
+            <a href="{{ url_for('delete_list', list_id=list.id) }}" role="button" class="outline secondary" onclick="return confirm('{{ _('Are you sure you want to delete the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Delete List') }}</a>
         </td>
     </tr>
     {% endfor %}
@@ -36,6 +36,6 @@
 </table>
 
 {% else %}
-<p class="text-muted">No mailing lists configured yet.</p>
+<p class="text-muted">{{ _('No mailing lists configured yet.') }}</p>
 {% endif %}
 {% endblock %}

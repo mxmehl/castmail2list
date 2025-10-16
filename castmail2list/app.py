@@ -1,10 +1,12 @@
 """Flask app for CastMail2List"""
 
 import argparse
+import logging
 import threading
 from logging.config import dictConfig
 
 from flask import Flask
+from flask_babel import Babel
 from flask_migrate import Migrate
 from sassutils.wsgi import SassMiddleware
 
@@ -40,6 +42,10 @@ def create_app() -> Flask:
     """Create Flask app"""
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Translations
+    Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
+    logging.info("Language set to: %s", app.config.get("LANGUAGE", "en"))
 
     # Database
     db.init_app(app)

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Mailing Lists{% endblock %}
+{% block title %}{{ _('Mailing Lists') }}{% endblock %}
 {% block content %}
-<h2>Overview</h2>
+<h2>{{ _('Overview') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<p>Welcome to CastMail2List! Use the navigation above to manage your mailing lists and their subscribers.</p>
+<p>{{ _('Welcome to CastMail2List! Use the navigation above to manage your mailing lists and their subscribers.') }}</p>
 
 {% endblock %}

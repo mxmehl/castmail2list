@@ -1,5 +1,6 @@
 """Flask-WTF forms for castmail2list application"""
 
+from flask_babel import lazy_gettext as _  # Using lazy_gettext for form field labels
 from flask_wtf import FlaskForm
 from wtforms import (
     BooleanField,
@@ -17,33 +18,35 @@ class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""
 
     mode = RadioField(
-        "Mode",
-        choices=[("broadcast", "Broadcast List"), ("group", "Group List")],
+        _("Mode"),
+        choices=[("broadcast", _("Broadcast List")), ("group", _("Group List"))],
         default="broadcast",
     )
-    name = StringField("List Name", validators=[DataRequired(), Length(min=1, max=100)])
-    address = EmailField("List Email Address", validators=[DataRequired(), Email()])
-    imap_host = StringField("IMAP Server", validators=[Optional(), Length(max=200)])
-    imap_port = IntegerField("IMAP Port", validators=[Optional(), NumberRange(min=1, max=65535)])
-    imap_user = StringField("IMAP Username", validators=[Optional(), Length(max=200)])
-    imap_pass = PasswordField("IMAP Password", validators=[Optional()])
-    from_addr = EmailField("From Address", validators=[Optional(), Email()])
+    name = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=100)])
+    address = EmailField(_("List Email Address"), validators=[DataRequired(), Email()])
+    imap_host = StringField(_("IMAP Server"), validators=[Optional(), Length(max=200)])
+    imap_port = IntegerField(_("IMAP Port"), validators=[Optional(), NumberRange(min=1, max=65535)])
+    imap_user = StringField(_("IMAP Username"), validators=[Optional(), Length(max=200)])
+    imap_pass = PasswordField(_("IMAP Password"), validators=[Optional()])
+    from_addr = EmailField(_("From Address"), validators=[Optional(), Email()])
     allowed_senders = StringField(
-        "Allowed Senders",
+        _("Allowed Senders"),
         validators=[Optional()],
-        description="Enter email addresses, separated by commas. Only relevant in Broadcast mode.",
+        description=_(
+            "Enter email addresses, separated by commas. Only relevant in Broadcast mode."
+        ),
     )
     only_subscribers_send = BooleanField(
-        "Only allow subscribers to send messages to the list. Only relevant in Group mode.",
+        _("Only allow subscribers to send messages to the list. Only relevant in Group mode."),
         default=False,
     )
-    submit = SubmitField("Save List")
+    submit = SubmitField(_("Save List"))
 
 
 class SubscriberAddForm(FlaskForm):
     """Form for adding new subscribers"""
 
-    name = StringField("Name", validators=[Optional(), Length(max=100)])
-    email = EmailField("Email Address", validators=[DataRequired(), Email()])
-    comment = StringField("Comment", validators=[Optional(), Length(max=100)])
-    submit = SubmitField("Save Subscriber")
+    name = StringField(_("Name"), validators=[Optional(), Length(max=100)])
+    email = EmailField(_("Email Address"), validators=[DataRequired(), Email()])
+    comment = StringField(_("Comment"), validators=[Optional(), Length(max=100)])
+    submit = SubmitField(_("Save Subscriber"))

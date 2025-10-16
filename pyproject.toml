@@ -26,6 +26,7 @@ flask-wtf = "^1.2.2"
 email-validator = "^2.3.0"
 libsass = "^0.23.0"
 setuptools = "^80.9.0"
+flask-babel = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^6.1.0"
