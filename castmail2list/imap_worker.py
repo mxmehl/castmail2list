@@ -141,17 +141,9 @@ def check_all_lists_for_messages(app: Flask) -> None:
 
                     # Mark message as seen and move to Processed folder
                     mark_msg_as_processed(app=app, mailbox=mailbox, msg=msg)
-
-                # Logout from IMAP
-                mailbox.logout()
         except Exception as e:  # pylint: disable=broad-except
             logging.error(
                 "Error processing list %s: %s\nTraceback: %s", ml.name, e, traceback.format_exc()
             )
-            # Logout from IMAP, if possible
-            try:
-                mailbox.logout()
-            except Exception:  # pylint: disable=broad-except
-                pass
 
     logging.debug("Finished checking for new messages")
