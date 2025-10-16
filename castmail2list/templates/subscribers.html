@@ -10,7 +10,7 @@
 
 <h3>{{ _('Add Subscriber') }}</h3>
 <form method="POST">
-    <fieldset role="group">
+    <fieldset class="grid">
         {{ add_form.hidden_tag() }}
 
         {{ add_form.name(placeholder=add_form.name.label.text) }}
@@ -40,7 +40,7 @@
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>{{ subscriber.email }}</td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
-            <td>
+            <td role="group">
                 <a href="{{ url_for('edit_subscriber', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button">{{ _('Edit') }}</a>
                 <a href="{{ url_for('delete_subscriber', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="secondary" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ subscriber.name }} <{{ subscriber.email }}> {{ _('from this list?') }}')">{{ _('Delete') }}</a>
             </td>
