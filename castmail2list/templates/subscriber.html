@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Subscriber Overview') }} - {{ email }}{% endblock %}
+
+{% block content %}
+<h2>{{ _('Subscriber Overview') }}</h2>
+
+<p>{{ _('Email Address') }}: <strong>{{ email }}</strong></p>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<h3>{{ _('Subscribed to Lists') }}</h3>
+{% if subscriber_lists %}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>{{ _('List Name') }}</th>
+            <th>{{ _('Subscriber Name') }}</th>
+            <th>{{ _('Comment') }}</th>
+            <th>{{ _('Actions') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in subscriber_lists %}
+        <tr>
+            <td><a href="{{ url_for('manage_subs', list_id=item.list.id) }}">{{ item.list.name }}</a></td>
+            <td>{{ item.subscriber.name or "" }}</td>
+            <td>{{ item.subscriber.comment or "" }}</td>
+            <td>
+                <a href="{{ url_for('edit_subscriber', list_id=item.list.id, subscriber_id=item.subscriber.id) }}" role="button">{{ _('Edit') }}</a>
+                <a href="{{ url_for('delete_subscriber', list_id=item.list.id, subscriber_id=item.subscriber.id) }}" role="button" class="secondary" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ item.subscriber.name or email }} {{ _('from') }} {{ item.list.name }} <{{ item.list.address }}>?')">{{ _('Remove from List') }}</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">{{ _('Not subscribed to any lists.') }}</p>
+{% endif %}
+{% endblock %}
