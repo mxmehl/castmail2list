@@ -13,6 +13,7 @@ from sassutils.wsgi import SassMiddleware
 from .config import Config
 from .imap_worker import poll_imap
 from .models import db
+from .seeder import seed_database
 from .views import init_routes
 
 
@@ -82,11 +83,25 @@ def main():
     parser.add_argument("-H", "--host", default="127.0.0.1")
     parser.add_argument("-p", "--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
+    parser.add_argument("--seed-only", action="store_true", help="Seed the database and exit")
+    parser.add_argument(
+        "--seed", action="store_true", help="Seed the database and continue to start the server"
+    )
     args = parser.parse_args()
 
     configure_logging(args.debug)
 
     app = create_app()
+
+    # seeding actions
+    if args.seed_only:
+        seed_database(app)
+        print("Database seeded (seed-only).")
+        return
+
+    if args.seed:
+        seed_database(app)
+
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 
