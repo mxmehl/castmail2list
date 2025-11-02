@@ -17,28 +17,103 @@ from imap_tools.message import MailMessage
 from castmail2list.models import List, Subscriber
 
 
-class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-methods
+class Mail: # pylint: disable=too-many-instance-attributes
     """Class for an email sent to multiple recipients via SMTP"""
 
-    def __init__(  # pylint: disable=too-many-positional-arguments, too-many-arguments
+    def __init__(
         self,
         app: Flask,
         ml: List,
         msg: MailMessage,
         message_id: str,
     ) -> None:
+        # SMTP settings from app config
         self.smtp_server: str = app.config["SMTP_HOST"]
         self.smtp_port: str | int = app.config["SMTP_PORT"]
         self.smtp_user: str = app.config["SMTP_USER"]
         self.smtp_password: str = app.config["SMTP_PASS"]
         self.smtp_starttls: bool = app.config["SMTP_STARTTLS"]
+        # Arguments as class attributes
         self.message_id: str = message_id
         self.ml: List = ml
         self.msg: MailMessage = msg
+        # Additional attributes we need for sending
+        self.composed_msg: MIMEMultipart | MIMEText | None = None
         self.from_header: str = ""
         self.reply_to: str = ""
         self.original_mid: str = next(iter(self.msg.headers.get("message-id", ())), "")
 
+        # Initialize message container type and common headers
+        self.choose_container_type()
+        self.prepare_common_headers()
+
+    def choose_container_type(self) -> None:
+        """Choose the correct container type for the email based on its content"""
+        if self.msg.attachments:
+            self.composed_msg = MIMEMultipart("mixed")
+        elif self.msg.text and self.msg.html:
+            self.composed_msg = MIMEMultipart("alternative")
+        else:
+            self.composed_msg = MIMEText(
+                self.msg.html or self.msg.text, "html" if self.msg.html else "plain"
+            )
+
+    def prepare_common_headers(self) -> None:
+        """Prepare common email headers, except To which is per-recipient"""
+        if not self.composed_msg:
+            raise ValueError("Message container type not chosen yet")
+
+        self.composed_msg["From"] = self.from_header
+        if self.msg.cc:
+            self.composed_msg["Cc"] = ", ".join(self.msg.cc)
+        self.composed_msg["Subject"] = self.msg.subject
+        self.composed_msg["Message-ID"] = self.message_id
+        self.composed_msg["Date"] = self.msg.date_str or formatdate(localtime=True)
+        self.composed_msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
+        self.composed_msg["X-Mailer"] = "CastMail2List"
+        self.composed_msg["Precedence"] = "list"
+        self.composed_msg["Original-Message-ID"] = self.original_mid
+        self.composed_msg["In-Reply-To"] = (
+            self.msg.headers.get("in-reply-to", ())[0]
+            if self.msg.headers.get("in-reply-to", ())
+            else self.original_mid
+        )
+        self.composed_msg["References"] = " ".join(
+            self.msg.headers.get("references", ()) + (self.original_mid,)
+        )
+        if self.reply_to:
+            self.composed_msg["Reply-To"] = self.reply_to
+
+    def add_body_parts(self) -> None:
+        """Add body parts to the email message container"""
+        if not self.composed_msg:
+            raise ValueError("Message container type not chosen yet")
+
+        if isinstance(self.composed_msg, MIMEMultipart):
+            if self.msg.text and self.msg.html:
+                # Combine text+html properly as an alternative part
+                alt = MIMEMultipart("alternative")
+                alt.attach(MIMEText(self.msg.text, "plain"))
+                alt.attach(MIMEText(self.msg.html, "html"))
+                self.composed_msg.attach(alt)
+            elif self.msg.text:
+                self.composed_msg.attach(MIMEText(self.msg.text, "plain"))
+            elif self.msg.html:
+                self.composed_msg.attach(MIMEText(self.msg.html, "html"))
+
+            # Add attachments if any
+            if self.msg.attachments:
+                for attachment in self.msg.attachments:
+                    part = MIMEBase(
+                        attachment.content_type.split("/")[0], attachment.content_type.split("/")[1]
+                    )
+                    part.set_payload(attachment.payload)
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        "Content-Disposition",
+                        f'{attachment.content_disposition}; filename="{attachment.filename}"',
+                    )
+                    self.composed_msg.attach(part)
 
     def construct_envelope_from(self, recipient: str) -> str:
         """
@@ -56,78 +131,26 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         sanitized_recipient = recipient.replace("@", "=").replace("+", "-")
         return f"{local_part}+bounces--{sanitized_recipient}@{domain_part}"
 
-    def send_email(  # pylint: disable=too-many-branches,too-many-statements
+    def send_email_to_recipient(
         self,
         recipient: str,
     ) -> bytes:
         """
-        Sends an email using a Jinja2 template. Returns sent message as bytes
+        Sends the mostly prepared list message to a recipient. Returns sent message as bytes.
         """
-        # --- Choose correct container type ---
-        msg: MIMEMultipart | MIMEText
-        # If there are attachments, we need a "mixed" container
-        if self.msg.attachments:
-            msg = MIMEMultipart("mixed")
-        # If there are both text and HTML parts, we need an "alternative" container
-        elif self.msg.text and self.msg.html:
-            msg = MIMEMultipart("alternative")
-        # If there are only text or only HTML parts, we can use a simple MIMEText
-        else:
-            # Just a plain text or html-only email — no multipart needed
-            msg = MIMEText(self.msg.html or self.msg.text, "html" if self.msg.html else "plain")
+        # --- Copy prepared message container ---
+        msg = self.composed_msg
+        if msg is None:
+            logging.error("Message container not prepared, cannot send email to %s", recipient)
+            return b""
 
+        # --- Add per-recipient headers ---
         # Deal with recipient as possible To of original message
         if recipient in self.msg.to:
             # TODO: Decide what to do if recipient is also in To header
             pass
-
-        # --- Write common headers ---
-        msg["From"] = self.from_header
-        msg["To"] = ", ".join(self.msg.to) if self.msg.to else recipient
-        if self.msg.cc:
-            msg["Cc"] = ", ".join(self.msg.cc)
-        msg["Subject"] = self.msg.subject
-        msg["Message-ID"] = self.message_id
-        msg["Date"] = self.msg.date_str or formatdate(localtime=True)
-        msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
-        msg["X-Mailer"] = "CastMail2List"
-        msg["Precedence"] = "list"
-        msg["Original-Message-ID"] = self.original_mid
-        msg["In-Reply-To"] = (
-            self.msg.headers.get("in-reply-to", ())[0]
-            if self.msg.headers.get("in-reply-to", ())
-            else self.original_mid
-        )
-        msg["References"] = " ".join(self.msg.headers.get("references", ()) + (self.original_mid,))
-        if self.reply_to:
-            msg["Reply-To"] = self.reply_to
-
-        # --- Add body parts ---
-        if isinstance(msg, MIMEMultipart):
-            if self.msg.text and self.msg.html:
-                # Combine text+html properly as an alternative part
-                alt = MIMEMultipart("alternative")
-                alt.attach(MIMEText(self.msg.text, "plain"))
-                alt.attach(MIMEText(self.msg.html, "html"))
-                msg.attach(alt)
-            elif self.msg.text:
-                msg.attach(MIMEText(self.msg.text, "plain"))
-            elif self.msg.html:
-                msg.attach(MIMEText(self.msg.html, "html"))
-
-            # Add attachments if any
-            if self.msg.attachments:
-                for attachment in self.msg.attachments:
-                    part = MIMEBase(
-                        attachment.content_type.split("/")[0], attachment.content_type.split("/")[1]
-                    )
-                    part.set_payload(attachment.payload)
-                    encoders.encode_base64(part)
-                    part.add_header(
-                        "Content-Disposition",
-                        f'{attachment.content_disposition}; filename="{attachment.filename}"',
-                    )
-                    msg.attach(part)
+        # TODO: Unsure, recipient must be in To, right? What does the below do?
+        msg["To"] = ", ".join(self.msg.to) if self.msg.to else ""
 
         logging.debug("Email content: \n%s", msg.as_string())
 
@@ -228,7 +251,7 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: Mai
 
     for subscriber in subscribers:
         try:
-            sent_msg = mail.send_email(recipient=subscriber.email)
+            sent_msg = mail.send_email_to_recipient(recipient=subscriber.email)
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                 tmpfile.write(msg.obj.as_string())
                 tmpfile.flush()
