@@ -7,42 +7,4 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<h3>{{ _('Bounce Handling Configuration') }}</h3>
-
-<div class="info-box">
-    <p>{{ _('A bounce address is used to receive bounce messages (e.g. undeliverable emails) from the mailing list. You need to set up a dedicated email account for this purpose.') }}</p>
-    <p>{{ _('This bounce address will be used as the "Return-Path" address for emails sent to subscribers of all mailing lists.') }}</p>
-</div>
-
-
-<form method="POST">
-    {{ form.hidden_tag() }}
-
-    {{ form.name.label }}
-    {{ form.name }}
-    <small>{{ form.name.description }}</small>
-
-    {{ form.address.label }}
-    {{ form.address }}
-    <small>{{ form.address.description }}</small>
-
-    {{ form.imap_host.label }}
-    {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
-    <small>{{ form.imap_host.description }}</small>
-
-    {{ form.imap_port.label }}
-    {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
-    <small>{{ form.imap_port.description }}</small>
-
-    {{ form.imap_user.label }}
-    {{ form.imap_user }}
-    <small>{{ form.imap_user.description }}</small>
-
-    {{ form.imap_pass.label }}
-    {{ form.imap_pass(placeholder=_("Leave empty to not update password")) }}
-    <small>{{ form.imap_pass.description }}</small>
-
-    {{ form.submit }}
-</form>
-
 {% endblock %}

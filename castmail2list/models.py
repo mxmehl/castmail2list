@@ -25,7 +25,7 @@ class List(Model):  # pylint: disable=too-few-public-methods
     messages = db.relationship("Message", backref="list", lazy=True, cascade="all, delete-orphan")
 
     # Technical settings per list
-    mode: str = db.Column(db.String)  # "broadcast", "group", or "bounce"
+    mode: str = db.Column(db.String)  # "broadcast" or "group"
     imap_host: str = db.Column(db.String)
     imap_port: str | int = db.Column(db.String)
     imap_user: str = db.Column(db.String)
@@ -35,16 +35,6 @@ class List(Model):  # pylint: disable=too-few-public-methods
     only_subscribers_send: bool = db.Column(
         db.Boolean, default=False
     )  # Only allow subscribers to send
-
-    @property
-    def is_bounce_list(self):
-        """Check if this list is a bounce list"""
-        return self.mode == "bounce"
-
-    @classmethod
-    def get_bounce_list(cls):
-        """Get the bounce list if it exists"""
-        return cls.query.filter_by(mode="bounce").first()
 
 
 class Subscriber(Model):  # pylint: disable=too-few-public-methods
