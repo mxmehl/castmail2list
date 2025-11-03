@@ -15,7 +15,8 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from castmail2list.models import List, Subscriber
+from .models import List, Subscriber
+from .utils import create_bounce_address
 
 
 class Mail:  # pylint: disable=too-many-instance-attributes
@@ -149,22 +150,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes
                     )
                     self.composed_msg.attach(part)
 
-    def construct_envelope_from(self, recipient: str) -> str:
-        """
-        Construct the individualized Envelope From address for bounce handling.
-
-        For the list address `list1@list.example.com` and the recipient `jane.doe@gmail.com`,
-        the return will be `list1+bounces--jane.doe=gmail.com@list.example.com`
-
-        Args:
-            recipient (str): The recipient email address
-        Returns:
-            str: The constructed Envelope From address
-        """
-        local_part, domain_part = self.ml.address.split("@", 1)
-        sanitized_recipient = recipient.replace("@", "=").replace("+", "-")
-        return f"{local_part}+bounces--{sanitized_recipient}@{domain_part}"
-
     def send_email_to_recipient(
         self,
         recipient: str,
@@ -202,7 +187,9 @@ class Mail:  # pylint: disable=too-many-instance-attributes
                     server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
                 server.sendmail(
-                    from_addr=self.construct_envelope_from(recipient),
+                    from_addr=create_bounce_address(
+                        ml_address=self.ml.address, recipient=recipient
+                    ),
                     to_addrs=recipient,
                     msg=self.composed_msg.as_string(),
                 )
