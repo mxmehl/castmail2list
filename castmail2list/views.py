@@ -93,7 +93,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         # Handle adding subscribers
         if form.submit.data and form.validate_on_submit():
             name = form.name.data
-            email = form.email.data
+            email = form.email.data.strip().lower()  # normalize before lookup/insert
             comment = form.comment.data
             # Check if subscriber already exists, identified by email and list_id
             existing_subscriber = Subscriber.query.filter_by(
@@ -169,7 +169,8 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
     def subscriber(email):
         """Show which lists a subscriber is part of"""
         # Find all subscriptions for this email address
-        subscriptions = Subscriber.query.filter_by(email=email).all()
+        email_norm = email.strip().lower()
+        subscriptions = Subscriber.query.filter_by(email=email_norm).all()
 
         if not subscriptions:
             flash(_('No subscriptions found for "%(email)s"', email=email), "warning")

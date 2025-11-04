@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import validates
 
 db = SQLAlchemy()
 if TYPE_CHECKING:
@@ -63,6 +64,11 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
     name: str = db.Column(db.String)
     email: str = db.Column(db.String, nullable=False)
     comment: str = db.Column(db.String)
+
+    @validates("email")
+    def _validate_email(self, _, value):
+        """Normalize email to lowercase on set so comparisons/queries are case-insensitive."""
+        return value.lower() if isinstance(value, str) else value
 
 
 class Message(Model):  # pylint: disable=too-few-public-methods
