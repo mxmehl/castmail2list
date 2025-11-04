@@ -18,7 +18,7 @@
     {{ form.name }}
 
     {{ form.address.label }}
-    {{ form.address }}
+    {{ form.address(value="@" + config.IMAP_DEFAULT_DOMAIN) }}
 
     {{ form.from_addr.label }}
     {{ form.from_addr }}
@@ -47,7 +47,7 @@
         {{ form.imap_port.label }}
         {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
         {{ form.imap_user.label }}
-        {{ form.imap_user }}
+        {{ form.imap_user(placeholder=_("Leave empty to use list address")) }}
         {{ form.imap_pass.label }}
         {{ form.imap_pass(placeholder=_("Leave empty to use configured default")) }}
     </details>
