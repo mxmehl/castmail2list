@@ -39,7 +39,7 @@ def poll_imap(app):
                 check_all_lists_for_messages(app)
             except Exception as e:  # pylint: disable=broad-except
                 logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
-            time.sleep(app.config["POLL_INTERVAL"])
+            time.sleep(app.config["POLL_INTERVAL_SECONDS"])
 
 
 def create_required_folders(app: Flask, mailbox: MailBox) -> None:
