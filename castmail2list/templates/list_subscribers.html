@@ -40,9 +40,9 @@
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td><a href="{{ url_for('subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a></td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
-            <td role="group">
-                <a href="{{ url_for('list_subscriber_edit', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button">{{ _('Edit') }}</a>
-                <a href="{{ url_for('list_subscriber_delete', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="secondary" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ subscriber.name }} <{{ subscriber.email }}> {{ _('from this list?') }}')">{{ _('Delete') }}</a>
+            <td>
+                <a href="{{ url_for('list_subscriber_edit', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
+                <a href="{{ url_for('list_subscriber_delete', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline danger" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ subscriber.name }} <{{ subscriber.email }}> {{ _('from this list?') }}')">{{ _('Delete') }}</a>
             </td>
         </tr>
         {% endfor %}

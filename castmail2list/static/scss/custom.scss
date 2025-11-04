@@ -32,3 +32,29 @@ ul#mode {
     list-style: none;
   }
 }
+
+// Buttons
+// Red button variant
+a[role="button"], button {
+  &.danger {
+    --pico-background-color: red;
+    --pico-border-color: red;
+
+    &:hover, &.active, &:focus {
+      --pico-background-color: crimson !important;
+      --pico-border-color: crimson !important;
+    }
+
+    &.outline {
+      --pico-background-color: transparent;
+      --pico-color: red;
+      --pico-border-color: red;
+
+      &:hover, &.active, &:focus {
+        --pico-background-color: transparent !important;
+        --pico-color: crimson !important;
+        --pico-border-color: crimson !important;
+      }
+    }
+  }
+}
