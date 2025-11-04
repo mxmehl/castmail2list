@@ -1,12 +1,14 @@
 """Flask routes for castmail2list application"""
 
+from datetime import datetime, timezone
+
 from flask import Flask, flash, redirect, render_template, url_for
 from flask_babel import _
 
 from .config import Config
 from .forms import MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, db
-from .utils import flash_form_errors, normalize_email_list  # <-- import helpers
+from .utils import flash_form_errors, normalize_email_list
 
 
 def init_routes(app: Flask):  # pylint: disable=too-many-statements
@@ -14,7 +16,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/")
     def index():
-        lists = List.query.all()
+        lists = List.query.filter_by(deleted=False).all()
         return render_template("index.html", lists=lists)
 
     @app.route("/messages")
@@ -24,7 +26,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists", methods=["GET"])
     def lists():
-        lists = List.query.all()
+        lists = List.query.filter_by(deleted=False).all()
         return render_template("lists.html", lists=lists, config=Config)
 
     @app.route("/lists/add", methods=["GET", "POST"])
@@ -62,7 +64,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists/<int:list_id>/edit", methods=["GET", "POST"])
     def list_edit(list_id):
-        mailing_list = List.query.get_or_404(list_id)
+        mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         form = MailingListForm(obj=mailing_list)
 
         if form.validate_on_submit():
@@ -87,7 +89,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
     def list_subscribers(list_id):
-        mailing_list = List.query.get_or_404(list_id)
+        mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         form = SubscriberAddForm()
 
         # Handle adding subscribers
@@ -127,15 +129,17 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists/<int:list_id>/delete", methods=["GET"])
     def list_delete(list_id):
-        mailing_list = List.query.get_or_404(list_id)
-        db.session.delete(mailing_list)
+        mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
+        # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
+        mailing_list.deleted = True
+        mailing_list.deleted_at = datetime.now(timezone.utc)
         db.session.commit()
-        flash(_('List "%(name)s" deleted successfully!', name=mailing_list.name), "success")
+        flash(_('List "%(name)s" marked deleted successfully!', name=mailing_list.name), "success")
         return redirect(url_for("lists"))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
     def list_subscriber_delete(list_id, subscriber_id):
-        mailing_list = List.query.get_or_404(list_id)
+        mailing_list = List.query.filter_by(id=list_id).first_or_404()
         subscriber = Subscriber.query.get_or_404(subscriber_id)
         if subscriber.list_id == mailing_list.id:
             email = subscriber.email
@@ -146,7 +150,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
     def list_subscriber_edit(list_id, subscriber_id):
-        mailing_list = List.query.get_or_404(list_id)
+        mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         subscriber = Subscriber.query.get_or_404(subscriber_id)
         form = SubscriberAddForm(obj=subscriber)
         if form.validate_on_submit():

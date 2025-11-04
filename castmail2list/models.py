@@ -46,6 +46,10 @@ class List(Model):  # pylint: disable=too-few-public-methods
         db.Boolean, default=False
     )  # Only allow subscribers to send
 
+    # Soft-delete flag: mark list as deleted instead of removing row from DB
+    deleted: bool = db.Column(db.Boolean, default=False, nullable=False)
+    deleted_at = db.Column(db.DateTime, nullable=True)
+
 
 class Subscriber(Model):  # pylint: disable=too-few-public-methods
     """A subscriber to a mailing list"""
