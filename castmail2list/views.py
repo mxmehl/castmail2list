@@ -28,7 +28,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         return render_template("lists.html", lists=lists, config=Config)
 
     @app.route("/lists/add", methods=["GET", "POST"])
-    def add_list():
+    def list_add():
         form = MailingListForm()
 
         if form.validate_on_submit():
@@ -58,10 +58,10 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         if form.submit.data and form.errors:
             flash_form_errors(form)
 
-        return render_template("add_list.html", config=Config, form=form)
+        return render_template("list_add.html", config=Config, form=form)
 
     @app.route("/lists/<int:list_id>/edit", methods=["GET", "POST"])
-    def edit_list(list_id):
+    def list_edit(list_id):
         mailing_list = List.query.get_or_404(list_id)
         form = MailingListForm(obj=mailing_list)
 
@@ -83,10 +83,10 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         if form.submit.data and form.errors:
             flash_form_errors(form)
 
-        return render_template("edit_list.html", mailing_list=mailing_list, form=form)
+        return render_template("list_edit.html", mailing_list=mailing_list, form=form)
 
     @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
-    def manage_subs(list_id):
+    def list_subscribers(list_id):
         mailing_list = List.query.get_or_404(list_id)
         form = SubscriberAddForm()
 
@@ -113,7 +113,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
                     "warning",
                 )
 
-            return redirect(url_for("manage_subs", list_id=list_id))
+            return redirect(url_for("list_subscribers", list_id=list_id))
 
         # Flash on form errors
         if form.submit.data and form.errors:
@@ -126,7 +126,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         )
 
     @app.route("/lists/<int:list_id>/delete", methods=["GET"])
-    def delete_list(list_id):
+    def list_delete(list_id):
         mailing_list = List.query.get_or_404(list_id)
         db.session.delete(mailing_list)
         db.session.commit()
@@ -134,7 +134,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         return redirect(url_for("lists"))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
-    def delete_subscriber(list_id, subscriber_id):
+    def list_subscriber_delete(list_id, subscriber_id):
         mailing_list = List.query.get_or_404(list_id)
         subscriber = Subscriber.query.get_or_404(subscriber_id)
         if subscriber.list_id == mailing_list.id:
@@ -142,10 +142,10 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             db.session.delete(subscriber)
             db.session.commit()
             flash(_('Successfully removed "%(email)s" from the list!', email=email), "success")
-        return redirect(url_for("manage_subs", list_id=list_id))
+        return redirect(url_for("list_subscribers", list_id=list_id))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
-    def edit_subscriber(list_id, subscriber_id):
+    def list_subscriber_edit(list_id, subscriber_id):
         mailing_list = List.query.get_or_404(list_id)
         subscriber = Subscriber.query.get_or_404(subscriber_id)
         form = SubscriberAddForm(obj=subscriber)
@@ -155,18 +155,18 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             subscriber.comment = form.comment.data
             db.session.commit()
             flash(_("Subscriber updated successfully!"), "success")
-            return redirect(url_for("manage_subs", list_id=list_id))
+            return redirect(url_for("list_subscribers", list_id=list_id))
 
         # Flash on form errors
         if form.submit.data and form.errors:
             flash_form_errors(form)
 
         return render_template(
-            "edit_subscriber.html", mailing_list=mailing_list, form=form, subscriber=subscriber
+            "list_subscriber_edit.html", mailing_list=mailing_list, form=form, subscriber=subscriber
         )
 
     @app.route("/subscriber/<email>")
-    def view_subscriber(email):
+    def subscriber(email):
         """Show which lists a subscriber is part of"""
         # Find all subscriptions for this email address
         subscriptions = Subscriber.query.filter_by(email=email).all()
