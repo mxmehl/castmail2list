@@ -208,16 +208,56 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         return self.composed_msg.as_bytes()
 
 
-def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
-    """Send message to all subscribers of a list"""
+def get_list_subscribers(ml: List) -> list[Subscriber]:
+    """Get all (deduplicated) subscribers of a mailing list, including those from overlapping lists"""
     # Find all subscribers of the list
     subscribers: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
     logging.debug(
-        "Found %d subscribers for the list <%s>: %s",
+        "Found %d initial subscribers for the list <%s>: %s",
         len(subscribers),
         ml.address,
         ", ".join([subscribers.email for subscribers in subscribers]),
     )
+
+    # Find out if any of the subscribers' email addresses is a configured mailing list address
+    subscriber_emails: list[str] = [sub.email for sub in subscribers]
+    all_lists: list[List] = List.query.all()
+    ml_addresses: list[str] = [l.address for l in all_lists]
+    overlapping_addresses = set(subscriber_emails) & set(ml_addresses)
+    if overlapping_addresses:
+        logging.debug(
+            "Some subscribers are also mailing lists: %s",
+            ", ".join(overlapping_addresses),
+        )
+
+    # Get all subscribers of each of those lists to avoid sending duplicate emails
+    additional_subscribers: list[Subscriber] = []
+    for overlap_address in overlapping_addresses:
+        overlapping_list = List.query.filter_by(address=overlap_address).first()
+        if overlapping_list:
+            overlapping_subs = Subscriber.query.filter_by(list_id=overlapping_list.id).all()
+            additional_subscribers.extend(overlapping_subs)
+
+    # Combine and deduplicate subscribers
+    all_subscribers_dict = {sub.email: sub for sub in subscribers + additional_subscribers}
+    subscribers = list(all_subscribers_dict.values())
+
+    # Finally, remove the identified mailing list addresses themselves
+    subscribers = [sub for sub in subscribers if sub.email not in ml_addresses]
+
+    logging.debug(
+        "Found %d unique, non-list subscribers for the list <%s>: %s",
+        len(subscribers),
+        ml.address,
+        ", ".join([sub.email for sub in subscribers]),
+    )
+    return subscribers
+
+
+def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
+    """Send message to all subscribers of a list"""
+    subscribers: list[Subscriber] = get_list_subscribers(ml)
+    return
 
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
