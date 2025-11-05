@@ -209,55 +209,85 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
 
 def get_list_subscribers(ml: List) -> list[Subscriber]:
-    """Get all (deduplicated) subscribers of a mailing list, including those from overlapping lists"""
-    # Find all subscribers of the list
-    subscribers: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
-    logging.debug(
-        "Found %d initial subscribers for the list <%s>: %s",
-        len(subscribers),
-        ml.address,
-        ", ".join([subscribers.email for subscribers in subscribers]),
-    )
+    """
+    Get all (deduplicated) subscribers of a mailing list, including those from overlapping
+    lists, recursively.
+    """
+    visited_list_ids = set()
+    subscribers_dict = {}
 
-    # Find out if any of the subscribers' email addresses is a configured mailing list address
-    subscriber_emails: list[str] = [sub.email for sub in subscribers]
-    all_lists: list[List] = List.query.all()
-    ml_addresses: list[str] = [l.address for l in all_lists]
-    overlapping_addresses = set(subscriber_emails) & set(ml_addresses)
-    if overlapping_addresses:
+    def _collect_subscribers(list_obj: List):
         logging.debug(
-            "Some subscribers are also mailing lists: %s",
-            ", ".join(overlapping_addresses),
+            "Collecting subscribers for list: %s <%s> (id=%s)",
+            list_obj.name,
+            list_obj.address,
+            list_obj.id,
         )
+        if list_obj.id in visited_list_ids:
+            logging.debug(
+                "List id %s already visited, skipping to avoid recursion loop.", list_obj.id
+            )
+            return
+        visited_list_ids.add(list_obj.id)
 
-    # Get all subscribers of each of those lists to avoid sending duplicate emails
-    additional_subscribers: list[Subscriber] = []
-    for overlap_address in overlapping_addresses:
-        overlapping_list = List.query.filter_by(address=overlap_address).first()
-        if overlapping_list:
-            overlapping_subs = Subscriber.query.filter_by(list_id=overlapping_list.id).all()
-            additional_subscribers.extend(overlapping_subs)
+        # Get direct subscribers
+        direct_subs = Subscriber.query.filter_by(list_id=list_obj.id).all()
+        logging.debug(
+            "Found %d direct subscribers for list <%s>: %s",
+            len(direct_subs),
+            list_obj.address,
+            ", ".join([sub.email for sub in direct_subs]),
+        )
+        for sub in direct_subs:
+            if sub.email not in subscribers_dict:
+                subscribers_dict[sub.email] = sub
+                logging.debug("Added subscriber: %s", sub.email)
+            else:
+                logging.debug("Subscriber %s already added, skipping.", sub.email)
 
-    # Combine and deduplicate subscribers
-    all_subscribers_dict = {sub.email: sub for sub in subscribers + additional_subscribers}
-    subscribers = list(all_subscribers_dict.values())
+        # Find subscribers whose email matches another list address (nested lists)
+        all_lists = List.query.all()
+        ml_addresses = {l.address: l for l in all_lists}
+        for sub in direct_subs:
+            nested_list = ml_addresses.get(sub.email)
+            if nested_list:
+                logging.debug(
+                    "Subscriber %s is also a list address (%s), recursing into list id %s.",
+                    sub.email,
+                    nested_list.address,
+                    nested_list.id,
+                )
+                if nested_list.id not in visited_list_ids:
+                    _collect_subscribers(nested_list)
+                else:
+                    logging.debug("Nested list id %s already visited, skipping.", nested_list.id)
 
-    # Finally, remove the identified mailing list addresses themselves
-    subscribers = [sub for sub in subscribers if sub.email not in ml_addresses]
+    _collect_subscribers(ml)
+
+    # Remove any subscribers whose email is a list address (do not send to lists themselves)
+    all_lists = List.query.all()
+    ml_addresses = {l.address for l in all_lists}
+    result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
 
     logging.debug(
         "Found %d unique, non-list subscribers for the list <%s>: %s",
-        len(subscribers),
+        len(result),
         ml.address,
-        ", ".join([sub.email for sub in subscribers]),
+        ", ".join([sub.email for sub in result]),
     )
-    return subscribers
+    return result
 
 
 def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
     """Send message to all subscribers of a list"""
     subscribers: list[Subscriber] = get_list_subscribers(ml)
-    return
+    logging.info(
+        "Sending message %s to %d subscribers of list <%s>: %s",
+        msg.uid,
+        len(subscribers),
+        ml.name,
+        ", ".join([sub.email for sub in subscribers]),
+    )
 
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
