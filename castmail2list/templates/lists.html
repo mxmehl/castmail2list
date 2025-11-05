@@ -27,7 +27,7 @@
         <td>{{ list.address }}</td>
         <td>
             <a href="{{ url_for('list_edit', list_id=list.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
-            <a href="{{ url_for('list_subscribers', list_id=list.id) }}" role="button" class="outline secondary">{{ _('Manage Subscribers') }} ({{ list.subscribers|length }})</a>
+            <a href="{{ url_for('list_subscribers_manage', list_id=list.id) }}" role="button" class="outline secondary">{{ _('Manage Subscribers') }} ({{ list.subscribers|length }})</a>
             <a href="{{ url_for('list_delete', list_id=list.id) }}" role="button" class="outline danger" onclick="return confirm('{{ _('Are you sure you want to delete the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Delete List') }}</a>
         </td>
     </tr>

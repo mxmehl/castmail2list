@@ -23,7 +23,7 @@
     <tbody>
         {% for item in subscriber_lists %}
         <tr>
-            <td><a href="{{ url_for('list_subscribers', list_id=item.list.id) }}">{{ item.list.name }}</a></td>
+            <td><a href="{{ url_for('list_subscribers_manage', list_id=item.list.id) }}">{{ item.list.name }}</a></td>
             <td>{{ item.subscriber.name or "" }}</td>
             <td>{{ item.subscriber.comment or "" }}</td>
             <td>
