@@ -163,6 +163,27 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             subscriber.email = form.email.data
             subscriber.comment = form.comment.data
             subscriber.subscriber_type = "list" if is_email_a_list(form.email.data) else "normal"
+
+            # Check if subscriber with new email already exists
+            existing_subscriber = Subscriber.query.filter_by(
+                list_id=mailing_list.id, email=form.email.data
+            ).first()
+            if existing_subscriber and existing_subscriber.id != subscriber.id:
+                flash(
+                    _(
+                        'Email "%(email)s" is already subscribed to this list.',
+                        email=form.email.data,
+                    ),
+                    "warning",
+                )
+                return render_template(
+                    "list_subscriber_edit.html",
+                    mailing_list=mailing_list,
+                    form=form,
+                    subscriber=subscriber,
+                )
+
+            # Commit updates
             db.session.commit()
             flash(_("Subscriber updated successfully!"), "success")
             return redirect(url_for("list_subscribers_manage", list_id=list_id))
