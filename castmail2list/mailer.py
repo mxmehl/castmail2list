@@ -285,7 +285,7 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: Mai
         "Sending message %s to %d subscribers of list <%s>: %s",
         msg.uid,
         len(subscribers),
-        ml.name,
+        ml.address,
         ", ".join([sub.email for sub in subscribers]),
     )
 
