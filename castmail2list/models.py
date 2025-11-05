@@ -26,8 +26,8 @@ class List(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String, unique=True)
-    address: str = db.Column(db.String)
+    name: str = db.Column(db.String)
+    address: str = db.Column(db.String, unique=True)
     subscribers = db.relationship(
         "Subscriber", backref="list", lazy=True, cascade="all, delete-orphan"
     )
@@ -47,7 +47,7 @@ class List(Model):  # pylint: disable=too-few-public-methods
     )  # Only allow subscribers to send
 
     # Soft-delete flag: mark list as deleted instead of removing row from DB
-    deleted: bool = db.Column(db.Boolean, default=False, nullable=False)
+    deleted: bool = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
 
@@ -68,6 +68,7 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
     name: str = db.Column(db.String)
     email: str = db.Column(db.String, nullable=False)
     comment: str = db.Column(db.String)
+    subscriber_type: str = db.Column(db.String, default="normal")  # subscriber or list
 
     @validates("email")
     def _validate_email(self, _, value):

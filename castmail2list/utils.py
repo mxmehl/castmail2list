@@ -4,6 +4,8 @@ import logging
 
 from flask import flash
 
+from .models import List
+
 
 def flash_form_errors(form):
     """Flash all errors from a Flask-WTF form"""
@@ -63,3 +65,16 @@ def parse_bounce_address(bounce_address: str) -> str | None:
     except ValueError:
         logging.warning("Failed to parse bounce address: %s", bounce_address)
         return None
+
+
+def is_email_a_list(email: str) -> bool:
+    """
+    Check if the given email address is the address of one of the configured mailing lists.
+
+    Args:
+        email (str): The email address to check
+    Returns:
+        bool: True if the email is a mailing list address, False otherwise
+    """
+    list_addresses = {lst.address.lower() for lst in List.query.filter_by(deleted=False).all()}
+    return email.lower() in list_addresses

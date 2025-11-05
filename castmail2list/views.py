@@ -8,7 +8,7 @@ from flask_babel import _
 from .config import Config
 from .forms import MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, db
-from .utils import flash_form_errors, normalize_email_list
+from .utils import flash_form_errors, is_email_a_list, normalize_email_list
 
 
 def init_routes(app: Flask):  # pylint: disable=too-many-statements
@@ -97,6 +97,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             name = form.name.data
             email = form.email.data.strip().lower()  # normalize before lookup/insert
             comment = form.comment.data
+            subscriber_type = "list" if is_email_a_list(email) else "normal"
             # Check if subscriber already exists, identified by email and list_id
             existing_subscriber = Subscriber.query.filter_by(
                 list_id=mailing_list.id, email=email
@@ -104,7 +105,11 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
             if not existing_subscriber:
                 new_subscriber = Subscriber(
-                    list_id=mailing_list.id, name=name, email=email, comment=comment
+                    list_id=mailing_list.id,
+                    name=name,
+                    email=email,
+                    comment=comment,
+                    subscriber_type=subscriber_type,
                 )
                 db.session.add(new_subscriber)
                 db.session.commit()
@@ -151,12 +156,13 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
     def list_subscriber_edit(list_id, subscriber_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
-        subscriber = Subscriber.query.get_or_404(subscriber_id)
+        subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
         form = SubscriberAddForm(obj=subscriber)
         if form.validate_on_submit():
             subscriber.name = form.name.data
             subscriber.email = form.email.data
             subscriber.comment = form.comment.data
+            subscriber.subscriber_type = "list" if is_email_a_list(form.email.data) else "normal"
             db.session.commit()
             flash(_("Subscriber updated successfully!"), "success")
             return redirect(url_for("list_subscribers", list_id=list_id))

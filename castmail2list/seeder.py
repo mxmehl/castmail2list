@@ -19,6 +19,8 @@ SEED = {
 import logging
 from typing import Any, Dict
 
+from flask import Flask
+
 from .models import List, Subscriber, db
 
 DEFAULT_SEED: Dict[str, Any] = {
@@ -80,7 +82,7 @@ def _load_local_seed() -> Dict[str, Any]:
     return getattr(local_secrets, "SEED", {}) or {}
 
 
-def seed_database(app: None = None) -> None:
+def seed_database(app: Flask) -> None:
     """Create tables and seed DB if empty, using local overrides when present.
 
     Accepts an optional Flask `app`. If provided, this function will push `app.app_context()`
@@ -122,7 +124,14 @@ def seed_database(app: None = None) -> None:
 
             subs = []
             for s in lst_cfg.get("subscribers", []):
-                subs.append(Subscriber(name=s.get("name"), email=s.get("email"), list=new_list))
+                subs.append(
+                    Subscriber(
+                        name=s.get("name"),
+                        email=s.get("email"),
+                        subscriber_type=s.get("subscriber_type"),
+                        list=new_list,
+                    )
+                )
 
             db.session.add(new_list)
             if subs:
