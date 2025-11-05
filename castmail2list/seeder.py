@@ -21,8 +21,6 @@ from typing import Any, Dict
 
 from .models import List, Subscriber, db
 
-logger = logging.getLogger(__name__)
-
 DEFAULT_SEED: Dict[str, Any] = {
     "list": {
         "name": "General Announcements",
@@ -84,7 +82,7 @@ def seed_database(app: None = None) -> None:
         db.create_all()
 
         if List.query.first():
-            logger.debug("Database already has lists — skipping seed.")
+            logging.debug("Database already has lists — skipping seed.")
             return
 
         local = _load_local_seed()
@@ -97,7 +95,7 @@ def seed_database(app: None = None) -> None:
         except (TypeError, ValueError):
             lst_cfg["imap_port"] = 993
 
-        logger.info("Seeding database with initial data (overrides present: %s).", bool(local))
+        logging.info("Seeding database with initial data (overrides present: %s).", bool(local))
 
         new_list = List(
             name=lst_cfg.get("name"),
@@ -121,7 +119,7 @@ def seed_database(app: None = None) -> None:
             db.session.add_all(subs)
         db.session.commit()
 
-        logger.info("✅ Seed data inserted.")
+        logging.info("✅ Seed data inserted.")
 
     if app is not None:
         # push provided app context while seeding
