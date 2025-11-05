@@ -37,7 +37,7 @@ def create_bounce_address(ml_address: str, recipient: str) -> str:
         str: The constructed Envelope From address
     """
     local_part, domain_part = ml_address.split("@", 1)
-    sanitized_recipient = recipient.replace("@", "=").replace("+", "-")
+    sanitized_recipient = recipient.replace("@", "=").replace("+", "---plus---")
     return f"{local_part}+bounces--{sanitized_recipient}@{domain_part}"
 
 
@@ -60,7 +60,7 @@ def parse_bounce_address(bounce_address: str) -> str | None:
             logging.debug("No bounce marker in address: %s", bounce_address)
             return None
         _, sanitized_recipient = local_part.split("+bounces--", 1)
-        recipient = sanitized_recipient.replace("=", "@").replace("-", "+")
+        recipient = sanitized_recipient.replace("=", "@").replace("---plus---", "+")
         return recipient
     except ValueError:
         logging.warning("Failed to parse bounce address: %s", bounce_address)
