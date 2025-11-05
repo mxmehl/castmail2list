@@ -3,20 +3,77 @@
 # TODO: gitignore this file and provide a template instead if productive
 
 SEED = {
-    "list": {
-        "name": "Test List",
-        "address": "test-list@***REMOVED***",
-        "imap_pass": "testtest123",
-        "mode": "broadcast",
-        "imap_host": "***REMOVED***",
-        "imap_port": 993,
-        "imap_user": "test-list@***REMOVED***",
-        "from_addr": "no-reply@***REMOVED***",
-        "allowed_senders": "user@***REMOVED***",
-        "only_subscribers_send": False,
-    },
-    "subscribers": [
-        {"name": "Max", "email": "tech@mehl.mx"},
-        {"name": "Bouncetest", "email": "bouncetest@tribulant.com"},
+    "lists": [
+        {
+            "name": "Alle Eltern",
+            "address": "list-eltern@***REMOVED***",
+            "mode": "broadcast",
+            "from_addr": "test-info@***REMOVED***",
+            "allowed_senders": "test-info@***REMOVED***",
+            "only_subscribers_send": False,
+            "imap_pass": "testtest123",
+            "imap_host": "***REMOVED***",
+            "imap_port": 993,
+            "imap_user": "list-eltern@***REMOVED***",
+            "subscribers": [],
+        },
+        {
+            "name": "Eltern Mondgruppe",
+            "address": "list-eltern-mondgruppe@***REMOVED***",
+            "mode": "broadcast",
+            "from_addr": "test-info@***REMOVED***",
+            "allowed_senders": "test-info@***REMOVED***",
+            "only_subscribers_send": False,
+            "imap_pass": "testtest123",
+            "imap_host": "***REMOVED***",
+            "imap_port": 993,
+            "imap_user": "list-eltern-mondgruppe@***REMOVED***",
+            "subscribers": [
+                {
+                    "name": "Elternteil Mond 1",
+                    "email": "test-user+mond1@***REMOVED***",
+                },
+                {
+                    "name": "Elternteil Mond 2",
+                    "email": "test-user+mond2@***REMOVED***",
+                },
+            ],
+        },
+        {
+            "name": "Elternbeirat",
+            "address": "list-elternbeirat@***REMOVED***",
+            "mode": "group",
+            "from_addr": "",
+            "allowed_senders": "",
+            "only_subscribers_send": False,
+            "imap_pass": "testtest123",
+            "imap_host": "***REMOVED***",
+            "imap_port": 993,
+            "imap_user": "list-elternbeirat@***REMOVED***",
+            "subscribers": [
+                {
+                    "name": "Elternteil Mond 1",
+                    "email": "test-user+mond1@***REMOVED***",
+                },
+            ],
+        },
+        {
+            "name": "Vorstand",
+            "address": "list-vorstand@***REMOVED***",
+            "mode": "group",
+            "from_addr": "",
+            "allowed_senders": "",
+            "only_subscribers_send": False,
+            "imap_pass": "testtest123",
+            "imap_host": "***REMOVED***",
+            "imap_port": 993,
+            "imap_user": "list-vorstand@***REMOVED***",
+            "subscribers": [
+                {
+                    "name": "Vorstand 1",
+                    "email": "test-user+vorstand@***REMOVED***",
+                },
+            ],
+        },
     ],
 }
