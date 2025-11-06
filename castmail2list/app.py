@@ -7,12 +7,17 @@ from logging.config import dictConfig
 
 from flask import Flask
 from flask_babel import Babel
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_login import LoginManager
 from flask_migrate import Migrate
+from flask_wtf import CSRFProtect
 from sassutils.wsgi import SassMiddleware
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
 from .imap_worker import poll_imap
-from .models import db
+from .models import User, db
 from .seeder import seed_database
 from .views import init_routes
 
@@ -54,6 +59,41 @@ def create_app() -> Flask:
     with app.app_context():
         db.create_all()
 
+    # Trust headers from reverse proxy (1 layer by default)
+    app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+    )
+
+    # Secure session cookie config
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="Lax"
+    )
+
+    # Set up rate limiting
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
+        storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
+    )
+    if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
+        app.logger.warning(
+            "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
+        )
+
+    # Enable CSRF protection
+    CSRFProtect(app)
+
+    # Configure Flask-Login
+    login_manager = LoginManager()
+    login_manager.login_view = "auth.login"
+    login_manager.init_app(app)
+
+    # User loader function for Flask-Login
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
     # Settings for SCSS conversion
     app.wsgi_app = SassMiddleware(  # type: ignore
         app.wsgi_app,
@@ -68,7 +108,7 @@ def create_app() -> Flask:
     )
 
     # Import routes
-    init_routes(app)
+    init_routes(app, limiter)
 
     # start background IMAP thread
     t = threading.Thread(target=poll_imap, args=(app,), daemon=True)

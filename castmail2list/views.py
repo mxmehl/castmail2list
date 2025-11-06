@@ -1,18 +1,55 @@
 """Flask routes for castmail2list application"""
 
+import logging
 from datetime import datetime, timezone
 
-from flask import Flask, flash, redirect, render_template, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_babel import _
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_login import login_user
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from .config import Config
-from .forms import MailingListForm, SubscriberAddForm
-from .models import List, Message, Subscriber, db
+from .forms import LoginForm, MailingListForm, SubscriberAddForm
+from .models import List, Message, Subscriber, User, db
 from .utils import flash_form_errors, is_email_a_list, normalize_email_list
 
 
-def init_routes(app: Flask):  # pylint: disable=too-many-statements
+def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-statements
     """Initialize Flask routes"""
+
+    # def is_authenticated():
+    #     """Check if the current session matches a valid user and password hash"""
+    #     username = session.get("username")
+    #     auth_signature = session.get("auth_signature")
+    #     users = app.config.get("USERS", {})
+    #     secret = app.config["STREAM_SECRET"]
+
+    #     if username not in users:
+    #         return False
+
+    #     expected_signature = compute_session_signature(username, users[username], secret)
+    #     return auth_signature == expected_signature
+
+    @app.route("/login", methods=["GET", "POST"])
+    @limiter.limit(app.config.get("RATE_LIMIT_LOGIN", ""))
+    def login():
+        form = LoginForm()
+        if form.validate_on_submit():
+            username = form.username.data
+            password = form.password.data
+
+            user = User.query.filter_by(username=username).first()
+
+            if not user or not check_password_hash(user.password, password):
+                flash("Please check your login details and try again.", "warning")
+                return redirect(url_for("login"))
+
+            login_user(user, remember=True)
+            return redirect(request.args.get("next") or url_for("index"))
+
+        return render_template("login.html", form=form)
 
     @app.route("/")
     def index():
