@@ -17,6 +17,7 @@
         <ul>
           <li><strong>CastMail2List</strong></li>
         </ul>
+        {%- if session._user_id %}
         <ul>
           <li><a href="{{ url_for('index') }}">{{ _('Home') }}</a></li>
           <li><a href="{{ url_for('messages') }}">{{ _('Messages') }}</a></li>
@@ -24,12 +25,20 @@
           <li><a href="{{ url_for('settings') }}">{{ _('Settings') }}</a></li>
           <li><a href="{{ url_for('logout') }}">{{ _('Logout') }}</a></li>
         </ul>
+        {%- endif %}
       </nav>
     </div>
   </header>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+  <footer class="container">
+    <hr />
+    <p>
+      Powered by <a href="https://github.com/mxmehl/castmail2list" target="_blank">CastMail2List</a>
+      {%- if session._user_id %} {{ version_info }}{% endif %}
+    </p>
+  </footer>
 </body>
 
 </html>

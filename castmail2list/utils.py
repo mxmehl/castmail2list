@@ -1,9 +1,11 @@
 """Utility functions for Castmail2List application"""
 
 import logging
+import subprocess
 
 from flask import flash
 
+from . import __version__
 from .models import List
 
 
@@ -12,6 +14,18 @@ def flash_form_errors(form):
     for field, errors in form.errors.items():
         for error in errors:
             flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+
+
+def get_version_info():
+    """Get the version information of the application"""
+    # Get short git commit hash if available
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
+    except Exception:  # pylint: disable=broad-exception-caught
+        logging.debug("Failed to get git commit hash.", exc_info=True)
+        commit = "unknown commit"
+
+    return f"{__version__} ({commit})"
 
 
 def normalize_email_list(input_str: str) -> str:
