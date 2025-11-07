@@ -44,9 +44,13 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
 
             if not user or not check_password_hash(user.password, password):
                 flash("Please check your login details and try again.", "warning")
+                logging.warning(
+                    "Failed login attempt for user %s from IP %s", username, request.remote_addr
+                )
                 return redirect(url_for("login"))
 
             login_user(user, remember=True)
+            logging.info("User %s logged in successfully from IP %s", username, request.remote_addr)
             return redirect(request.args.get("next") or url_for("index"))
 
         return render_template("login.html", form=form)
