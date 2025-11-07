@@ -8,7 +8,7 @@
 <ul>
     {% for m in messages %}
     <li>
-        <b>{{ m.subject }}</b> {{ _('from') }} <a href="{{ url_for('subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a> ({{ m.received_at }})
+        <b>{{ m.subject }}</b> {{ _('from') }} <a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a> ({{ m.received_at }})
     </li>
     {% endfor %}
 </ul>

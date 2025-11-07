@@ -19,9 +19,10 @@ from werkzeug.security import generate_password_hash
 from .config import Config
 from .imap_worker import poll_imap
 from .models import User, db
-from .routes import init_routes
 from .seeder import seed_database
+from .utils import get_version_info
 from .views.auth import auth
+from .views.general import general
 from .views.lists import lists
 
 
@@ -115,9 +116,16 @@ def create_app() -> Flask:
     )
 
     # Register views and routes
-    init_routes(app)
     app.register_blueprint(auth)
     app.register_blueprint(lists)
+    app.register_blueprint(general)
+
+    # Inject variables into templates
+    @app.context_processor
+    def inject_vars():
+        return {
+            "version_info": get_version_info(),
+        }
 
     # start background IMAP thread
     t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
