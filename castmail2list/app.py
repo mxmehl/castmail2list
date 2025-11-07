@@ -22,6 +22,7 @@ from .models import User, db
 from .routes import init_routes
 from .seeder import seed_database
 from .views.auth import auth
+from .views.lists import lists
 
 
 def configure_logging(debug: bool) -> None:
@@ -116,6 +117,7 @@ def create_app() -> Flask:
     # Register views and routes
     init_routes(app)
     app.register_blueprint(auth)
+    app.register_blueprint(lists)
 
     # start background IMAP thread
     t = threading.Thread(target=poll_imap, args=(app,), daemon=True)

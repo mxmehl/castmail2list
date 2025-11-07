@@ -21,7 +21,7 @@
         <ul>
           <li><a href="{{ url_for('index') }}">{{ _('Home') }}</a></li>
           <li><a href="{{ url_for('messages') }}">{{ _('Messages') }}</a></li>
-          <li><a href="{{ url_for('lists') }}">{{ _('Lists') }}</a></li>
+          <li><a href="{{ url_for('lists.show_all') }}">{{ _('Lists') }}</a></li>
           <li><a href="{{ url_for('settings') }}">{{ _('Settings') }}</a></li>
           <li><a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a></li>
         </ul>
