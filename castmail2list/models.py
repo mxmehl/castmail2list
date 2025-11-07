@@ -16,9 +16,18 @@ else:
 class User(Model):  # pylint: disable=too-few-public-methods
     """A user of the CastMail2List application"""
 
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
-    name = db.Column(db.String(1000))
+    password = db.Column(db.String)  # Hashed password
 
 
 class List(Model):  # pylint: disable=too-few-public-methods

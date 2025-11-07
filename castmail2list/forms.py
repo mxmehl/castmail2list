@@ -25,6 +25,7 @@ class LoginForm(FlaskForm):
 
     username = StringField(label="Username", validators=[DataRequired()])
     password = PasswordField(label="Password", validators=[DataRequired()])
+    submit = SubmitField(_("Login"))
 
 class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""

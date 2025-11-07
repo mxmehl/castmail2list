@@ -8,7 +8,7 @@
 {%- include "flash.html" %} {# Show flash messages #}
 
 <form method="POST">
-    {{ form.hidden_tag() }}
+    {{ form.csrf_token }}
 
     {{ form.mode.label }}
     {{ form.mode }}

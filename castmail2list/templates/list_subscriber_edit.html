@@ -10,7 +10,7 @@
 <p>{{ _('On list: %(name)s', name=mailing_list.name) }}</p>
 
 <form method="POST">
-    {{ form.hidden_tag() }}
+    {{ form.csrf_token }}
 
     {{ form.name.label }}
     {{ form.name }}
