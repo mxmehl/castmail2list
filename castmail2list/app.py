@@ -19,8 +19,9 @@ from werkzeug.security import generate_password_hash
 from .config import Config
 from .imap_worker import poll_imap
 from .models import User, db
+from .routes import init_routes
 from .seeder import seed_database
-from .views import init_routes
+from .views.auth import auth
 
 
 def configure_logging(debug: bool) -> None:
@@ -71,14 +72,18 @@ def create_app() -> Flask:
     )
 
     # Set up rate limiting
+    app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
+    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
+    app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
     limiter = Limiter(
         get_remote_address,
-        app=app,
         default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
         storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
     )
+    limiter.init_app(app)
+
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
-        app.logger.warning(
+        logging.warning(
             "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
         )
 
@@ -87,7 +92,7 @@ def create_app() -> Flask:
 
     # Configure Flask-Login
     login_manager = LoginManager()
-    login_manager.login_view = "login"
+    login_manager.login_view = "auth.login"
     login_manager.init_app(app)
 
     # User loader function for Flask-Login
@@ -108,8 +113,9 @@ def create_app() -> Flask:
         },
     )
 
-    # Import routes
-    init_routes(app, limiter)
+    # Register views and routes
+    init_routes(app)
+    app.register_blueprint(auth)
 
     # start background IMAP thread
     t = threading.Thread(target=poll_imap, args=(app,), daemon=True)

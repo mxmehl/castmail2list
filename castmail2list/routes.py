@@ -1,17 +1,14 @@
 """Flask routes for castmail2list application"""
 
-import logging
 from datetime import datetime, timezone
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, url_for
 from flask_babel import _
-from flask_limiter import Limiter
-from flask_login import login_required, login_user, logout_user
-from werkzeug.security import check_password_hash
+from flask_login import login_required
 
 from .config import Config
-from .forms import LoginForm, MailingListForm, SubscriberAddForm
-from .models import List, Message, Subscriber, User, db
+from .forms import MailingListForm, SubscriberAddForm
+from .models import List, Message, Subscriber, db
 from .utils import (
     flash_form_errors,
     get_version_info,
@@ -20,7 +17,7 @@ from .utils import (
 )
 
 
-def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-statements
+def init_routes(app: Flask):  # pylint: disable=too-many-statements
     """Initialize Flask routes"""
 
     # Inject variables into templates
@@ -29,35 +26,6 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return {
             "version_info": get_version_info(),
         }
-
-    @app.route("/login", methods=["GET", "POST"])
-    @limiter.limit(app.config.get("RATE_LIMIT_LOGIN", ""))
-    def login():
-        form = LoginForm()
-        if form.validate_on_submit():
-            username = form.username.data
-            password = form.password.data
-
-            user = User.query.filter_by(username=username).first()
-
-            if not user or not check_password_hash(user.password, password):
-                flash("Please check your login details and try again.", "warning")
-                logging.warning(
-                    "Failed login attempt for user %s from IP %s", username, request.remote_addr
-                )
-                return redirect(url_for("login"))
-
-            login_user(user, remember=True)
-            logging.info("User %s logged in successfully from IP %s", username, request.remote_addr)
-            return redirect(request.args.get("next") or url_for("index"))
-
-        return render_template("login.html", form=form)
-
-    @app.route("/logout")
-    @login_required
-    def logout():
-        logout_user()
-        return redirect(url_for("index"))
 
     @app.route("/")
     @login_required
