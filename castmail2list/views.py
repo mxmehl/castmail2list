@@ -7,7 +7,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_babel import _
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_login import login_user
+from flask_login import login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .config import Config
@@ -55,22 +55,32 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
 
         return render_template("login.html", form=form)
 
+    @app.route('/logout')
+    @login_required
+    def logout():
+        logout_user()
+        return redirect(url_for('index'))
+
     @app.route("/")
+    @login_required
     def index():
         lists = List.query.filter_by(deleted=False).all()
         return render_template("index.html", lists=lists)
 
     @app.route("/messages")
+    @login_required
     def messages() -> str:
         msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).limit(20).all()
         return render_template("messages.html", messages=msgs)
 
     @app.route("/lists", methods=["GET"])
+    @login_required
     def lists():
         lists = List.query.filter_by(deleted=False).all()
         return render_template("lists.html", lists=lists, config=Config)
 
     @app.route("/lists/add", methods=["GET", "POST"])
+    @login_required
     def list_add():
         form = MailingListForm()
 
@@ -104,6 +114,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return render_template("list_add.html", config=Config, form=form)
 
     @app.route("/lists/<int:list_id>/edit", methods=["GET", "POST"])
+    @login_required
     def list_edit(list_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         form = MailingListForm(obj=mailing_list)
@@ -129,6 +140,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return render_template("list_edit.html", mailing_list=mailing_list, form=form)
 
     @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
+    @login_required
     def list_subscribers_manage(list_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         form = SubscriberAddForm()
@@ -174,6 +186,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         )
 
     @app.route("/lists/<int:list_id>/delete", methods=["GET"])
+    @login_required
     def list_delete(list_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
@@ -184,6 +197,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return redirect(url_for("lists"))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
+    @login_required
     def list_subscriber_delete(list_id, subscriber_id):
         mailing_list = List.query.filter_by(id=list_id).first_or_404()
         subscriber = Subscriber.query.get_or_404(subscriber_id)
@@ -195,6 +209,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return redirect(url_for("list_subscribers_manage", list_id=list_id))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
+    @login_required
     def list_subscriber_edit(list_id, subscriber_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
@@ -238,6 +253,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         )
 
     @app.route("/subscriber/<email>")
+    @login_required
     def subscriber(email):
         """Show which lists a subscriber is part of"""
         # Find all subscriptions for this email address
@@ -258,6 +274,7 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
         return render_template("subscriber.html", email=email, subscriber_lists=subscriber_lists)
 
     @app.route("/settings", methods=["GET", "POST"])
+    @login_required
     def settings():
         """Manage application settings"""
 
