@@ -19,10 +19,12 @@ SEED = {
 import logging
 from typing import Any, Dict
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from flask import Flask
 from werkzeug.security import generate_password_hash
 
-from .models import List, Subscriber, User, db
+from .models import AlembicVersion, List, Subscriber, User, db
 
 DEFAULT_SEED: Dict[str, Any] = {
     "users": [
@@ -153,6 +155,21 @@ def seed_database(app: Flask) -> None:
                 password=generate_password_hash(user_cfg.get("password")),
             )
             db.session.add(new_user)
+
+        # Get the latest alembic revision and write it into DB
+        try:
+            alembic_cfg = Config("alembic.ini")
+            script = ScriptDirectory.from_config(alembic_cfg)
+            head_revision = script.get_current_head()
+            if not head_revision:
+                raise ValueError("No head revision found in Alembic scripts")
+            logging.info("Latest Alembic revision: %s", head_revision)
+            # Write into alembic_version table if needed
+            if not AlembicVersion.query.first():
+                alembic_version = AlembicVersion(version_num=head_revision)
+                db.session.add(alembic_version)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.warning("Could not determine or add Alembic revision: %s", e)
 
         db.session.commit()
         logging.info("✅ Seed data inserted.")
