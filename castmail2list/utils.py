@@ -236,6 +236,21 @@ def get_plus_suffix(email: str) -> str | None:
     return None
 
 
+def remove_plus_suffix(email: str) -> str:
+    """
+    Remove the +suffix from an email address, if present.
+
+    Args:
+        email (str): The email address to remove the suffix from
+    Returns:
+        str: The email address without the +suffix
+    """
+    local_part, domain_part = email.split("@", 1)
+    if "+" in local_part:
+        local_part = local_part.split("+", 1)[0]
+    return f"{local_part}@{domain_part}"
+
+
 def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> bool:
     """
     Check if the given (expanded) To address corresponds to the mailing list address,
@@ -247,7 +262,7 @@ def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> 
     Returns:
         bool: True if the address matches the mailing list address, False otherwise
     """
-    to_local_part, to_domain_part = to_address[0].split("@", 1)
+    to_local_part, to_domain_part = to_address.split("@", 1)
     list_local_part, list_domain_part = list_address.split("@", 1)
 
     # Check domain parts (case-insensitive)

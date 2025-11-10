@@ -18,7 +18,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for m in messages %}
+        {% for m in messages | reverse %}
         <tr>
             <td><a href="{{ url_for('messages.show', message_id=m.id)}}">{{ m.subject }}</a></td>
             <td><a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a></td>

@@ -12,7 +12,7 @@ messages = Blueprint("messages", __name__, url_prefix="/messages")
 @login_required
 def show_all() -> str:
     """Show all messages"""
-    msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).all()
+    msgs: list[Message] = Message.query.all()  # will be reversed in template
     return render_template("messages/index.html", messages=msgs)
 
 
