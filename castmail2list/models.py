@@ -1,6 +1,6 @@
 """Database models for CastMail2List"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from flask_login import UserMixin
@@ -63,8 +63,12 @@ class List(Model):  # pylint: disable=too-few-public-methods
     only_subscribers_send: bool = db.Column(
         db.Boolean, default=False
     )  # Only allow subscribers to send
-    allowed_senders: str = db.Column(db.JSON, default="[]")  # Stores allowed sender emails as JSON array
-    sender_auth: str = db.Column(db.JSON, default="[]")  # Stores list of sender passwords as JSON array
+    allowed_senders: str = db.Column(
+        db.JSON, default="[]"
+    )  # Stores allowed sender emails as JSON array
+    sender_auth: str = db.Column(
+        db.JSON, default="[]"
+    )  # Stores list of sender passwords as JSON array
 
     # IMAP settings for fetching emails
     imap_host: str = db.Column(db.String)
@@ -128,4 +132,8 @@ class Message(Model):  # pylint: disable=too-few-public-methods
     from_addr: str = db.Column(db.String)
     headers: str = db.Column(db.Text)
     raw: str = db.Column(db.Text)  # for now, store full RFC822 text
-    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    received_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    status: str = db.Column(
+        db.String
+    )  # "ok", "bounce-msg", "sender-not-allowed", "sender-auth-failed", "duplicate"
+    error_info: dict = db.Column(db.JSON, default="{}")  # Store diagnostic info as JSON
