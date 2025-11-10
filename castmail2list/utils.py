@@ -1,5 +1,6 @@
 """Utility functions for Castmail2List application"""
 
+import json
 import logging
 import subprocess
 import sys
@@ -24,6 +25,7 @@ def compile_scss(compiler: str, scss_files: list[tuple[str, str]]) -> None:
                 "Sass compiler not found. Please ensure '%s' is installed: %s", compiler, e
             )
             sys.exit(1)
+
 
 def flash_form_errors(form):
     """Flash all errors from a Flask-WTF form"""
@@ -52,6 +54,32 @@ def normalize_email_list(input_str: str) -> str:
     # Replace newlines with commas, then split
     emails = [email.strip() for email in input_str.replace("\n", ",").split(",") if email.strip()]
     return ", ".join(emails)
+
+
+def string_to_json_array(input_str: str) -> str:
+    """Normalize a string of strings into a comma-separated list"""
+    # Accepts either comma or newline separated, returns JSON array string
+    if not input_str:
+        return "[]"
+    # Replace newlines with commas, then split
+    strings = [
+        string.strip() for string in input_str.replace("\n", ",").split(",") if string.strip()
+    ]
+    # Create JSON array string
+    json_array = json.dumps(strings)
+    return json_array
+
+
+def json_array_to_string(json_array_str: str) -> str:
+    """Convert a JSON array string back to a comma-separated string"""
+    try:
+        items = json.loads(json_array_str)
+        if isinstance(items, list):
+            return ", ".join(items)
+        return ""
+    except json.JSONDecodeError:
+        logging.warning("Failed to decode JSON array: %s", json_array_str)
+        return ""
 
 
 def create_bounce_address(ml_address: str, recipient: str) -> str:

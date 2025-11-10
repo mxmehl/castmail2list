@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 else:
     Model = db.Model
 
+
 class AlembicVersion(Model):  # pylint: disable=too-few-public-methods
     """Alembic version table mapping"""
 
@@ -20,6 +21,7 @@ class AlembicVersion(Model):  # pylint: disable=too-few-public-methods
         self.version_num = version_num
 
     version_num: str = db.Column(db.String(32), primary_key=True)
+
 
 class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     """A user of the CastMail2List application"""
@@ -54,23 +56,28 @@ class List(Model):  # pylint: disable=too-few-public-methods
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String)
     address: str = db.Column(db.String, unique=True)
+    from_addr: str = db.Column(db.String)
+
+    # Mode settings
+    mode: str = db.Column(db.String)  # "broadcast" or "group"
+    allowed_senders: str = db.Column(db.Text)  # Comma-separated list of allowed sender emails
+    only_subscribers_send: bool = db.Column(
+        db.Boolean, default=False
+    )  # Only allow subscribers to send
+    sender_auth: str = db.Column(db.JSON)  # Stores list of sender passwords as JSON array
+
+    # IMAP settings for fetching emails
+    imap_host: str = db.Column(db.String)
+    imap_port: str | int = db.Column(db.String)
+    imap_user: str = db.Column(db.String)
+    imap_pass: str = db.Column(db.String)
+
+    # Subscribers and messages relationships
     subscribers = db.relationship(
         "Subscriber", backref="list", lazy=True, cascade="all, delete-orphan"
     )
     # Cascade delete messages as well
     messages = db.relationship("Message", backref="list", lazy=True, cascade="all, delete-orphan")
-
-    # Technical settings per list
-    mode: str = db.Column(db.String)  # "broadcast" or "group"
-    imap_host: str = db.Column(db.String)
-    imap_port: str | int = db.Column(db.String)
-    imap_user: str = db.Column(db.String)
-    imap_pass: str = db.Column(db.String)
-    from_addr: str = db.Column(db.String)
-    allowed_senders: str = db.Column(db.Text)  # Comma-separated list of allowed sender emails
-    only_subscribers_send: bool = db.Column(
-        db.Boolean, default=False
-    )  # Only allow subscribers to send
 
     # Soft-delete flag: mark list as deleted instead of removing row from DB
     deleted: bool = db.Column(db.Boolean, default=False)
