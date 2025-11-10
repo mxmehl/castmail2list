@@ -1,30 +1,27 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Recent Messages') }}{% endblock %}
+{% block title %}{{ _('Bounce Messages') }}{% endblock %}
 {% block content %}
-<h2>{{ _('Recent Messages') }}</h2>
+<h2>{{ _('Bounce Messages') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
-
-<a href="{{ url_for('messages.bounces') }}" role="button">{{ _('View Bounce Messages') }}</a>
 
 <table>
     <thead>
         <tr>
             <th>{{ _('Subject') }}</th>
-            <th>{{ _('From') }}</th>
             <th>{{ _('Received At') }}</th>
             <th>{{ _('List') }}</th>
-            <th>{{ _('Status') }}</th>
+            <th>{{ _('Bounced Recipients') }}</th>
         </tr>
     </thead>
     <tbody>
         {% for m in messages %}
+        {% set bounced_recipient = m.error_info["bounced_recipients"] %}
         <tr>
             <td><a href="{{ url_for('messages.show', message_id=m.id)}}">{{ m.subject }}</a></td>
-            <td><a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a></td>
             <td>{{ m.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
             <td>{{ m.list.name }}</td>
-            <td>{{ m.status }}</td>
+            <td><a href="{{ url_for('general.subscriber', email=bounced_recipient) }}">{{ bounced_recipient }}</a></td>
         </tr>
         {% endfor %}
     </tbody>

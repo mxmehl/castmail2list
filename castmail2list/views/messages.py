@@ -15,6 +15,7 @@ def show_all() -> str:
     msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).all()
     return render_template("messages/index.html", messages=msgs)
 
+
 @messages.route("/<int:message_id>")
 @login_required
 def show(message_id: int) -> str:
@@ -23,3 +24,13 @@ def show(message_id: int) -> str:
     if not msg:
         flash("Message not found", "error")
     return render_template("messages/detail.html", message=msg)
+
+
+@messages.route("/bounces")
+@login_required
+def bounces() -> str:
+    """Show bounced messages"""
+    bounce_messages: list[Message] = (
+        Message.query.filter_by(status="bounce-msg").order_by(Message.received_at.desc()).all()
+    )
+    return render_template("messages/bounces.html", messages=bounce_messages)
