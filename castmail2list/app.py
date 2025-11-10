@@ -55,6 +55,7 @@ def create_app() -> Flask:
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
     logging.info("Language set to: %s", app.config.get("LANGUAGE", "en"))
+    app.jinja_env.globals["current_language"] = app.config.get("LANGUAGE", "en")
 
     # Database
     db.init_app(app)
