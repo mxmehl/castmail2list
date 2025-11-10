@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Message detail') }}: {{ message.subject }}{% endblock %}
+{% block content %}
+<h2>{{ _('Message detail') }}: {{ message.subject }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<table>
+    <tr>
+        <th>{{ _('Subject') }}</th>
+        <td>{{ message.subject }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('From') }}</th>
+        <td><a href="{{ url_for('general.subscriber', email=message.from_addr) }}">{{ message.from_addr }}</a></td>
+    </tr>
+    <tr>
+        <th>{{ _('Received At') }}</th>
+        <td>{{ message.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('List') }}</th>
+        <td>{{ message.list.name }} &lt;{{message.list.address}}&gt;</td>
+    </tr>
+    <tr>
+        <th>{{ _('Status') }}</th>
+        <td>{{ message.status }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('Error Info') }}</th>
+        <td>{{ message.error_info }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('Raw') }}</th>
+        <td><pre>{{ message.raw }}</pre></td>
+    </tr>
+</table>
+{% endblock %}
