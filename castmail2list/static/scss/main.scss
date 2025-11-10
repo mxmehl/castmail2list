@@ -52,6 +52,7 @@ a[role="button"], button {
   &.danger {
     --pico-background-color: red;
     --pico-border-color: red;
+    --pico-color: white;
 
     &:hover, &.active, &:focus {
       --pico-background-color: crimson !important;
