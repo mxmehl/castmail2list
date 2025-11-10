@@ -157,9 +157,35 @@ def detect_bounce(msg: MailMessage) -> str:
     return ""
 
 
-def validate_email(
-    msg: MailMessage, ml: List
-) -> tuple[str, dict[str, str]]:
+def validate_email_sender_authentication(msg: MailMessage, ml: List) -> bool:
+    """
+    Validate sender authentication for a broadcast mailing list.
+
+    Args:
+        msg (MailMessage): IMAP message to process
+        ml (List): Mailing list the message belongs to
+
+    Returns:
+        bool: True if sender authentication is valid, False otherwise
+    """
+    sender_auth_passwords = json_array_to_list(ml.sender_auth)
+    sender_email = msg.from_values.email if msg.from_values else ""
+
+    # Iterate over all To addresses to find the string that matches the list address
+    for to_addr in msg.to:
+        if is_expanded_address_the_mailing_list(to_addr, ml.address):
+            plus_suffix = get_plus_suffix(to_addr)
+            if plus_suffix in sender_auth_passwords:
+                logging.debug(
+                    "Sender <%s> provided valid authentication password for list <%s>",
+                    sender_email,
+                    ml.address,
+                )
+                return True
+    return False
+
+
+def validate_email_all_checks(msg: MailMessage, ml: List) -> tuple[str, dict[str, str]]:
     """
     Check a new single IMAP message from the Inbox:
         * Bounce detection
@@ -202,28 +228,14 @@ def validate_email(
     # In broadcast mode, check sender authentication if configured
     # The password is provided via a +password suffix in the To address of the mailing list
     if ml.mode == "broadcast" and ml.sender_auth:
-        sender_auth_passwords = json_array_to_list(ml.sender_auth)
-        sender_email = msg.from_values.email if msg.from_values else ""
-
-        # Iterate over all To addresses to find the string that matches the list address
-        for to_addr in msg.to:
-            if is_expanded_address_the_mailing_list(to_addr, ml.address):
-                plus_suffix = get_plus_suffix(to_addr)
-                if plus_suffix in sender_auth_passwords:
-                    logging.debug(
-                        "Sender <%s> provided valid authentication password for list <%s>",
-                        sender_email,
-                        ml.address,
-                    )
-                    continue  # Valid password found, continue processing
-        logging.warning(
-            "Sender <%s> failed authentication for list <%s>, skipping message %s",
-            sender_email,
-            ml.address,
-            msg.uid,
-        )
-        status = "sender-auth-failed"
-        return status, error_info
+        if not validate_email_sender_authentication(msg=msg, ml=ml):
+            logging.warning(
+                "Sender failed authentication for list <%s>, skipping message %s",
+                ml.address,
+                msg.uid,
+            )
+            status = "sender-auth-failed"
+            return status, error_info
 
     # In group mode, ensure the original sender is one of the subscribers
     subscribers: list[Subscriber] = get_list_subscribers(ml)
@@ -269,7 +281,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 # Fetch unseen messages
                 for msg in mailbox.fetch():
                     # Process new message: check for bounce, store in DB, and abort if duplicate
-                    status, error_info = validate_email(msg=msg, ml=ml)
+                    status, error_info = validate_email_all_checks(msg=msg, ml=ml)
                     no_duplicate = store_msg_in_db_and_imap(
                         app=app,
                         ml=ml,
