@@ -13,7 +13,6 @@ from ..utils import (
     flash_form_errors,
     is_email_a_list,
     json_array_to_string,
-    normalize_email_list,
     string_to_json_array,
 )
 
@@ -36,8 +35,6 @@ def add():
 
     if form.validate_on_submit():
         # Convert input to comma-separated for storage
-        allowed_senders_data = normalize_email_list(form.allowed_senders.data)
-
         new_list = List(
             mode=form.mode.data,
             name=form.name.data,
@@ -45,7 +42,7 @@ def add():
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
-            allowed_senders=allowed_senders_data or "",
+            allowed_senders=string_to_json_array(form.allowed_senders.data),
             sender_auth=string_to_json_array(form.sender_auth.data),
             # IMAP settings with defaults
             imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
@@ -80,10 +77,8 @@ def edit(list_id):
         if not form.imap_pass.data:
             mailing_list.imap_pass = old_pass
 
-        # Convert input to comma-separated for storage
-        mailing_list.allowed_senders = normalize_email_list(form.allowed_senders.data)
-
-        # Convert sender_auth to JSON array
+        # Convert comma-separated fields to JSON array
+        mailing_list.allowed_senders = string_to_json_array(form.allowed_senders.data)
         mailing_list.sender_auth = string_to_json_array(form.sender_auth.data)
 
         db.session.commit()
@@ -94,8 +89,9 @@ def edit(list_id):
     if form.submit.data and form.errors:
         flash_form_errors(form)
 
-    # Case: GET request, pre-fill sender_auth field
+    # Case: GET request: populate form fields from JSON arrays to comma-separated strings
     if not form.submit.data:
+        form.allowed_senders.data = json_array_to_string(mailing_list.allowed_senders)
         form.sender_auth.data = json_array_to_string(mailing_list.sender_auth)
 
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)

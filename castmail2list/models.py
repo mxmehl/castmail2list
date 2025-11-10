@@ -60,11 +60,11 @@ class List(Model):  # pylint: disable=too-few-public-methods
 
     # Mode settings
     mode: str = db.Column(db.String)  # "broadcast" or "group"
-    allowed_senders: str = db.Column(db.Text)  # Comma-separated list of allowed sender emails
     only_subscribers_send: bool = db.Column(
         db.Boolean, default=False
     )  # Only allow subscribers to send
-    sender_auth: str = db.Column(db.JSON)  # Stores list of sender passwords as JSON array
+    allowed_senders: str = db.Column(db.JSON, default="[]")  # Stores allowed sender emails as JSON array
+    sender_auth: str = db.Column(db.JSON, default="[]")  # Stores list of sender passwords as JSON array
 
     # IMAP settings for fetching emails
     imap_host: str = db.Column(db.String)
