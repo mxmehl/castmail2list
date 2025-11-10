@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}CastMail2List{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-all.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.scss.css') }}" />
 </head>
 
@@ -23,6 +24,9 @@
           <li><a href="{{ url_for('lists.show_all') }}">{{ _('Lists') }}</a></li>
           <li><a href="{{ url_for('general.settings') }}">{{ _('Settings') }}</a></li>
           <li><a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a></li>
+          <li>
+            <i id="theme-toggle" data-theme-toggle aria-label="Change to light theme" title="Change to light theme" class="fa-solid fa-lightbulb"></i>
+          </li>
         </ul>
         {%- endif %}
       </nav>
@@ -38,6 +42,7 @@
       {%- if session._user_id %} {{ version_info }}{% endif %}
     </p>
   </footer>
+  <script src="{{ url_for('static', filename='js/themeToggle.js') }}"></script>
 </body>
 
 </html>

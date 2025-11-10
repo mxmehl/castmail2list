@@ -71,3 +71,8 @@ a[role="button"], button {
     }
   }
 }
+
+// Color for theme toggle icon in navbar
+i#theme-toggle::before {
+  color: var(--pico-primary);
+}
