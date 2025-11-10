@@ -1,6 +1,5 @@
 // Import Pico CSS framework with custom theme color
-@use "pico" with (
-  $theme-color: "amber"
+@use "pico" with ($theme-color: "amber"
 );
 
 /*********************************
@@ -76,4 +75,20 @@ a[role="button"], button {
 // Color for theme toggle icon in navbar
 i#theme-toggle::before {
   color: var(--pico-primary);
+}
+
+/* Forms */
+// Only show fields that relate to the selected ML mode
+details[name="mode"] {
+  .mode-group, .mode-broadcast {
+    display: none;
+  }
+
+  &:has(#select-mode #mode-0:checked) .mode-broadcast {
+    display: block;
+  }
+
+  &:has(#select-mode #mode-1:checked) .mode-group {
+    display: block;
+  }
 }
