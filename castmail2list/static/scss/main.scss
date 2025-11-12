@@ -74,7 +74,7 @@ a[role="button"], button {
 }
 
 // Color for theme toggle icon in navbar
-i#theme-toggle::before {
+span#theme-toggle::before {
   color: var(--pico-primary);
 }
 
@@ -91,5 +91,16 @@ details[name="mode"] {
 
   &:has(#select-mode #mode-1:checked) .mode-group {
     display: block;
+  }
+}
+
+/* Icons */
+.icon {
+  font-family: "Font Awesome 7 Free";
+  &.sun::before {
+    content: "\f185"; // FontAwesome sun icon
+  }
+  &.moon::before {
+    content: "\f186"; // FontAwesome moon icon
   }
 }
