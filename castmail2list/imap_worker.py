@@ -1,7 +1,6 @@
 """IMAP worker for CastMail2List"""
 
 import logging
-import os
 import time
 import traceback
 import uuid
@@ -22,6 +21,7 @@ from .utils import (
     json_array_to_list,
     parse_bounce_address,
     remove_plus_suffix,
+    run_only_once,
 )
 
 REQUIRED_FOLDERS_ENVS = [
@@ -31,18 +31,6 @@ REQUIRED_FOLDERS_ENVS = [
     "IMAP_FOLDER_DENIED",
     "IMAP_FOLDER_DUPLICATE",
 ]
-
-
-def run_only_once(app):
-    """Ensure that something is only run once if Flask is run in Debug mode. Check if Flask is run
-    in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is"""
-    logging.debug("FLASK_DEBUG=%s, WERKZEUG_RUN_MAIN=%s", app.debug, os.getenv("WERKZEUG_RUN_MAIN"))
-
-    if not app.debug:
-        return True
-    if app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true":
-        return True
-    return False
 
 
 def poll_imap(app):

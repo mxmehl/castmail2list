@@ -48,10 +48,19 @@ def configure_logging(debug: bool) -> None:
     )
 
 
-def create_app() -> Flask:
-    """Create Flask app"""
+def create_app(config_overrides: dict | None = None, start_imap: bool = True) -> Flask:
+    """Create Flask app
+
+    Parameters:
+    - config_overrides: optional dict to update app.config before DB init (useful for tests)
+    - start_imap: whether to start the background IMAP polling thread
+    """
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # apply overrides early so DB and other setup use them
+    if config_overrides:
+        app.config.update(config_overrides)
 
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
@@ -116,9 +125,10 @@ def create_app() -> Flask:
             "version_info": get_version_info(),
         }
 
-    # start background IMAP thread
-    t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
-    t.start()
+    # start background IMAP thread unless disabled or in testing
+    if start_imap and not app.config.get("TESTING", False):
+        t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
+        t.start()
 
     return app
 
