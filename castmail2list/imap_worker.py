@@ -13,7 +13,7 @@ from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers
-from .models import List, Message, Subscriber, db
+from .models import MailingList, Message, Subscriber, db
 from .utils import (
     get_list_subscribers,
     get_plus_suffix,
@@ -54,7 +54,7 @@ def create_required_folders(app: Flask, mailbox: MailBox) -> None:
 
 def store_msg_in_db_and_imap(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     app: Flask,
-    ml: List,
+    ml: MailingList,
     mailbox: MailBox,
     msg: MailMessage,
     status: str,
@@ -66,7 +66,7 @@ def store_msg_in_db_and_imap(  # pylint: disable=too-many-arguments, too-many-po
         app (Flask): Flask app context
         msg (MailMessage): IMAP message to store
         mailbox (MailBox): IMAP mailbox to operate on
-        ml (List): Mailing list the message belongs to
+        ml (MailingList): Mailing list the message belongs to
         status (str): Status of the message.
         error_info (dict | None): Optional error diagnostic information to store, e.g. about bounce
 
@@ -148,13 +148,13 @@ def detect_bounce(msg: MailMessage) -> str:
     return ""
 
 
-def validate_email_sender_authentication(msg: MailMessage, ml: List) -> str:
+def validate_email_sender_authentication(msg: MailMessage, ml: MailingList) -> str:
     """
     Validate sender authentication for a broadcast mailing list.
 
     Args:
         msg (MailMessage): IMAP message to process
-        ml (List): Mailing list the message belongs to
+        ml (MailingList): Mailing list the message belongs to
 
     Returns:
         str: The successful To address if authentication passed, else empty string
@@ -199,7 +199,7 @@ def remove_password_in_to_address(msg: MailMessage, old_to: str, new_to: str) ->
     msg.to_values = tuple(to_value_addresses)
 
 
-def validate_email_all_checks(msg: MailMessage, ml: List) -> tuple[str, dict[str, str]]:
+def validate_email_all_checks(msg: MailMessage, ml: MailingList) -> tuple[str, dict[str, str]]:
     """
     Check a new single IMAP message from the Inbox:
         * Bounce detection
@@ -209,7 +209,7 @@ def validate_email_all_checks(msg: MailMessage, ml: List) -> tuple[str, dict[str
 
     Args:
         msg (MailMessage): IMAP message to process
-        ml (List): Mailing list the message belongs to
+        ml (MailingList): Mailing list the message belongs to
 
     Returns:
         tuple (str, dict): Status of the message processing and error information
@@ -285,7 +285,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
     logging.info("Checking for new messages...")
 
     # Iterate over all configured lists
-    maillists = List.query.filter_by(deleted=False).all()
+    maillists = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
         logging.debug("Checking list: %s (%s)", ml.name, ml.address)
         try:

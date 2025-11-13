@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import login_required
 
 from ..config import Config
-from ..models import List, Subscriber
+from ..models import MailingList, Subscriber
 
 general = Blueprint("general", __name__)
 
@@ -14,7 +14,7 @@ general = Blueprint("general", __name__)
 @login_required
 def index():
     """Show dashboard"""
-    active_lists: list[List] = List.query.filter_by(deleted=False).all()
+    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     return render_template("index.html", lists=active_lists)
 
 
@@ -33,7 +33,7 @@ def subscriber(email):
     # Get list information for each subscription
     subscriber_lists = []
     for sub in subscriptions:
-        mailing_list: List | None = List.query.get(sub.list_id)
+        mailing_list: MailingList | None = MailingList.query.get(sub.list_id)
         if mailing_list:
             subscriber_lists.append({"list": mailing_list, "subscriber": sub})
 

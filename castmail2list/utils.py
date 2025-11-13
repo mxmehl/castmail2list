@@ -9,7 +9,7 @@ import sys
 from flask import flash
 
 from . import __version__
-from .models import List, Subscriber
+from .models import MailingList, Subscriber
 
 
 def compile_scss(compiler: str, scss_files: list[tuple[str, str]]) -> None:
@@ -147,11 +147,11 @@ def is_email_a_list(email: str) -> bool:
     Returns:
         bool: True if the email is a mailing list address, False otherwise
     """
-    list_addresses = {lst.address.lower() for lst in List.query.filter_by(deleted=False).all()}
+    list_addresses = {lst.address.lower() for lst in MailingList.query.filter_by(deleted=False).all()}
     return email.lower() in list_addresses
 
 
-def get_list_subscribers(ml: List) -> list[Subscriber]:
+def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
     """
     Get all (deduplicated) subscribers of a mailing list, including those from overlapping
     lists, recursively.
@@ -159,7 +159,7 @@ def get_list_subscribers(ml: List) -> list[Subscriber]:
     visited_list_ids = set()
     subscribers_dict = {}
 
-    def _collect_subscribers(list_obj: List):
+    def _collect_subscribers(list_obj: MailingList):
         logging.debug(
             "Collecting subscribers for list: %s <%s> (id=%s)",
             list_obj.name,
@@ -189,7 +189,7 @@ def get_list_subscribers(ml: List) -> list[Subscriber]:
                 logging.debug("Subscriber %s already added, skipping.", sub.email)
 
         # Find subscribers whose email matches another list address (nested lists)
-        all_lists = List.query.all()
+        all_lists = MailingList.query.all()
         ml_addresses = {l.address: l for l in all_lists}
         for sub in direct_subs:
             nested_list = ml_addresses.get(sub.email)
@@ -208,7 +208,7 @@ def get_list_subscribers(ml: List) -> list[Subscriber]:
     _collect_subscribers(ml)
 
     # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    all_lists = List.query.all()
+    all_lists = MailingList.query.all()
     ml_addresses = {l.address for l in all_lists}
     result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
 

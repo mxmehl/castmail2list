@@ -41,8 +41,10 @@ class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     role = db.Column(db.String, default="admin")
 
 
-class List(Model):  # pylint: disable=too-few-public-methods
+class MailingList(Model):  # pylint: disable=too-few-public-methods
     """A mailing list"""
+
+    __tablename__ = "list"
 
     def __init__(self, **kwargs):
         # Only set attributes that actually exist on the mapped class
