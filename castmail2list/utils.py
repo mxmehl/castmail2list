@@ -324,3 +324,53 @@ def check_email_account_works(
             e,
         )
         return False
+
+
+def split_email_address(email: str) -> tuple[str, str]:
+    """
+    Split an email address into local part and domain part.
+
+    Args:
+        email (str): The email address to split
+    Returns:
+        tuple[str, str]: A tuple containing the local part and domain part
+    """
+    local_part, domain_part = email.split("@", 1)
+    return local_part, domain_part
+
+
+def create_email_account(host_type: str, email: str, password: str) -> bool:
+    """
+    Create an email account on the server.
+
+    Args:
+        host_type (str): The type of hosting environment (e.g., 'uberspace7', 'uberspace8')
+        email (str): The email address to create
+        password (str): The password for the new email account
+    Returns:
+        bool: True if the email account was created successfully, False otherwise
+    """
+    logging.info("Creating email account %s on host type %s", email, host_type)
+    try:
+        if host_type == "uberspace7":
+            cmd = [
+                "uberspace",
+                "mail",
+                "user",
+                "add",
+                "-p",
+                password,
+                split_email_address(email)[0],
+            ]
+        elif host_type == "uberspace8":
+            cmd = ["uberspace", "mail", "address", "add", "--password", password, email]
+        else:
+            logging.error("Unsupported host type for email account creation: %s", host_type)
+            return False
+
+        subprocess.run(cmd, check=True)
+        logging.info("Successfully created email account: %s", email)
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.error("Failed to create email account %s: %s", email, e)
+        return False
