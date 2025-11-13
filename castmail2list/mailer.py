@@ -179,10 +179,15 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             return b""
 
         # --- Add per-recipient headers ---
-        # Deal with recipient as possible To of original message
-        if recipient in self.msg.to:
-            # TODO: Decide what to do if recipient is also in To header of original message
-            pass
+        # Deal with recipient as possible To/Cc of original message
+        if recipient in self.msg.to or recipient in self.msg.cc:
+            if self.ml.avoid_duplicates:
+                logging.info(
+                    "Recipient %s already in To/Cc of original message. Skipping as the list is "
+                    "configured to avoid duplicates.",
+                    recipient,
+                )
+                return b""
         # Add recipient to To header if not already present
         if recipient not in self.msg.to:
             self.msg.to += (recipient,)
@@ -220,7 +225,9 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         return self.composed_msg.as_bytes()
 
 
-def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: MailingList, mailbox: MailBox) -> None:
+def send_msg_to_subscribers(
+    app: Flask, msg: MailMessage, ml: MailingList, mailbox: MailBox
+) -> None:
     """Send message to all subscribers of a list"""
     subscribers: list[Subscriber] = get_list_subscribers(ml)
     logging.info(
@@ -246,14 +253,23 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: MailingList, mailb
             # Copy mail class to avoid cross-contamination between recipients
             recipient_mail = deepcopy(mail)
             sent_msg = recipient_mail.send_email_to_recipient(recipient=subscriber.email)
-            with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
-                tmpfile.write(msg.obj.as_string())
-                tmpfile.flush()
-                logging.debug(
-                    "Saving sent message to temp file %s to be stored in Sent folder", tmpfile.name
-                )
-                mailbox.append(
-                    message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
+
+            # Store sent message in Sent folder via IMAP if we have one
+            if sent_msg:
+                with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
+                    tmpfile.write(msg.obj.as_string())
+                    tmpfile.flush()
+                    logging.debug(
+                        "Saving sent message to temp file %s to be stored in Sent folder",
+                        tmpfile.name,
+                    )
+                    mailbox.append(
+                        message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
+                    )
+            else:
+                logging.info(
+                    "No sent message returned for subscriber %s, not storing in Sent folder",
+                    subscriber.email,
                 )
         except Exception as e:  # pylint: disable=broad-except
             logging.error(

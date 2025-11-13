@@ -17,6 +17,11 @@
   {{ form.from_addr }}
   <small>{{ (form.from_addr.description) }}</small>
 
+  <fieldset>
+    {{ form.avoid_duplicates(role="switch") }}
+    {{ form.avoid_duplicates.label }}
+  </fieldset>
+
   <details name="mode" open="open">
     <summary>{{ _('Mode Settings') }}</summary>
 

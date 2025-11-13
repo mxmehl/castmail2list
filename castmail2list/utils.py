@@ -147,7 +147,9 @@ def is_email_a_list(email: str) -> bool:
     Returns:
         bool: True if the email is a mailing list address, False otherwise
     """
-    list_addresses = {lst.address.lower() for lst in MailingList.query.filter_by(deleted=False).all()}
+    list_addresses: set[str] = {
+        lst.address.lower() for lst in MailingList.query.filter_by(deleted=False).all()
+    }
     return email.lower() in list_addresses
 
 
@@ -189,7 +191,7 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
                 logging.debug("Subscriber %s already added, skipping.", sub.email)
 
         # Find subscribers whose email matches another list address (nested lists)
-        all_lists = MailingList.query.all()
+        all_lists: list[MailingList] = MailingList.query.all()
         ml_addresses = {l.address: l for l in all_lists}
         for sub in direct_subs:
             nested_list = ml_addresses.get(sub.email)
@@ -208,7 +210,7 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
     _collect_subscribers(ml)
 
     # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    all_lists = MailingList.query.all()
+    all_lists: list[MailingList] = MailingList.query.all()
     ml_addresses = {l.address for l in all_lists}
     result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
 

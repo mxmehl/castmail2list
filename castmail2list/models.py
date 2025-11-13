@@ -59,6 +59,7 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     name: str = db.Column(db.String)
     address: str = db.Column(db.String, unique=True)
     from_addr: str = db.Column(db.String)
+    avoid_duplicates: bool = db.Column(db.Boolean, default=True)
 
     # Mode settings
     mode: str = db.Column(db.String)  # "broadcast" or "group"
