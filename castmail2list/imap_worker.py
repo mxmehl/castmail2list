@@ -199,7 +199,9 @@ def remove_password_in_to_address(msg: MailMessage, old_to: str, new_to: str) ->
     msg.to_values = tuple(to_value_addresses)
 
 
-def validate_email_all_checks(msg: MailMessage, ml: MailingList) -> tuple[str, dict[str, str]]:
+def validate_email_all_checks(
+    msg: MailMessage, ml: MailingList, app_domain: str
+) -> tuple[str, dict[str, str]]:
     """
     Check a new single IMAP message from the Inbox:
         * Bounce detection
@@ -210,6 +212,7 @@ def validate_email_all_checks(msg: MailMessage, ml: MailingList) -> tuple[str, d
     Args:
         msg (MailMessage): IMAP message to process
         ml (MailingList): Mailing list the message belongs to
+        app_domain (str): Domain of this CastMail2List instance
 
     Returns:
         tuple (str, dict): Status of the message processing and error information
@@ -270,6 +273,19 @@ def validate_email_all_checks(msg: MailMessage, ml: MailingList) -> tuple[str, d
             status = "sender-not-allowed"
             return status, error_info
 
+    # --- Email is actually a message by this CastMail2List instance itself (duplicate) ---
+    # Get X-CastMail2List-Domain header
+    x_domain_headers = msg.headers.get("x-castmail2list-domain", "")
+    if app_domain in x_domain_headers:
+        logging.warning(
+            "Message %s is from this CastMail2List instance itself (X-CastMail2List-Domain: %s), "
+            "skipping",
+            msg.uid,
+            x_domain_headers,
+        )
+        status = "duplicate-from-same-instance"
+        return status, error_info
+
     # --- Fallback return: all seems to be OK ---
     return status, error_info
 
@@ -300,7 +316,9 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 # Fetch unseen messages
                 for msg in mailbox.fetch():
                     # Process new message: check for bounce, store in DB, and abort if duplicate
-                    status, error_info = validate_email_all_checks(msg=msg, ml=ml)
+                    status, error_info = validate_email_all_checks(
+                        msg=msg, ml=ml, app_domain=app.config["DOMAIN"]
+                    )
                     no_duplicate = store_msg_in_db_and_imap(
                         app=app,
                         ml=ml,
