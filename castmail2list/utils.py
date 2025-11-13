@@ -175,6 +175,11 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
             return
         visited_list_ids.add(list_obj.id)
 
+        # Exclude deleted lists
+        if list_obj.deleted:
+            logging.warning("List id %s is marked deleted, skipping.", list_obj.id)
+            return
+
         # Get direct subscribers
         direct_subs = Subscriber.query.filter_by(list_id=list_obj.id).all()
         logging.debug(
