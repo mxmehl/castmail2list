@@ -168,6 +168,11 @@ class Mail:  # pylint: disable=too-many-instance-attributes
     ) -> bytes:
         """
         Sends the mostly prepared list message to a recipient. Returns sent message as bytes.
+
+        Args:
+            recipient (str): Recipient email address
+        Returns:
+            bytes: Sent message as bytes
         """
         if self.composed_msg is None:
             logging.error("Message container not prepared, cannot send email to %s", recipient)
@@ -184,6 +189,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         # Set To header: preserve original To addresses if any (minus the list address in some
         # configurations), and recipient in any case
         self.composed_msg["To"] = ", ".join(self.msg.to) if self.msg.to else recipient
+        # Set X-Recipient header to ease debugging
+        self.composed_msg["X-Recipient"] = recipient
 
         logging.debug("Email content: \n%s", self.composed_msg.as_string())
 
