@@ -33,7 +33,7 @@
 
     <fieldset class="mode-broadcast">
       {{ form.from_addr.label }}
-      {{ form.from_addr }}
+      {{ form.from_addr(placeholder=("John Doe <john.doe@example.com>")) }}
       <small>{{ (form.from_addr.description) }}</small>
 
       {{ form.allowed_senders.label }}

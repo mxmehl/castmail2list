@@ -1805,6 +1805,7 @@ files = [
 ]
 
 [package.dependencies]
+email-validator = {version = "*", optional = true, markers = "extra == \"email\""}
 markupsafe = "*"
 
 [package.extras]
@@ -1859,4 +1860,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "3a583e3b57ff0b7c87b7b9a2add06a800749bf87d4ee53cc5c8a2b03137d18a4"
+content-hash = "db94a73cdbe94fe3db30b8aaa85d7842de3b8c05beb0be8902a6feed1e0fb2a6"
