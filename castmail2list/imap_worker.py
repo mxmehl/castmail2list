@@ -148,18 +148,21 @@ def detect_bounce(msg: MailMessage) -> str:
     return ""
 
 
-def validate_email_sender_authentication(msg: MailMessage, ml: MailingList) -> str:
+def validate_email_sender_authentication(
+    msg: MailMessage, ml: MailingList, sender_auth_passwords: list[str]
+) -> str:
     """
-    Validate sender authentication for a broadcast mailing list.
+    Validate sender authentication for a broadcast mailing list, if a sender authentication
+    password is configured. The password is expected to be provided as a +suffix in the To address.
 
     Args:
         msg (MailMessage): IMAP message to process
         ml (MailingList): Mailing list the message belongs to
+        sender_auth_passwords (list[str]): List of valid sender authentication passwords
 
     Returns:
         str: The successful To address if authentication passed, else empty string
     """
-    sender_auth_passwords = json_array_to_list(ml.sender_auth)
     sender_email = msg.from_values.email if msg.from_values else ""
 
     # Iterate over all To addresses to find the string that matches the list address
@@ -230,8 +233,7 @@ def validate_email_all_checks(
 
     # --- Sender not allowed checks ---
     # In broadcast mode, ensure the original sender of the message is in the allowed senders list
-    if ml.mode == "broadcast" and ml.allowed_senders:
-        allowed_senders = json_array_to_list(ml.allowed_senders)
+    if ml.mode == "broadcast" and (allowed_senders := json_array_to_list(ml.allowed_senders)):
         if not msg.from_values or msg.from_values.email not in allowed_senders:
             logging.warning(
                 "Sender <%s> not in allowed senders for list <%s>, skipping message %s",
@@ -244,8 +246,10 @@ def validate_email_all_checks(
 
     # In broadcast mode, check sender authentication if configured
     # The password is provided via a +password suffix in the To address of the mailing list
-    if ml.mode == "broadcast" and ml.sender_auth:
-        if passed_to_address := validate_email_sender_authentication(msg=msg, ml=ml):
+    if ml.mode == "broadcast" and (sender_auth_passwords := json_array_to_list(ml.sender_auth)):
+        if passed_to_address := validate_email_sender_authentication(
+            msg=msg, ml=ml, sender_auth_passwords=sender_auth_passwords
+        ):
             # Remove the +password suffix from the To address so subscribers don't see it
             remove_password_in_to_address(
                 msg, old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
@@ -261,7 +265,7 @@ def validate_email_all_checks(
 
     # In group mode, ensure the original sender is one of the subscribers
     subscribers: list[Subscriber] = get_list_subscribers(ml)
-    if ml.mode == "group" and subscribers and ml.only_subscribers_send:
+    if ml.mode == "group" and ml.only_subscribers_send and subscribers:
         subscriber_emails = [sub.email for sub in subscribers]
         if not msg.from_values or msg.from_values.email not in subscriber_emails:
             logging.error(
