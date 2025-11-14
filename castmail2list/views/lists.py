@@ -12,6 +12,7 @@ from ..forms import MailingListForm, SubscriberAddForm
 from ..models import MailingList, Subscriber, db
 from ..utils import (
     check_email_account_works,
+    check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
     is_email_a_list,
@@ -97,6 +98,11 @@ def add():
         db.session.add(new_list)
         db.session.commit()
         flash(_('Mailing list "%(name)s" created successfully!', name=new_list.name), "success")
+
+        # Check recommended settings and flash warnings if needed
+        for finding in check_recommended_list_setting(ml=new_list):
+            flash(finding[0], finding[1])
+
         return redirect(url_for("lists.show_all"))
 
     # Flash on form errors
@@ -145,6 +151,11 @@ def edit(list_id):
 
         db.session.commit()
         flash(_('List "%(name)s" updated successfully!', name=mailing_list.name), "success")
+
+        # Check recommended settings and flash warnings if needed
+        for finding in check_recommended_list_setting(ml=mailing_list):
+            flash(finding[0], finding[1])
+
         return redirect(url_for("lists.show_all"))
 
     # Flash on form errors
