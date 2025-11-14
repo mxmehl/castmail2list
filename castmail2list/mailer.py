@@ -79,6 +79,10 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             self.from_header = self.ml.from_addr or self.ml.address
             # Reply-To: No Reply-To, sender is the expected recipient of replies
             self.reply_to = ""
+            # Remove list address from To and CC headers to avoid confusion
+            if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
+                self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
+                self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
         elif self.ml.mode == "group":
             # From: Use "Sender Name via List Name <list@address>" format if possible
             if not self.msg.from_values:
@@ -100,14 +104,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         else:
             logging.error("Unknown list mode %s for list %s", self.ml.mode, self.ml.name)
             return
-
-        if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
-            # Remove list address from To and CC headers to avoid confusion
-            # TODO: Depending on list settings as broadcast or real mailing list, this may be
-            # handled differently. In Group mode, it might be helpful to keep it.
-            # In group mode, it's part of Reply-To
-            self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
-            self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
 
         # App
         self.composed_msg["X-Mailer"] = "CastMail2List"
@@ -197,8 +193,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes
                     recipient,
                 )
                 return b""
-        # Add recipient to To header if not already present
-        if recipient not in self.msg.to:
+        # In Broadcast mode: add recipient to To header if not already present
+        if self.ml.mode == "broadcast" and recipient not in self.msg.to:
             self.msg.to += (recipient,)
         # Set To header: preserve original To addresses if any (minus the list address in some
         # configurations), and recipient in any case
