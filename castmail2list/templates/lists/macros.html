@@ -13,10 +13,6 @@
   {{ form.address }}
   {%- endif %}
 
-  {{ form.from_addr.label }}
-  {{ form.from_addr }}
-  <small>{{ (form.from_addr.description) }}</small>
-
   <fieldset>
     {{ form.avoid_duplicates(role="switch") }}
     {{ form.avoid_duplicates.label }}
@@ -36,6 +32,10 @@
     </fieldset>
 
     <fieldset class="mode-broadcast">
+      {{ form.from_addr.label }}
+      {{ form.from_addr }}
+      <small>{{ (form.from_addr.description) }}</small>
+
       {{ form.allowed_senders.label }}
       {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
       <small>{{ (form.allowed_senders.description) }}</small>
