@@ -1,7 +1,6 @@
 """Lists blueprint for CastMail2List application"""
 
 import logging
-from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
@@ -16,8 +15,8 @@ from ..utils import (
     create_email_account,
     flash_form_errors,
     is_email_a_list,
-    json_array_to_string,
-    string_to_json_array,
+    list_to_string,
+    string_to_list,
 )
 
 lists = Blueprint("lists", __name__, url_prefix="/lists")
@@ -46,8 +45,8 @@ def add():
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
-            allowed_senders=string_to_json_array(form.allowed_senders.data),
-            sender_auth=string_to_json_array(form.sender_auth.data),
+            allowed_senders=string_to_list(form.allowed_senders.data),
+            sender_auth=string_to_list(form.sender_auth.data),
             # IMAP settings with defaults
             imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
             imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
@@ -145,9 +144,9 @@ def edit(list_id):
             )
             return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
-        # Convert comma-separated fields to JSON array
-        mailing_list.allowed_senders = string_to_json_array(form.allowed_senders.data)
-        mailing_list.sender_auth = string_to_json_array(form.sender_auth.data)
+        # Convert comma-separated fields to list object for storage in DB
+        mailing_list.allowed_senders = string_to_list(form.allowed_senders.data)
+        mailing_list.sender_auth = string_to_list(form.sender_auth.data)
 
         db.session.commit()
         flash(_('List "%(name)s" updated successfully!', name=mailing_list.name), "success")
@@ -162,10 +161,10 @@ def edit(list_id):
     if form.submit.data and form.errors:
         flash_form_errors(form)
 
-    # Case: GET request: populate form fields from JSON arrays to comma-separated strings
+    # Case: GET request: populate form fields from list objects to comma-separated strings
     if not form.submit.data:
-        form.allowed_senders.data = json_array_to_string(mailing_list.allowed_senders)
-        form.sender_auth.data = json_array_to_string(mailing_list.sender_auth)
+        form.allowed_senders.data = list_to_string(mailing_list.allowed_senders)
+        form.sender_auth.data = list_to_string(mailing_list.sender_auth)
 
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
@@ -225,9 +224,7 @@ def delete(list_id):
     mailing_list: MailingList = MailingList.query.filter_by(
         id=list_id, deleted=False
     ).first_or_404()
-    # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
-    mailing_list.deleted = True
-    mailing_list.deleted_at = datetime.now(timezone.utc)
+    mailing_list.soft_delete()  # Use the soft_delete method from the model
     db.session.commit()
     flash(_('List "%(name)s" marked deleted successfully!', name=mailing_list.name), "success")
     return redirect(url_for("lists.show_all"))
