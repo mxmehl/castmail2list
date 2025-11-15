@@ -19,6 +19,13 @@ class List(Model):  # pylint: disable=too-few-public-methods
     address = db.Column(db.String)
     subscribers = db.relationship("Subscriber", backref="list", lazy=True)
 
+    # Technical settings per list
+    imap_host = db.Column(db.String)
+    imap_port = db.Column(db.String)
+    imap_user = db.Column(db.String)
+    imap_pass = db.Column(db.String)
+    from_addr = db.Column(db.String)
+
 
 class Subscriber(Model):  # pylint: disable=too-few-public-methods
     """A subscriber to a mailing list"""
