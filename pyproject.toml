@@ -14,7 +14,7 @@ license = "GPL-3.0-only"
 classifiers = []
 
 [tool.poetry.scripts]
-# cast2maillist = ""
+castmail2list = "castmail2list.app:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"

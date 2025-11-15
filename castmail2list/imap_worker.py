@@ -1,12 +1,14 @@
 import email
 import imaplib
+import logging
 import threading
 import time
 from email.policy import default
 
 from flask import current_app
-from mailer import send_mail
-from models import List, Message, db
+
+from .mailer import send_mail
+from .models import List, Message, db
 
 
 def poll_imap(app):
@@ -16,11 +18,12 @@ def poll_imap(app):
             try:
                 process_new_messages(app)
             except Exception as e:
-                print("IMAP worker error:", e)
-            time.sleep(10)
+                logging.error("IMAP worker error: %s", e)
+            time.sleep(app.config["POLL_INTERVAL"])
 
 
 def process_new_messages(app):
+    logging.debug("Checking for new messages...")
     cfg = app.config
     imap = imaplib.IMAP4_SSL(cfg["IMAP_HOST"])
     imap.login(cfg["IMAP_USER"], cfg["IMAP_PASS"])
@@ -48,7 +51,7 @@ def process_new_messages(app):
                 cfg,
                 s.email,
                 msg["subject"],
-                msg.get_body(preferencelist=("plain")).get_content(),
+                msg.get_body(preferencelist="plain").get_content(),
                 cfg["IMAP_USER"],
             )
 
