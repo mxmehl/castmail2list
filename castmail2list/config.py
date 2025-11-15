@@ -10,7 +10,7 @@ class Config:  # pylint: disable=too-few-public-methods
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
 
-    # IMAP settings and defaults
+    # IMAP settings and defaults (used as defaults for new lists)
     IMAP_DEFAULT_HOST = os.getenv("IMAP_DEFAULT_HOST", "***REMOVED***")
     IMAP_DEFAULT_PORT = os.getenv("IMAP_DEFAULT_PORT", "993")
     IMAP_DEFAULT_PASS = os.getenv("IMAP_DEFAULT_PASS", "testtest123")
@@ -18,13 +18,14 @@ class Config:  # pylint: disable=too-few-public-methods
     IMAP_FOLDER_PROCESSED = os.getenv("IMAP_FOLDER_PROCESSED", "Processed")
     IMAP_FOLDER_BOUNCES = os.getenv("IMAP_FOLDER_BOUNCES", "Bounces")
 
-    # Single list
-    IMAP_LIST_USER = os.getenv("IMAP_LIST_USER", "test-list@***REMOVED***")
+    # Default "from" address for new lists
     IMAP_LIST_FROM = os.getenv("IMAP_LIST_FROM", "noreply@***REMOVED***")
 
-    # SMTP settings
+    # SMTP settings (defaults for new lists)
     SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")
     SMTP_USER = os.getenv("SMTP_USER", "test-list@***REMOVED***")
     SMTP_PASS = os.getenv("SMTP_PASS", "testtest123")
 
     POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))  # seconds
+
+    # Removed: IMAP_LIST_USER (single-list user), as lists are now dynamic
