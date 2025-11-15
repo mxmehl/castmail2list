@@ -5,6 +5,7 @@ import threading
 from logging.config import dictConfig
 
 from flask import Flask
+from flask_migrate import Migrate
 
 from .config import Config
 from .imap_worker import poll_imap
@@ -39,6 +40,9 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
+
+    # Initialize Flask-Migrate
+    Migrate(app, db)
 
     with app.app_context():
         db.create_all()
