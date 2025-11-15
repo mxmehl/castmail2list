@@ -3,7 +3,7 @@
 import logging
 import time
 
-from imap_tools import AND, MailBox
+from imap_tools import MailBox
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_mail
@@ -21,6 +21,14 @@ def poll_imap(app):
             time.sleep(app.config["POLL_INTERVAL"])
 
 
+def create_folders(mailbox: MailBox, folder_names: list[str]) -> None:
+    """Create IMAP folders if they don't exist."""
+    for folder in folder_names:
+        if not mailbox.folder.exists(folder):
+            mailbox.folder.create(folder=folder)
+            logging.info("Created IMAP folder: %s", folder)
+
+
 def process_new_messages(app) -> None:
     """
     Check IMAP for new messages, store them in the DB, and send to subscribers.
@@ -34,13 +42,17 @@ def process_new_messages(app) -> None:
 
     # Use imap_tools MailBox instead of imaplib
     with MailBox(cfg["IMAP_HOST"]).login(cfg["IMAP_USER"], cfg["IMAP_PASS"]) as mailbox:
-        # Select folder
-        mailbox.folder.set(cfg["IMAP_FOLDER"])
+        # Create required folders
+        create_folders(
+            mailbox,
+            [cfg["IMAP_FOLDER_INBOX"], cfg["IMAP_FOLDER_PROCESSED"], cfg["IMAP_FOLDER_BOUNCES"]],
+        )
+        # Select INBOX folder
+        mailbox.folder.set(cfg["IMAP_FOLDER_INBOX"])
 
         # Fetch unseen messages
-        for msg in mailbox.fetch(AND(seen=False)):
+        for msg in mailbox.fetch():
             logging.debug("Processing message: %s", msg.subject)
-            logging.info(msg.headers)
 
             # Store message in database
             m = Message()
@@ -83,8 +95,9 @@ def process_new_messages(app) -> None:
                 except Exception as e:  # pylint: disable=broad-except
                     logging.error("Failed to send message to %s: %s", subscriber.email, e)
 
-            # Mark message as seen
+            # Mark message as seen and move to Processed folder
             mailbox.flag(msg.uid, ["\\Seen"], True)
+            mailbox.move(msg.uid, cfg["IMAP_FOLDER_PROCESSED"])
             logging.debug("Marked message %s as seen", msg.uid)
 
     logging.debug("Finished checking for new messages")

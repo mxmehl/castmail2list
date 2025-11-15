@@ -13,7 +13,9 @@ class Config:  # pylint: disable=too-few-public-methods
     IMAP_HOST = os.getenv("IMAP_HOST", "***REMOVED***")
     IMAP_USER = os.getenv("IMAP_USER", "test-list@***REMOVED***")
     IMAP_PASS = os.getenv("IMAP_PASS", "testtest123")
-    IMAP_FOLDER = "INBOX"
+    IMAP_FOLDER_INBOX = "INBOX"
+    IMAP_FOLDER_PROCESSED = "Processed"
+    IMAP_FOLDER_BOUNCES = "Bounces"
 
     SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")
     SMTP_USER = os.getenv("SMTP_USER", "test-list@***REMOVED***")
