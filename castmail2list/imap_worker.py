@@ -3,10 +3,12 @@
 import logging
 import os
 import time
+from email.utils import make_msgid
 
 from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
+from imap_tools.utils import EmailAddress
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import Mail
@@ -74,6 +76,7 @@ def process_imap_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: List) -
     m.message_id = msg.headers.get("message-id", ())[0].strip("<>")
     m.subject = msg.subject
     m.from_addr = msg.from_
+    m.headers = str(msg.headers)
     m.raw = str(msg.obj)  # Get raw RFC822 message
     db.session.add(m)
     try:
@@ -95,6 +98,7 @@ def send_msg_to_subscribers(
     app: Flask, msg: MailMessage, ml: List, subscribers: list[Subscriber]
 ) -> None:
     """Send message to all subscribers"""
+    new_msgid = make_msgid(idstring="castmail2list", domain="localhost")
     for subscriber in subscribers:
         try:
             # Get plain text content
@@ -109,9 +113,16 @@ def send_msg_to_subscribers(
                 smtp_from=ml.from_addr,
             )
             mail.send_email(
+                list_address=ml.from_addr,
+                list_name=ml.name,
+                from_addr=msg.from_values or EmailAddress(name="Unknown", email=""),
+                to_header=msg.to,
+                cc_header=msg.cc,
+                date_header=msg.date_str,
                 subject=msg.subject,
-                message=content,
+                text_message=content,
                 recipient=subscriber.email,
+                msg_id=new_msgid,
             )
             logging.debug("Sent message to %s", subscriber.email)
         except Exception as e:  # pylint: disable=broad-except
