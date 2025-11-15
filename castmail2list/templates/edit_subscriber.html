@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Subscriber - {{ subscriber.name }}{% endblock %}
+
+{% block content %}
+<h2>Edit Subscriber</h2>
+
+<p>On list: {{ mailing_list.name }}</p>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    {{ form.name.label }}
+    {{ form.name }}
+    {% if form.name.errors %}
+    <div class="text-danger">
+        {% for error in form.name.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.email.label }}
+    {{ form.email }}
+    {% if form.email.errors %}
+    <div class="text-danger">
+        {% for error in form.email.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.comment.label }}
+    {{ form.comment }}
+    {% if form.comment.errors %}
+    <div class="text-danger">
+        {% for error in form.comment.errors %}
+        <small>{{ error }}</small>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {{ form.submit }}
+</form>
+</div>
+{% endblock %}

@@ -66,7 +66,7 @@ def init_routes(app: Flask):
         delete_form = SubscriberDeleteForm()
 
         # Handle adding subscribers
-        if add_form.add_subscriber.data and add_form.validate_on_submit():
+        if add_form.submit.data and add_form.validate_on_submit():
             email = add_form.email.data
             existing_subscriber = Subscriber.query.filter_by(
                 list_id=mailing_list.id, email=email
@@ -97,7 +97,7 @@ def init_routes(app: Flask):
         flash(f'List "{mailing_list.name}" deleted successfully!', "success")
         return redirect(url_for("lists"))
 
-    @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["POST"])
+    @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
     def delete_subscriber(list_id, subscriber_id):
         mailing_list = List.query.get_or_404(list_id)
         subscriber = Subscriber.query.get_or_404(subscriber_id)
@@ -107,3 +107,19 @@ def init_routes(app: Flask):
             db.session.commit()
             flash(f'Successfully removed "{email}" from the list!', "success")
         return redirect(url_for("manage_subs", list_id=list_id))
+
+    @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
+    def edit_subscriber(list_id, subscriber_id):
+        mailing_list = List.query.get_or_404(list_id)
+        subscriber = Subscriber.query.get_or_404(subscriber_id)
+        form = SubscriberAddForm(obj=subscriber)
+        if form.validate_on_submit():
+            subscriber.name = form.name.data
+            subscriber.email = form.email.data
+            subscriber.comment = form.comment.data
+            db.session.commit()
+            flash("Subscriber updated successfully!", "success")
+            return redirect(url_for("manage_subs", list_id=list_id))
+        return render_template(
+            "edit_subscriber.html", mailing_list=mailing_list, form=form, subscriber=subscriber
+        )
