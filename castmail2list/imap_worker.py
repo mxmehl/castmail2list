@@ -41,7 +41,9 @@ def process_new_messages(app) -> None:
     cfg = app.config
 
     # Use imap_tools MailBox instead of imaplib
-    with MailBox(cfg["IMAP_HOST"]).login(cfg["IMAP_USER"], cfg["IMAP_PASS"]) as mailbox:
+    with MailBox(host=cfg["IMAP_DEFAULT_HOST"], port=cfg["IMAP_DEFAULT_PORT"]).login(
+        username=cfg["IMAP_LIST_USER"], password=cfg["IMAP_DEFAULT_PASS"]
+    ) as mailbox:
         # Create required folders
         create_folders(
             mailbox,
