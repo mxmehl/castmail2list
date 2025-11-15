@@ -1,6 +1,6 @@
 """Flask routes for castmail2list application"""
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, url_for
 
 from .config import Config
 from .forms import MailingListForm, SubscriberAddForm, SubscriberDeleteForm
@@ -66,7 +66,7 @@ def init_routes(app: Flask):
         delete_form = SubscriberDeleteForm()
 
         # Handle adding subscribers
-        if add_form.validate_on_submit():
+        if add_form.add_subscriber.data and add_form.validate_on_submit():
             email = add_form.email.data
             existing_subscriber = Subscriber.query.filter_by(
                 list_id=mailing_list.id, email=email
@@ -79,19 +79,6 @@ def init_routes(app: Flask):
                 flash(f'Successfully added "{email}" to the list!', "success")
             else:
                 flash(f'Email "{email}" is already subscribed to this list.', "warning")
-
-            return redirect(url_for("manage_subs", list_id=list_id))
-
-        # Handle removing subscribers
-        if delete_form.validate_on_submit():
-            sub_id = int(delete_form.subscriber_id.data)
-            subscriber = Subscriber.query.get_or_404(sub_id)
-
-            if subscriber.list_id == mailing_list.id:
-                email = subscriber.email
-                db.session.delete(subscriber)
-                db.session.commit()
-                flash(f'Successfully removed "{email}" from the list!', "success")
 
             return redirect(url_for("manage_subs", list_id=list_id))
 
@@ -109,3 +96,14 @@ def init_routes(app: Flask):
         db.session.commit()
         flash(f'List "{mailing_list.name}" deleted successfully!', "success")
         return redirect(url_for("lists"))
+
+    @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["POST"])
+    def delete_subscriber(list_id, subscriber_id):
+        mailing_list = List.query.get_or_404(list_id)
+        subscriber = Subscriber.query.get_or_404(subscriber_id)
+        if subscriber.list_id == mailing_list.id:
+            email = subscriber.email
+            db.session.delete(subscriber)
+            db.session.commit()
+            flash(f'Successfully removed "{email}" from the list!', "success")
+        return redirect(url_for("manage_subs", list_id=list_id))
