@@ -1,7 +1,11 @@
+"""Configuration for CastMail2List"""
+
 import os
 
 
-class Config:
+class Config:  # pylint: disable=too-few-public-methods
+    """Flask configuration from environment variables with defaults"""
+
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///castmail2list.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
