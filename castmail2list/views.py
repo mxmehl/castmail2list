@@ -3,7 +3,7 @@
 from flask import Flask, flash, redirect, render_template, url_for
 
 from .config import Config
-from .forms import MailingListForm, SubscriberAddForm, SubscriberDeleteForm
+from .forms import MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, db
 
 
@@ -67,7 +67,6 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
     def manage_subs(list_id):
         mailing_list = List.query.get_or_404(list_id)
         add_form = SubscriberAddForm()
-        delete_form = SubscriberDeleteForm()
 
         # Handle adding subscribers
         if add_form.submit.data and add_form.validate_on_submit():
@@ -90,7 +89,6 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             "subscribers.html",
             mailing_list=mailing_list,
             add_form=add_form,
-            delete_form=delete_form,
         )
 
     @app.route("/lists/<int:list_id>/delete", methods=["GET"])
