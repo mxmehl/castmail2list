@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h2>Mailing Lists</h2>
+<ul>
+{% for l in lists %}
+  <li>
+    {{ l.name }} ({{ l.address }})
+    <a href="{{ url_for('edit_list', list_id=l.id) }}">Edit</a>
+    <a href="{{ url_for('manage_subs', list_id=l.id) }}">Subscribers</a>
+  </li>
+{% endfor %}
+</ul>
+<h3>Add List</h3>
+<form method="post">
+  Name: <input name="name"><br>
+  Address: <input name="address"><br>
+  IMAP Host: <input name="imap_host" value="{{ config.IMAP_DEFAULT_HOST }}"><br>
+  IMAP Port: <input name="imap_port" value="{{ config.IMAP_DEFAULT_PORT }}"><br>
+  IMAP User: <input name="imap_user"><br>
+  IMAP Pass: <input name="imap_pass" value="{{ config.IMAP_DEFAULT_PASS }}"><br>
+  From Address: <input name="from_addr"><br>
+  <input type="submit" value="Add List">
+</form>
+{% endblock %}
