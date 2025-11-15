@@ -57,10 +57,18 @@ def init_routes(app: Flask):
     def manage_subs(list_id):
         l = List.query.get_or_404(list_id)
         if request.method == "POST":
-            # Add subscriber
-            email = request.form["email"]
-            if not any(s.email == email for s in l.subscribers):
-                db.session.add(Subscriber(list_id=l.id, email=email))
-                db.session.commit()
+            if "delete" in request.form:
+                # Delete subscriber
+                sub_id = int(request.form["delete"])
+                sub = Subscriber.query.get_or_404(sub_id)
+                if sub.list_id == l.id:
+                    db.session.delete(sub)
+                    db.session.commit()
+            else:
+                # Add subscriber
+                email = request.form["email"]
+                if not any(s.email == email for s in l.subscribers):
+                    db.session.add(Subscriber(list_id=l.id, email=email))
+                    db.session.commit()
             return redirect(url_for("manage_subs", list_id=list_id))
         return render_template("subscribers.html", l=l)
