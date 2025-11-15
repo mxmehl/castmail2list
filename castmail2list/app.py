@@ -11,27 +11,30 @@ from .imap_worker import poll_imap
 from .models import db
 from .views import init_routes
 
-dictConfig(
-    {
-        "version": 1,
-        "formatters": {
-            "default": {
-                "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
-            }
-        },
-        "handlers": {
-            "wsgi": {
-                "class": "logging.StreamHandler",
-                "stream": "ext://flask.logging.wsgi_errors_stream",
-                "formatter": "default",
-            }
-        },
-        "root": {"level": "DEBUG", "handlers": ["wsgi"]},
-    }
-)
+
+def configure_logging(debug: bool) -> None:
+    """Configure logging"""
+    dictConfig(
+        {
+            "version": 1,
+            "formatters": {
+                "default": {
+                    "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+                }
+            },
+            "handlers": {
+                "wsgi": {
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://flask.logging.wsgi_errors_stream",
+                    "formatter": "default",
+                }
+            },
+            "root": {"level": "DEBUG" if debug else "INFO", "handlers": ["wsgi"]},
+        }
+    )
 
 
-def create_app():
+def create_app() -> Flask:
     """Create Flask app"""
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -57,6 +60,8 @@ def main():
     parser.add_argument("-p", "--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
     args = parser.parse_args()
+
+    configure_logging(args.debug)
 
     app = create_app()
     app.run(host=args.host, port=args.port, debug=args.debug)
