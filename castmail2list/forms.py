@@ -26,11 +26,13 @@ class MailingListForm(FlaskForm):
 
 class SubscriberAddForm(FlaskForm):
     """Form for adding new subscribers"""
+    name = StringField('Name', validators=[Optional(), Length(max=100)])
     email = EmailField('Email Address', validators=[DataRequired(), Email()])
+    comment = StringField('Comment', validators=[Optional(), Length(max=100)])
     add_subscriber = SubmitField('Add Subscriber')
 
 
 class SubscriberDeleteForm(FlaskForm):
     """Form for removing subscribers"""
     subscriber_id = HiddenField('Subscriber ID', validators=[DataRequired()])
-    delete_subscriber = SubmitField('Remove')
+    delete_subscriber = SubmitField('Remove from list')
