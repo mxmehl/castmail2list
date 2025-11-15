@@ -402,6 +402,18 @@ files = [
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
 
 [[package]]
+name = "imap-tools"
+version = "1.11.0"
+description = "Work with email by IMAP"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "imap_tools-1.11.0-py3-none-any.whl", hash = "sha256:7c797b421fdf1b898b4ee0042fe02d10037d56f9acacca64086c2af36d830a24"},
+    {file = "imap_tools-1.11.0.tar.gz", hash = "sha256:77b055d301f24e668ff54ad50cc32a36d1579c6aa9b26e5fb6501fb622feb6ea"},
+]
+
+[[package]]
 name = "isort"
 version = "6.1.0"
 description = "A Python utility / library to sort Python imports."
@@ -1250,4 +1262,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "37e707bdb77117024d7805871d55a86e3cbd4b2011c57f5446ca3a0c3b143adb"
+content-hash = "c626f7851c16961c80e1bcbe8fbeca2c0819afd363ce4dc163914eb79423ea75"
