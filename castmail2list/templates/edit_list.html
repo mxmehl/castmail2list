@@ -5,7 +5,7 @@
 {% block content %}
 <h2>Edit List: {{ mailing_list.name }}</h2>
 
-<a href="{{ url_for('manage_subs', list_id=mailing_list.id) }}">
+<a href="{{ url_for('manage_subs', list_id=mailing_list.id) }}" role="button">
     Manage Subscribers
 </a>
 
@@ -63,7 +63,7 @@
     {% endif %}
 
     {{ form.imap_pass.label }}
-    {{ form.imap_pass }}
+    {{ form.imap_pass(placeholder="Leave empty to not update password") }}
     {% if form.imap_pass.errors %}
     <div class="text-danger">
         {% for error in form.imap_pass.errors %}
