@@ -18,13 +18,6 @@
         {{ add_form.email(placeholder=add_form.email.label.text) }}
 
         {{ add_form.comment(placeholder=add_form.comment.label.text) }}
-        {% if add_form.email.errors %}
-        <div class="text-danger">
-            {% for error in add_form.email.errors %}
-            <small>{{ error }}</small>
-            {% endfor %}
-        </div>
-        {% endif %}
 
         {{ add_form.submit }}
     </fieldset>
