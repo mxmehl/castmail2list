@@ -1,16 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}CastMail2List{% endblock %}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}CastMail2List{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='pico.min.css') }}" />
 </head>
+
 <body>
-    <nav>
-        <a href="{{ url_for('index') }}">Home</a> |
-        <a href="{{ url_for('messages') }}">Messages</a> |
-        <a href="{{ url_for('settings') }}">Settings</a>
-    </nav>
-    <hr>
+  <header>
+    <div class="container">
+      <nav>
+        <ul>
+          <li><strong>CastMail2List</strong></li>
+        </ul>
+        <ul>
+          <li><a href="{{ url_for('index') }}">Home</a></li>
+          <li><a href="{{ url_for('messages') }}">Messages</a></li>
+          <li><a href="{{ url_for('lists') }}">Lists</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
     {% block content %}{% endblock %}
+  </main>
 </body>
+
 </html>
