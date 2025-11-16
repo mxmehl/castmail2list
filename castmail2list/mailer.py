@@ -44,16 +44,20 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.reply_to: str = ""
         self.original_mid: str = next(iter(self.msg.headers.get("message-id", ())), "")
 
-        # Initialize message container type and common headers
+        # Initialize message container type, common headers, and body parts
         self.choose_container_type()
         self.prepare_common_headers()
+        self.add_body_parts()
 
     def choose_container_type(self) -> None:
         """Choose the correct container type for the email based on its content"""
+        # If there are attachments, use multipart/mixed
         if self.msg.attachments:
             self.composed_msg = MIMEMultipart("mixed")
+        # If both text and html parts exist, use multipart/alternative
         elif self.msg.text and self.msg.html:
             self.composed_msg = MIMEMultipart("alternative")
+        # Otherwise, use simple MIMEText with either text or html, whichever exists
         else:
             self.composed_msg = MIMEText(
                 self.msg.html or self.msg.text, "html" if self.msg.html else "plain"
