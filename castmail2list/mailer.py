@@ -4,6 +4,7 @@ import logging
 import smtplib
 import tempfile
 import traceback
+from copy import deepcopy
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -17,7 +18,7 @@ from imap_tools.message import MailMessage
 from castmail2list.models import List, Subscriber
 
 
-class Mail: # pylint: disable=too-many-instance-attributes
+class Mail:  # pylint: disable=too-many-instance-attributes
     """Class for an email sent to multiple recipients via SMTP"""
 
     def __init__(
@@ -62,6 +63,34 @@ class Mail: # pylint: disable=too-many-instance-attributes
         """Prepare common email headers, except To which is per-recipient"""
         if not self.composed_msg:
             raise ValueError("Message container type not chosen yet")
+
+        # --- Prepare From and Reply-To headers based on list mode ---
+        if self.ml.mode == "broadcast":
+            # From: Use the list's From address if set, otherwise the list address itself
+            self.from_header = self.ml.from_addr or self.ml.address
+            # Reply-To: No Reply-To, sender is the expected recipient of replies
+            self.reply_to = ""
+        elif self.ml.mode == "group":
+            # From: Use "Sender Name via List Name <list@address>" format if possible
+            if not self.msg.from_values:
+                logging.error("No valid From header in message %s, cannot send", self.msg.uid)
+                return
+            self.from_header = (
+                f"{self.msg.from_values.name or self.msg.from_values.email} "
+                f"via {self.ml.name} <{self.ml.address}>"
+            )
+            # Reply-To: Set to list address to avoid replies going to all subscribers
+            self.reply_to = self.ml.address
+        else:
+            logging.error("Unknown list mode %s for list %s", self.ml.mode, self.ml.name)
+            return
+
+        if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
+            # Remove list address from To and CC headers to avoid confusion
+            # TODO: Depending on list settings as broadcast or real mailing list, this needs to be
+            # handled differently
+            self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
+            self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
 
         self.composed_msg["From"] = self.from_header
         if self.msg.cc:
@@ -138,21 +167,23 @@ class Mail: # pylint: disable=too-many-instance-attributes
         """
         Sends the mostly prepared list message to a recipient. Returns sent message as bytes.
         """
-        # --- Copy prepared message container ---
-        msg = self.composed_msg
-        if msg is None:
+        if self.composed_msg is None:
             logging.error("Message container not prepared, cannot send email to %s", recipient)
             return b""
 
         # --- Add per-recipient headers ---
         # Deal with recipient as possible To of original message
         if recipient in self.msg.to:
-            # TODO: Decide what to do if recipient is also in To header
+            # TODO: Decide what to do if recipient is also in To header of original message
             pass
-        # TODO: Unsure, recipient must be in To, right? What does the below do?
-        msg["To"] = ", ".join(self.msg.to) if self.msg.to else ""
+        # Add recipient to To header if not already present
+        if recipient not in self.msg.to:
+            self.msg.to += (recipient,)
+        # Set To header: preserve original To addresses if any (minus the list address in some
+        # configurations), and recipient in any case
+        self.composed_msg["To"] = ", ".join(self.msg.to) if self.msg.to else recipient
 
-        logging.debug("Email content: \n%s", msg.as_string())
+        logging.debug("Email content: \n%s", self.composed_msg.as_string())
 
         # --- Send email ---
         try:
@@ -168,14 +199,14 @@ class Mail: # pylint: disable=too-many-instance-attributes
                 server.sendmail(
                     from_addr=self.construct_envelope_from(recipient),
                     to_addrs=recipient,
-                    msg=msg.as_string(),
+                    msg=self.composed_msg.as_string(),
                 )
             logging.info("Email sent to %s", recipient)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
 
-        return msg.as_bytes()
+        return self.composed_msg.as_bytes()
 
 
 def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
@@ -222,36 +253,11 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: Mai
             )
             return
 
-    # Depending on list mode, prepare headers
-    if ml.mode == "broadcast":
-        # From: Use the list's From address if set, otherwise the list address itself
-        mail.from_header = ml.from_addr or ml.address
-        # Reply-To: No Reply-To, sender is the expected recipient of replies
-        mail.reply_to = ""
-    elif ml.mode == "group":
-        # From: Use "Sender Name via List Name <list@address>" format if possible
-        if not msg.from_values:
-            logging.error("No valid From header in message %s, cannot send", msg.uid)
-            return
-        mail.from_header = (
-            f"{msg.from_values.name or msg.from_values.email} via {ml.name} <{ml.address}>"
-        )
-        # Reply-To: Set to list address to avoid replies going to all subscribers
-        mail.reply_to = ml.address
-    else:
-        logging.error("Unknown list mode %s for list %s", ml.mode, ml.name)
-        return
-
-    if ml.address in msg.to or ml.address in msg.cc:
-        # Remove list address from To and CC headers to avoid confusion
-        # TODO: Depending on list settings as broadcast or real mailing list, this needs to be
-        # handled differently
-        mail.msg.to = tuple(addr for addr in msg.to if addr != ml.address)
-        mail.msg.cc = tuple(addr for addr in msg.cc if addr != ml.address)
-
     for subscriber in subscribers:
         try:
-            sent_msg = mail.send_email_to_recipient(recipient=subscriber.email)
+            # Copy mail class to avoid cross-contamination between recipients
+            recipient_mail = deepcopy(mail)
+            sent_msg = recipient_mail.send_email_to_recipient(recipient=subscriber.email)
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                 tmpfile.write(msg.obj.as_string())
                 tmpfile.flush()
