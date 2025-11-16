@@ -16,6 +16,7 @@ class Config:  # pylint: disable=too-few-public-methods
     IMAP_DEFAULT_PASS = os.getenv("IMAP_DEFAULT_PASS", "testtest123")
     IMAP_FOLDER_INBOX = os.getenv("IMAP_FOLDER_INBOX", "INBOX")
     IMAP_FOLDER_PROCESSED = os.getenv("IMAP_FOLDER_PROCESSED", "Processed")
+    IMAP_FOLDER_SENT = os.getenv("IMAP_FOLDER_SENT", "Sent")
     IMAP_FOLDER_BOUNCES = os.getenv("IMAP_FOLDER_BOUNCES", "Bounces")
 
     # Default "from" address for new lists
