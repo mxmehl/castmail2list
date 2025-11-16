@@ -39,12 +39,15 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
                 mode=form.mode.data,
                 name=form.name.data,
                 address=form.address.data,
+                from_addr=form.from_addr.data or "",
+                # Mode settings
+                only_subscribers_send=form.only_subscribers_send.data,
+                allowed_senders=allowed_senders_data or "",
+                # IMAP settings with defaults
                 imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
                 imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
-                imap_user=form.imap_user.data or "",
+                imap_user=form.imap_user.data or form.address.data,
                 imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
-                from_addr=form.from_addr.data or "",
-                allowed_senders=allowed_senders_data or "",
             )
             db.session.add(new_list)
             db.session.commit()
