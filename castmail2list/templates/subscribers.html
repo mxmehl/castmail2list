@@ -38,7 +38,7 @@
         {% for subscriber in mailing_list.subscribers %}
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
-            <td>{{ subscriber.email }}</td>
+            <td><a href="{{ url_for('view_subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a></td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
             <td role="group">
                 <a href="{{ url_for('edit_subscriber', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button">{{ _('Edit') }}</a>

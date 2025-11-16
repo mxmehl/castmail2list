@@ -161,3 +161,22 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         return render_template(
             "edit_subscriber.html", mailing_list=mailing_list, form=form, subscriber=subscriber
         )
+
+    @app.route("/subscriber/<email>")
+    def view_subscriber(email):
+        """Show which lists a subscriber is part of"""
+        # Find all subscriptions for this email address
+        subscriptions = Subscriber.query.filter_by(email=email).all()
+
+        if not subscriptions:
+            flash(_('No subscriptions found for "%(email)s"', email=email), "warning")
+            return render_template("subscriber.html", email=email)
+
+        # Get list information for each subscription
+        subscriber_lists = []
+        for sub in subscriptions:
+            mailing_list = List.query.get(sub.list_id)
+            if mailing_list:
+                subscriber_lists.append({"list": mailing_list, "subscriber": sub})
+
+        return render_template("subscriber.html", email=email, subscriber_lists=subscriber_lists)
