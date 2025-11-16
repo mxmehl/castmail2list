@@ -3,6 +3,7 @@
 import logging
 import smtplib
 import tempfile
+import traceback
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -134,7 +135,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
             logging.info("Email sent to %s", recipient)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"Failed to send email: {e}")
+            logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
 
         return msg.as_bytes()
 
@@ -217,7 +218,7 @@ def send_msg_to_subscribers(
                 recipient=subscriber.email,
                 attachments=msg.attachments,
                 reply_to=reply_to,
-                original_mid=msg.headers.get("message-id", ())[0],
+                original_mid=next(iter(msg.headers.get("message-id", ())), ""),
                 references=msg.headers.get("references", ()),
                 in_reply_to=msg.headers.get("in-reply-to", ()),
             )
@@ -231,4 +232,9 @@ def send_msg_to_subscribers(
                     message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
                 )
         except Exception as e:  # pylint: disable=broad-except
-            logging.error("Failed to send message to %s: %s", subscriber.email, e)
+            logging.error(
+                "Failed to send message to %s: %s\nTraceback: %s",
+                subscriber.email,
+                e,
+                traceback.format_exc(),
+            )
