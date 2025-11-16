@@ -13,7 +13,7 @@ from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers
-from .models import List, Message, Subscriber, db
+from .models import List, Message, db
 
 REQUIRED_FOLDERS_ENVS = ["IMAP_FOLDER_INBOX", "IMAP_FOLDER_PROCESSED", "IMAP_FOLDER_BOUNCES"]
 
@@ -88,7 +88,7 @@ def process_imap_inbox_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: L
     m.message_id = next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
     m.subject = msg.subject
     m.from_addr = msg.from_
-    m.headers = str(msg.headers)
+    m.headers = dict(msg.headers.items())
     m.raw = str(msg.obj)  # Get raw RFC822 message
     db.session.add(m)
     try:
@@ -126,9 +126,9 @@ def check_all_lists_for_messages(app: Flask) -> None:
             ) as mailbox:
                 # Create required folders
                 create_required_folders(app, mailbox)
-                # Select INBOX folder
-                mailbox.folder.set(app.config["IMAP_FOLDER_INBOX"])
 
+                # --- INBOX processing ---
+                mailbox.folder.set(app.config["IMAP_FOLDER_INBOX"])
                 # Fetch unseen messages
                 for msg in mailbox.fetch():
                     # Process new message: check for bounce, store in DB, and abort if duplicate
@@ -136,18 +136,22 @@ def check_all_lists_for_messages(app: Flask) -> None:
                     if not msg_ok:
                         continue
 
-                    # Get subscribers for this list, and send the message to them
-                    subscribers = Subscriber.query.filter_by(list_id=ml.id).all()
-                    logging.debug("Found %d subscribers: %s", len(subscribers), subscribers)
-                    send_msg_to_subscribers(
-                        app=app, msg=msg, ml=ml, subscribers=subscribers, mailbox=mailbox
-                    )
+                    # Send the message to all subscribers of the list
+                    send_msg_to_subscribers(app=app, msg=msg, ml=ml, mailbox=mailbox)
 
                     # Mark message as seen and move to Processed folder
                     mark_msg_as_processed(app=app, mailbox=mailbox, msg=msg)
+
+                # Logout from IMAP
+                mailbox.logout()
         except Exception as e:  # pylint: disable=broad-except
             logging.error(
                 "Error processing list %s: %s\nTraceback: %s", ml.name, e, traceback.format_exc()
             )
+            # Logout from IMAP, if possible
+            try:
+                mailbox.logout()
+            except Exception:  # pylint: disable=broad-except
+                pass
 
     logging.debug("Finished checking for new messages")

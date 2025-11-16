@@ -140,10 +140,17 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         return msg.as_bytes()
 
 
-def send_msg_to_subscribers(
-    app: Flask, msg: MailMessage, ml: List, subscribers: list[Subscriber], mailbox: MailBox
-) -> None:
-    """Send message to all subscribers"""
+def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
+    """Send message to all subscribers of a list"""
+    # Find all subscribers of the list
+    subscribers: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
+    logging.debug(
+        "Found %d subscribers for the list <%s>: %s",
+        len(subscribers),
+        ml.address,
+        ", ".join([subscribers.email for subscribers in subscribers]),
+    )
+
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
     mail = Mail(app=app, message_id=new_msgid, list_from_address=ml.from_addr)
