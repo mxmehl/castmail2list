@@ -138,9 +138,34 @@ def send_msg_to_subscribers(
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
     mail = Mail(app=app, message_id=new_msgid, list_from_address=ml.from_addr)
 
-    # Sanity checks
+    # --- Sanity checks ---
+    # Make sure there is content to send
     if not msg.text and not msg.html:
         logging.warning("No HTML or Plaintext content in message %s", msg.uid)
+    # In broadcast mode, ensure the original sender of the message is in the allowed senders list
+    if ml.mode == "broadcast" and ml.allowed_senders:
+        allowed_senders: list[str] = [
+            email.strip() for email in ml.allowed_senders.split(",") if email.strip()
+        ]
+        if not msg.from_values or msg.from_values.email not in allowed_senders:
+            logging.error(
+                "Sender %s not in allowed senders for list %s, skipping message %s",
+                msg.from_values.email if msg.from_values else "unknown",
+                ml.name,
+                msg.uid,
+            )
+            return
+    # In group mode, ensure the original sender is one of the subscribers
+    if ml.mode == "group" and subscribers:
+        subscriber_emails = [sub.email for sub in subscribers]
+        if not msg.from_values or msg.from_values.email not in subscriber_emails:
+            logging.error(
+                "Sender %s not a subscriber of list %s, skipping message %s",
+                msg.from_values.email if msg.from_values else "unknown",
+                ml.name,
+                msg.uid,
+            )
+            return
 
     # Depending on list mode, prepare headers
     if ml.mode == "broadcast":
