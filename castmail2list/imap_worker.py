@@ -88,7 +88,7 @@ def process_imap_inbox_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: L
     m.message_id = next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
     m.subject = msg.subject
     m.from_addr = msg.from_
-    m.headers = dict(msg.headers.items())
+    m.headers = str(dict(msg.headers.items()))
     m.raw = str(msg.obj)  # Get raw RFC822 message
     db.session.add(m)
     try:
