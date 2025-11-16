@@ -7,7 +7,7 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<a href="{{ url_for('list_subscribers', list_id=mailing_list.id) }}" role="button">
+<a href="{{ url_for('list_subscribers_manage', list_id=mailing_list.id) }}" role="button">
     {{ _('Manage Subscribers') }}
 </a>
 

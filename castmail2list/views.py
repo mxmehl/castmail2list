@@ -88,7 +88,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         return render_template("list_edit.html", mailing_list=mailing_list, form=form)
 
     @app.route("/lists/<int:list_id>/subscribers", methods=["GET", "POST"])
-    def list_subscribers(list_id):
+    def list_subscribers_manage(list_id):
         mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
         form = SubscriberAddForm()
 
@@ -120,14 +120,14 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
                     "warning",
                 )
 
-            return redirect(url_for("list_subscribers", list_id=list_id))
+            return redirect(url_for("list_subscribers_manage", list_id=list_id))
 
         # Flash on form errors
         if form.submit.data and form.errors:
             flash_form_errors(form)
 
         return render_template(
-            "list_subscribers.html",
+            "list_subscribers_manage.html",
             mailing_list=mailing_list,
             add_form=form,
         )
@@ -151,7 +151,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             db.session.delete(subscriber)
             db.session.commit()
             flash(_('Successfully removed "%(email)s" from the list!', email=email), "success")
-        return redirect(url_for("list_subscribers", list_id=list_id))
+        return redirect(url_for("list_subscribers_manage", list_id=list_id))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
     def list_subscriber_edit(list_id, subscriber_id):
@@ -165,7 +165,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             subscriber.subscriber_type = "list" if is_email_a_list(form.email.data) else "normal"
             db.session.commit()
             flash(_("Subscriber updated successfully!"), "success")
-            return redirect(url_for("list_subscribers", list_id=list_id))
+            return redirect(url_for("list_subscribers_manage", list_id=list_id))
 
         # Flash on form errors
         if form.submit.data and form.errors:
