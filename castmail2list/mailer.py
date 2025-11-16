@@ -102,6 +102,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.composed_msg["Subject"] = self.msg.subject
         self.composed_msg["Message-ID"] = self.message_id
         self.composed_msg["Date"] = self.msg.date_str or formatdate(localtime=True)
+        self.composed_msg["Sender"] = self.ml.address
         self.composed_msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
         self.composed_msg["X-Mailer"] = "CastMail2List"
         self.composed_msg["Precedence"] = "list"
