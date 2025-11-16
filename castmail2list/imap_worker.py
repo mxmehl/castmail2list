@@ -152,7 +152,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
     logging.info("Checking for new messages...")
 
     # Iterate over all configured lists
-    maillists = List.query.all()
+    maillists = List.query.filter_by(deleted=False).all()
     for ml in maillists:
         logging.debug("Checking list: %s (%s)", ml.name, ml.address)
         try:
