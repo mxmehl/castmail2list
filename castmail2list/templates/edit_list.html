@@ -16,6 +16,7 @@
 
     {{ form.mode.label }}
     {{ form.mode }}
+    <small>{{ (form.mode.description) }}</small>
 
     {{ form.name.label }}
     {{ form.name }}
@@ -23,31 +24,38 @@
     {{ form.address.label }}
     {{ form.address }}
 
-    {{ form.imap_host.label }}
-    {{ form.imap_host }}
-
-    {{ form.imap_port.label }}
-    {{ form.imap_port }}
-
-    {{ form.imap_user.label }}
-    {{ form.imap_user }}
-
-    {{ form.imap_pass.label }}
-    {{ form.imap_pass(placeholder=_("Leave empty to not update password")) }}
-
     {{ form.from_addr.label }}
     {{ form.from_addr }}
+    <small>{{ (form.from_addr.description) }}</small>
 
-    <fieldset>
-        {{ form.only_subscribers_send(role="switch") }}
-        {{ form.only_subscribers_send.label }}
-    </fieldset>
+    <details>
+        <summary>{{ _('Mode Settings') }}</summary>
+        <fieldset>
+            {{ form.only_subscribers_send(role="switch") }}
+            {{ form.only_subscribers_send.label }}
+        </fieldset>
 
-    {{ form.allowed_senders.label }}
-    {{ form.allowed_senders(placeholder=_("user@example.com,another@example.com")) }}
-    <small>{{ _(form.allowed_senders.description) }}</small>
+        <fieldset>
+            {{ form.allowed_senders.label }}
+            {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
+            <small>{{ (form.allowed_senders.description) }}</small>
+        </fieldset>
+    </details>
 
-    {{ form.submit }}
+    <hr />
+
+    <details>
+        <summary>{{ _('IMAP Settings') }}</summary>
+        {{ form.imap_host.label }}
+        {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
+        {{ form.imap_port.label }}
+        {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
+        {{ form.imap_user.label }}
+        {{ form.imap_user }}
+        {{ form.imap_pass.label }}
+        {{ form.imap_pass(placeholder=_("Leave empty to not update password")) }}
+    </details>
+
+    {{ form.submit(value=_('Save List')) }}
 </form>
-</div>
 {% endblock %}

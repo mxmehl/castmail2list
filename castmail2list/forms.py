@@ -17,18 +17,26 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Optiona
 class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""
 
-    mode = RadioField(
-        _("Mode"),
-        choices=[("broadcast", _("Broadcast List")), ("group", _("Group List"))],
-        default="broadcast",
-    )
+    # Basics
     name = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=100)])
     address = EmailField(_("List Email Address"), validators=[DataRequired(), Email()])
-    imap_host = StringField(_("IMAP Server"), validators=[Optional(), Length(max=200)])
-    imap_port = IntegerField(_("IMAP Port"), validators=[Optional(), NumberRange(min=1, max=65535)])
-    imap_user = StringField(_("IMAP Username"), validators=[Optional(), Length(max=200)])
-    imap_pass = PasswordField(_("IMAP Password"), validators=[Optional()])
-    from_addr = EmailField(_("From Address"), validators=[Optional(), Email()])
+    from_addr = EmailField(
+        _("From Address"),
+        validators=[Optional(), Email()],
+        description=_(
+            "Optional 'From' address for emails sent by the list. "
+            "If left empty, the list address will be used."
+        ),
+    )
+    # Modes
+    mode = RadioField(
+        _("Mode"),
+        choices=[
+            ("broadcast", _("Broadcast List: One-to-many communication, distribution list")),
+            ("group", _("Group List: Many-to-many communication, discussion group")),
+        ],
+        default="broadcast",
+    )
     allowed_senders = StringField(
         _("Allowed Senders"),
         validators=[Optional()],
@@ -40,6 +48,11 @@ class MailingListForm(FlaskForm):
         _("Only allow subscribers to send messages to the list. Only relevant in Group mode."),
         default=False,
     )
+    # IMAP Settings
+    imap_host = StringField(_("IMAP Server"), validators=[Optional(), Length(max=200)])
+    imap_port = IntegerField(_("IMAP Port"), validators=[Optional(), NumberRange(min=1, max=65535)])
+    imap_user = StringField(_("IMAP Username"), validators=[Optional(), Length(max=200)])
+    imap_pass = PasswordField(_("IMAP Password"), validators=[Optional()])
     submit = SubmitField(_("Save List"))
 
 
