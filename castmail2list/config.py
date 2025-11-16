@@ -23,8 +23,10 @@ class Config:  # pylint: disable=too-few-public-methods
 
     # SMTP settings (defaults for new lists)
     SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")
+    SMTP_PORT = os.getenv("SMTP_PORT", "587")
     SMTP_USER = os.getenv("SMTP_USER", "test-list@***REMOVED***")
     SMTP_PASS = os.getenv("SMTP_PASS", "testtest123")
+    SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").lower() in ("true", "1", "yes")
 
     POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))  # seconds
 
