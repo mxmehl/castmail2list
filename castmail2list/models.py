@@ -15,6 +15,15 @@ else:
 class List(Model):  # pylint: disable=too-few-public-methods
     """A mailing list"""
 
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
+
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String, unique=True)
     address: str = db.Column(db.String)
@@ -40,6 +49,15 @@ class List(Model):  # pylint: disable=too-few-public-methods
 class Subscriber(Model):  # pylint: disable=too-few-public-methods
     """A subscriber to a mailing list"""
 
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
+
     id = db.Column(db.Integer, primary_key=True)
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=False)
     name: str = db.Column(db.String)
@@ -49,6 +67,15 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
 
 class Message(Model):  # pylint: disable=too-few-public-methods
     """A message sent to a mailing list"""
+
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
 
     id: int = db.Column(db.Integer, primary_key=True)
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"))
