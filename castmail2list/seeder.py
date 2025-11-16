@@ -22,40 +22,50 @@ from typing import Any, Dict
 from .models import List, Subscriber, db
 
 DEFAULT_SEED: Dict[str, Any] = {
-    "list": {
-        "name": "General Announcements",
-        "address": "general@example.com",
-        "mode": "broadcast",
-        "imap_host": "imap.example.com",
-        "imap_port": 993,
-        "imap_user": "general@example.com",
-        "imap_pass": "supersecret",
-        "from_addr": "no-reply@example.com",
-        "allowed_senders": "admin@example.com",
-        "only_subscribers_send": True,
-    },
-    "subscribers": [
-        {"name": "Alice", "email": "alice@example.com"},
-        {"name": "Bob", "email": "bob@example.com"},
-    ],
+    "lists": [
+        {
+            "name": "General Announcements",
+            "address": "general@example.com",
+            "mode": "broadcast",
+            "imap_host": "imap.example.com",
+            "imap_port": 993,
+            "imap_user": "general@example.com",
+            "imap_pass": "supersecret",
+            "from_addr": "no-reply@example.com",
+            "allowed_senders": "admin@example.com",
+            "only_subscribers_send": False,
+            "subscribers": [
+                {"name": "Alice", "email": "alice@example.com"},
+                {"name": "Bob", "email": "bob@example.com"},
+            ],
+        },
+        {
+            "name": "Group Chat",
+            "address": "group@example.com",
+            "mode": "group",
+            "imap_host": "imap.example.com",
+            "imap_port": 993,
+            "imap_user": "general@example.com",
+            "imap_pass": "supersecret",
+            "from_addr": "",
+            "allowed_senders": "",
+            "only_subscribers_send": True,
+            "subscribers": [
+                {"name": "Carol", "email": "carol@example.com"},
+            ],
+        },
+    ]
 }
 
 
 def _merge_defaults(defaults: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Shallow merge: dict keys in overrides replace defaults; subscribers list replaces default if
-    provided
+    Merge lists and their subscribers from overrides into defaults.
     """
     result = defaults.copy()
-    for k, v in overrides.items():
-        if k == "list" and isinstance(v, dict):
-            merged_list = result["list"].copy()
-            merged_list.update(v)
-            result["list"] = merged_list
-        elif k == "subscribers" and isinstance(v, list):
-            result["subscribers"] = v
-        else:
-            result[k] = v
+    if "lists" in overrides and isinstance(overrides["lists"], list):
+        # Replace the entire lists array if present in overrides
+        result["lists"] = overrides["lists"]
     return result
 
 
@@ -88,37 +98,37 @@ def seed_database(app: None = None) -> None:
         local = _load_local_seed()
         cfg = _merge_defaults(DEFAULT_SEED, local)
 
-        lst_cfg = cfg["list"]
-        # ensure port is int
-        try:
-            lst_cfg["imap_port"] = int(lst_cfg.get("imap_port", 993))
-        except (TypeError, ValueError):
-            lst_cfg["imap_port"] = 993
-
         logging.info("Seeding database with initial data (overrides present: %s).", bool(local))
 
-        new_list = List(
-            name=lst_cfg.get("name"),
-            address=lst_cfg.get("address"),
-            mode=lst_cfg.get("mode"),
-            imap_host=lst_cfg.get("imap_host"),
-            imap_port=lst_cfg.get("imap_port"),
-            imap_user=lst_cfg.get("imap_user"),
-            imap_pass=lst_cfg.get("imap_pass"),
-            from_addr=lst_cfg.get("from_addr"),
-            allowed_senders=lst_cfg.get("allowed_senders"),
-            only_subscribers_send=lst_cfg.get("only_subscribers_send", True),
-        )
+        for lst_cfg in cfg.get("lists", []):
+            # ensure port is int
+            try:
+                lst_cfg["imap_port"] = int(lst_cfg.get("imap_port", 993))
+            except (TypeError, ValueError):
+                lst_cfg["imap_port"] = 993
 
-        subs = []
-        for s in cfg.get("subscribers", []):
-            subs.append(Subscriber(name=s.get("name"), email=s.get("email"), list=new_list))
+            new_list = List(
+                name=lst_cfg.get("name"),
+                address=lst_cfg.get("address"),
+                mode=lst_cfg.get("mode"),
+                imap_host=lst_cfg.get("imap_host"),
+                imap_port=lst_cfg.get("imap_port"),
+                imap_user=lst_cfg.get("imap_user"),
+                imap_pass=lst_cfg.get("imap_pass"),
+                from_addr=lst_cfg.get("from_addr"),
+                allowed_senders=lst_cfg.get("allowed_senders"),
+                only_subscribers_send=lst_cfg.get("only_subscribers_send", True),
+            )
 
-        db.session.add(new_list)
-        if subs:
-            db.session.add_all(subs)
+            subs = []
+            for s in lst_cfg.get("subscribers", []):
+                subs.append(Subscriber(name=s.get("name"), email=s.get("email"), list=new_list))
+
+            db.session.add(new_list)
+            if subs:
+                db.session.add_all(subs)
+
         db.session.commit()
-
         logging.info("✅ Seed data inserted.")
 
     if app is not None:
