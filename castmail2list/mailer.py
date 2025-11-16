@@ -3,13 +3,15 @@
 import logging
 import smtplib
 import tempfile
+from email import encoders
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 
 from flask import Flask
 from imap_tools import MailBox
-from imap_tools.message import MailMessage
+from imap_tools.message import MailAttachment, MailMessage
 
 from castmail2list.models import List, Subscriber
 
@@ -34,7 +36,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
     def send_email(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         list_address: str,
-        list_name: str,
         header_from: str,
         subject: str,
         recipient: str,
@@ -43,18 +44,30 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         date_header: str,
         text_message: str = "",
         html_message: str = "",
-        attachments: None | list[tuple[str, bytes, str]] = None,
+        attachments: list[MailAttachment] | None = None,
     ) -> bytes:
         """
         Sends an email using a Jinja2 template. Returns sent message as bytes
         """
+        # --- Choose correct container type ---
+        msg: MIMEMultipart | MIMEText
+        # If there are attachments, we need a "mixed" container
+        if attachments:
+            msg = MIMEMultipart("mixed")
+        # If there are both text and HTML parts, we need an "alternative" container
+        elif text_message and html_message:
+            msg = MIMEMultipart("alternative")
+        # If there are only text or only HTML parts, we can use a simple MIMEText
+        else:
+            # Just a plain text or html-only email — no multipart needed
+            msg = MIMEText(html_message or text_message, "html" if html_message else "plain")
+
         # Deal with recipient as possible To of original message
         if recipient in to_header:
             # TODO: Decide what to do if recipient is also in To header
             pass
 
-        # Create the email message wth all necessary headers
-        msg = MIMEMultipart()
+        # --- Write common headers ---
         msg["From"] = header_from
         msg["To"] = ", ".join(to_header) if to_header else recipient
         if cc_header:
@@ -62,21 +75,47 @@ class Mail:  # pylint: disable=too-many-instance-attributes,too-few-public-metho
         msg["Subject"] = subject
         msg["Message-ID"] = self.message_id
         msg["Date"] = date_header or formatdate(localtime=True)
-        # TODO: Set List-ID only for real mailing lists, not for broadcast mode
-        msg["List-Id"] = f"{list_name} <{list_address.replace('@', '.')}>"
+        msg["List-Id"] = f"<{list_address.replace('@', '.')}>"
         msg["X-Mailer"] = "CastMail2List"
+        msg["Precedence"] = "list"
 
-        # Attach the email body in Plain and HTML
-        if text_message:
-            msg.attach(MIMEText(text_message, "plain"))
-        if html_message:
-            msg.attach(MIMEText(html_message, "html"))
+        # --- Add body parts ---
+        if isinstance(msg, MIMEMultipart):
+            if text_message and html_message:
+                # Combine text+html properly as an alternative part
+                alt = MIMEMultipart("alternative")
+                alt.attach(MIMEText(text_message, "plain"))
+                alt.attach(MIMEText(html_message, "html"))
+                msg.attach(alt)
+            elif text_message:
+                msg.attach(MIMEText(text_message, "plain"))
+            elif html_message:
+                msg.attach(MIMEText(html_message, "html"))
+
+            # Add attachments if any
+            if attachments:
+                for attachment in attachments:
+                    part = MIMEBase(
+                        attachment.content_type.split("/")[0], attachment.content_type.split("/")[1]
+                    )
+                    part.set_payload(attachment.payload)
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        "Content-Disposition",
+                        f'{attachment.content_disposition}; filename="{attachment.filename}"',
+                    )
+                    msg.attach(part)
 
         logging.debug("Email content: \n%s", msg.as_string())
 
+        # --- Send email ---
         try:
             # Send the email
-            with smtplib.SMTP(self.smtp_server, int(self.smtp_port)) as server:
+            with smtplib.SMTP(
+                self.smtp_server,
+                int(self.smtp_port),
+                local_hostname=list_address.split("@")[-1],
+            ) as server:
                 if self.smtp_starttls:
                     server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
@@ -96,7 +135,7 @@ def send_msg_to_subscribers(
 ) -> None:
     """Send message to all subscribers"""
     # Prepare message class
-    new_msgid = make_msgid(idstring="castmail2list", domain="localhost")
+    new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
     mail = Mail(app=app, message_id=new_msgid, list_from_address=ml.from_addr)
 
     # Sanity checks
@@ -106,7 +145,7 @@ def send_msg_to_subscribers(
     # Depending on list mode, prepare headers
     if ml.mode == "broadcast":
         from_header = ml.from_addr or ml.address
-    elif ml.mode == "list":
+    elif ml.mode == "group":
         if not msg.from_values:
             logging.error("No valid From header in message %s, cannot send", msg.uid)
             return
@@ -127,8 +166,7 @@ def send_msg_to_subscribers(
     for subscriber in subscribers:
         try:
             sent_msg = mail.send_email(
-                list_address=ml.from_addr,
-                list_name=ml.name,
+                list_address=ml.address,
                 header_from=from_header,
                 to_header=msg.to,
                 cc_header=msg.cc,
@@ -137,6 +175,7 @@ def send_msg_to_subscribers(
                 text_message=msg.text or "",
                 html_message=msg.html or "",
                 recipient=subscriber.email,
+                attachments=msg.attachments,
             )
             with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                 tmpfile.write(msg.obj.as_string())
@@ -144,6 +183,8 @@ def send_msg_to_subscribers(
                 logging.debug(
                     "Saving sent message to temp file %s to be stored in Sent folder", tmpfile.name
                 )
-                mailbox.append(message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"])
+                mailbox.append(
+                    message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
+                )
         except Exception as e:  # pylint: disable=broad-except
             logging.error("Failed to send message to %s: %s", subscriber.email, e)
