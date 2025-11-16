@@ -20,10 +20,17 @@ import logging
 from typing import Any, Dict
 
 from flask import Flask
+from werkzeug.security import generate_password_hash
 
-from .models import List, Subscriber, db
+from .models import List, Subscriber, User, db
 
 DEFAULT_SEED: Dict[str, Any] = {
+    "users": [
+        {
+            "username": "admin",
+            "password": "admin",
+        }
+    ],
     "lists": [
         {
             "name": "General Announcements",
@@ -56,18 +63,21 @@ DEFAULT_SEED: Dict[str, Any] = {
                 {"name": "Carol", "email": "carol@example.com"},
             ],
         },
-    ]
+    ],
 }
 
 
 def _merge_defaults(defaults: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Merge lists and their subscribers from overrides into defaults.
+    Merge local secrets overrides into defaults.
     """
     result = defaults.copy()
     if "lists" in overrides and isinstance(overrides["lists"], list):
         # Replace the entire lists array if present in overrides
         result["lists"] = overrides["lists"]
+    if "users" in overrides and isinstance(overrides["users"], list):
+        # Replace the entire users array if present in overrides
+        result["users"] = overrides["users"]
     return result
 
 
@@ -136,6 +146,13 @@ def seed_database(app: Flask) -> None:
             db.session.add(new_list)
             if subs:
                 db.session.add_all(subs)
+
+        for user_cfg in cfg.get("users", []):
+            new_user = User(
+                username=user_cfg.get("username"),
+                password=generate_password_hash(user_cfg.get("password")),
+            )
+            db.session.add(new_user)
 
         db.session.commit()
         logging.info("✅ Seed data inserted.")

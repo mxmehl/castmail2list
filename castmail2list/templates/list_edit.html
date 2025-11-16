@@ -12,7 +12,7 @@
 </a>
 
 <form method="POST">
-    {{ form.hidden_tag() }}
+    {{ form.csrf_token }}
 
     {{ form.mode.label }}
     {{ form.mode }}

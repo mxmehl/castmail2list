@@ -11,7 +11,7 @@
 <h3>{{ _('Add Subscriber') }}</h3>
 <form method="POST">
     <fieldset class="grid">
-        {{ add_form.hidden_tag() }}
+        {{ form.csrf_token }}
 
         {{ add_form.name(placeholder=add_form.name.label.text) }}
 
