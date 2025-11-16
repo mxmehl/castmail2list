@@ -7,6 +7,7 @@ import traceback
 import uuid
 
 from flask import Flask
+from flufl.bounce import scan_message
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
@@ -55,8 +56,8 @@ def mark_msg_as_processed(app: Flask, mailbox: MailBox, msg: MailMessage) -> Non
     logging.debug("Marked message %s as seen and moved to Processed folder", msg.uid)
 
 
-def process_imap_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: List) -> bool:
-    """Process a single IMAP message: store in DB and check for duplicates
+def process_imap_inbox_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: List) -> bool:
+    """Process a single IMAP message from the Inbox: store in DB and check for duplicates
 
     Args:
         app (Flask): Flask app context
@@ -65,10 +66,21 @@ def process_imap_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: List) -
         ml (List): Mailing list the message belongs to
 
     Returns:
-        bool: True if message was new and processed, False if it was a duplicate and skipped
+        bool: True if message was new and processed, False if it was a duplicate or bounce and
+            skipped
 
     """
     logging.debug("Processing message: %s", msg.subject)
+
+    # Detect whether message is a bounce
+    bounced_recipients = scan_message(msg.obj)  # type: ignore
+    if bounced_recipients:
+        logging.info("Message %s is a bounce", msg.uid)
+        # # Move to Bounces folder and mark as seen
+        mailbox.flag(msg.uid, ["\\Seen"], True)  # type: ignore
+        mailbox.move(msg.uid, app.config["IMAP_FOLDER_BOUNCES"])  # type: ignore
+        return False
+    logging.debug("Message %s is not a bounce", msg.uid)
 
     # Store message in database
     m = Message()
@@ -119,8 +131,8 @@ def check_all_lists_for_messages(app: Flask) -> None:
 
                 # Fetch unseen messages
                 for msg in mailbox.fetch():
-                    # Process new message (store in DB) and abort if duplicate
-                    msg_ok = process_imap_msg(app=app, msg=msg, mailbox=mailbox, ml=ml)
+                    # Process new message: check for bounce, store in DB, and abort if duplicate
+                    msg_ok = process_imap_inbox_msg(app=app, msg=msg, mailbox=mailbox, ml=ml)
                     if not msg_ok:
                         continue
 
