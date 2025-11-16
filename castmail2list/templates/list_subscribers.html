@@ -38,7 +38,10 @@
         {% for subscriber in mailing_list.subscribers %}
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
-            <td><a href="{{ url_for('subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a></td>
+            <td>
+                <a href="{{ url_for('subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                {% if subscriber.subscriber_type == "list" %}({{ _('List') }}){% endif %}
+            </td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
             <td>
                 <a href="{{ url_for('list_subscriber_edit', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline">{{ _('Edit') }}</a>

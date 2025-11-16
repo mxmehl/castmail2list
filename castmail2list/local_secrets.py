@@ -19,14 +19,17 @@ SEED = {
                 {
                     "name": "Eltern Mondgruppe",
                     "email": "list-eltern-mondgruppe@***REMOVED***",
+                    "subscriber_type": "list",
                 },
                 {
                     "name": "Eltern Sonnengruppe",
                     "email": "list-eltern-sonnengruppe@***REMOVED***",
+                    "subscriber_type": "list",
                 },
                 {
                     "name": "Elternbeirat",
                     "email": "list-elternbeirat@***REMOVED***",
+                    "subscriber_type": "list",
                 },
             ],
         },
