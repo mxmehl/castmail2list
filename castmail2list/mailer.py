@@ -44,6 +44,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.from_header: str = ""
         self.reply_to: str = ""
         self.original_mid: str = next(iter(self.msg.headers.get("message-id", ())), "")
+        self.x_mailfrom_header: str = ""
 
         # Initialize message container type, common headers, and body parts
         self.choose_container_type()
@@ -86,6 +87,10 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             )
             # Reply-To: Set to list address to avoid replies going to all subscribers
             self.reply_to = self.ml.address
+            # TODO: If sender is not member of list, consider adding them as Reply-To. Or perhaps
+            # List and sender?
+            # Add X-MailFrom with original sender address
+            self.x_mailfrom_header = self.msg.from_values.email
         else:
             logging.error("Unknown list mode %s for list %s", self.ml.mode, self.ml.name)
             return
@@ -106,6 +111,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.composed_msg["Sender"] = self.ml.address
         self.composed_msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
         self.composed_msg["X-Mailer"] = "CastMail2List"
+        if self.x_mailfrom_header:
+            self.composed_msg["X-MailFrom"] = self.x_mailfrom_header
         self.composed_msg["Precedence"] = "list"
         self.composed_msg["Original-Message-ID"] = self.original_mid
         self.composed_msg["In-Reply-To"] = (
