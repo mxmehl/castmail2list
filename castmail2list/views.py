@@ -31,6 +31,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
         if form.validate_on_submit():
             new_list = List(
+                mode=form.mode.data,
                 name=form.name.data,
                 address=form.address.data,
                 imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
@@ -66,6 +67,12 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             db.session.commit()
             flash(f'List "{mailing_list.name}" updated successfully!', "success")
             return redirect(url_for("lists"))
+
+        # Flash on form errors
+        if form.submit.data and form.errors:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
         return render_template("edit_list.html", mailing_list=mailing_list, form=form)
 
@@ -139,6 +146,13 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             db.session.commit()
             flash("Subscriber updated successfully!", "success")
             return redirect(url_for("manage_subs", list_id=list_id))
+
+        # Flash on form errors
+        if form.submit.data and form.errors:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
+
         return render_template(
             "edit_subscriber.html", mailing_list=mailing_list, form=form, subscriber=subscriber
         )

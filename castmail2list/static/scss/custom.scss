@@ -23,3 +23,12 @@
     }
   }
 }
+
+// Small display fixes
+ul#mode {
+  list-style-type: none;
+
+  li {
+    list-style: none;
+  }
+}
