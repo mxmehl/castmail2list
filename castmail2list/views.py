@@ -4,7 +4,7 @@ from flask import Flask, flash, redirect, render_template, url_for
 from flask_babel import _
 
 from .config import Config
-from .forms import BounceListForm, MailingListForm, SubscriberAddForm
+from .forms import MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, db
 from .utils import flash_form_errors, normalize_email_list  # <-- import helpers
 
@@ -24,8 +24,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/lists", methods=["GET"])
     def lists():
-        # Show all mailing lists except bounce list
-        lists = List.query.filter(List.mode != "bounce").all()
+        lists = List.query.all()
         return render_template("lists.html", lists=lists, config=Config)
 
     @app.route("/lists/add", methods=["GET", "POST"])
@@ -184,49 +183,6 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
 
     @app.route("/settings", methods=["GET", "POST"])
     def settings():
-        """Manage application settings, including bounce email configuration"""
-        # Get existing bounce list if it exists
-        bounce_list = List.get_bounce_list()
+        """Manage application settings"""
 
-        # Initialize form with existing data if available
-        form = BounceListForm(obj=bounce_list) if bounce_list else BounceListForm()
-
-        if form.validate_on_submit():
-            if bounce_list:
-                # Update fields except password if not provided
-                bounce_list.name = form.name.data
-                bounce_list.address = form.address.data
-                bounce_list.imap_host = form.imap_host.data
-                bounce_list.imap_port = form.imap_port.data
-                bounce_list.imap_user = form.imap_user.data
-                # Only update imap_pass if a new value is provided
-                old_pass = bounce_list.imap_pass
-                if not form.imap_pass.data:
-                    bounce_list.imap_pass = old_pass
-
-                db.session.commit()
-                flash(_("Bounce settings updated successfully!"), "success")
-            else:
-                # Create new bounce list
-                new_bounce_list = List(
-                    mode="bounce",
-                    name=form.name.data,
-                    address=form.address.data,
-                    imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
-                    imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
-                    imap_user=form.imap_user.data or "",
-                    imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
-                    from_addr="",  # Not needed for bounce list
-                    allowed_senders="",  # Not needed for bounce list
-                )
-                db.session.add(new_bounce_list)
-                db.session.commit()
-                flash(_("Bounce settings created successfully!"), "success")
-
-            return redirect(url_for("settings"))
-
-        # Flash form errors if any
-        if form.submit.data and form.errors:
-            flash_form_errors(form)
-
-        return render_template("settings.html", form=form, bounce_list=bounce_list, config=Config)
+        return render_template("settings.html", config=Config)
