@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Add New List - CastMail2List{% endblock %}
+{% block title %}{{ _('Add New List') }} - CastMail2List{% endblock %}
 
 {% block content %}
-<h2>Add a New List</h2>
+<h2>{{ _('Add a New List') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
@@ -40,9 +40,9 @@
     </fieldset>
 
     {{ form.allowed_senders.label }}
-    {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
-    <small>{{ form.allowed_senders.description }}</small>
+    {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
+    <small>{{ (form.allowed_senders.description) }}</small>
 
-    {{ form.submit }}
+    {{ form.submit(value=_('Save List')) }}
 </form>
 {% endblock %}

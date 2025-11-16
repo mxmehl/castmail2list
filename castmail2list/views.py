@@ -1,6 +1,7 @@
 """Flask routes for castmail2list application"""
 
 from flask import Flask, flash, redirect, render_template, url_for
+from flask_babel import _
 
 from .config import Config
 from .forms import MailingListForm, SubscriberAddForm
@@ -47,7 +48,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             )
             db.session.add(new_list)
             db.session.commit()
-            flash(f'Mailing list "{new_list.name}" created successfully!', "success")
+            flash(_('Mailing list "%(name)s" created successfully!', name=new_list.name), "success")
             return redirect(url_for("lists"))
 
         # Flash on form errors
@@ -72,7 +73,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             mailing_list.allowed_senders = normalize_email_list(form.allowed_senders.data)
 
             db.session.commit()
-            flash(f'List "{mailing_list.name}" updated successfully!', "success")
+            flash(_('List "%(name)s" updated successfully!', name=mailing_list.name), "success")
             return redirect(url_for("lists"))
 
         # Flash on form errors
@@ -102,9 +103,12 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
                 )
                 db.session.add(new_subscriber)
                 db.session.commit()
-                flash(f'Successfully added "{email}" to the list!', "success")
+                flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
             else:
-                flash(f'Email "{email}" is already subscribed to this list.', "warning")
+                flash(
+                    _('Email "%(email)s" is already subscribed to this list.', email=email),
+                    "warning",
+                )
 
             return redirect(url_for("manage_subs", list_id=list_id))
 
@@ -123,7 +127,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
         mailing_list = List.query.get_or_404(list_id)
         db.session.delete(mailing_list)
         db.session.commit()
-        flash(f'List "{mailing_list.name}" deleted successfully!', "success")
+        flash(_('List "%(name)s" deleted successfully!', name=mailing_list.name), "success")
         return redirect(url_for("lists"))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
@@ -134,7 +138,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             email = subscriber.email
             db.session.delete(subscriber)
             db.session.commit()
-            flash(f'Successfully removed "{email}" from the list!', "success")
+            flash(_('Successfully removed "%(email)s" from the list!', email=email), "success")
         return redirect(url_for("manage_subs", list_id=list_id))
 
     @app.route("/lists/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
@@ -147,7 +151,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             subscriber.email = form.email.data
             subscriber.comment = form.comment.data
             db.session.commit()
-            flash("Subscriber updated successfully!", "success")
+            flash(_("Subscriber updated successfully!"), "success")
             return redirect(url_for("manage_subs", list_id=list_id))
 
         # Flash on form errors

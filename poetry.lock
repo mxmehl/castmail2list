@@ -70,6 +70,21 @@ files = [
 typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
 
 [[package]]
+name = "babel"
+version = "2.17.0"
+description = "Internationalization utilities"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "babel-2.17.0-py3-none-any.whl", hash = "sha256:4d0b53093fdfb4b21c92b5213dba5a1b23885afa8383709427046b21c366e5f2"},
+    {file = "babel-2.17.0.tar.gz", hash = "sha256:0c54cffb19f690cdcc52a3b50bcbf71e07a808d1c80d549f2459b9d2cf0afb9d"},
+]
+
+[package.extras]
+dev = ["backports.zoneinfo ; python_version < \"3.9\"", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest (>=6.0)", "pytest-cov", "pytz", "setuptools", "tzdata ; sys_platform == \"win32\""]
+
+[[package]]
 name = "black"
 version = "25.9.0"
 description = "The uncompromising code formatter."
@@ -299,6 +314,24 @@ werkzeug = ">=3.1.0"
 [package.extras]
 async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
+
+[[package]]
+name = "flask-babel"
+version = "4.0.0"
+description = "Adds i18n/l10n support for Flask applications."
+optional = false
+python-versions = ">=3.8,<4.0"
+groups = ["main"]
+files = [
+    {file = "flask_babel-4.0.0-py3-none-any.whl", hash = "sha256:638194cf91f8b301380f36d70e2034c77ee25b98cb5d80a1626820df9a6d4625"},
+    {file = "flask_babel-4.0.0.tar.gz", hash = "sha256:dbeab4027a3f4a87678a11686496e98e1492eb793cbdd77ab50f4e9a2602a593"},
+]
+
+[package.dependencies]
+Babel = ">=2.12"
+Flask = ">=2.0"
+Jinja2 = ">=3.1"
+pytz = ">=2022.7"
 
 [[package]]
 name = "flask-migrate"
@@ -1104,6 +1137,18 @@ files = [
 dev = ["black", "build", "mypy", "pytest", "pytest-cov", "setuptools", "tox", "twine", "wheel"]
 
 [[package]]
+name = "pytz"
+version = "2025.2"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"},
+    {file = "pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3"},
+]
+
+[[package]]
 name = "questionary"
 version = "2.1.1"
 description = "Python library to build pretty command line user prompts ⭐️"
@@ -1436,4 +1481,4 @@ email = ["email-validator"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "5a2e9f1d52459fc6ff5877074dad03d4f26cde03a492e4b96680ab90ed2077bd"
+content-hash = "9efcbc4c44961d3027b05a73bdf8979135b7e961eb4cf18579f5b1b182562f17"

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Subscriber - {{ subscriber.name }}{% endblock %}
+{% block title %}{{ _('Edit Subscriber') }} - {{ subscriber.name }}{% endblock %}
 
 {% block content %}
-<h2>Edit Subscriber</h2>
+<h2>{{ _('Edit Subscriber') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<p>On list: {{ mailing_list.name }}</p>
+<p>{{ _('On list: %(name)s', name=mailing_list.name) }}</p>
 
 <form method="POST">
     {{ form.hidden_tag() }}

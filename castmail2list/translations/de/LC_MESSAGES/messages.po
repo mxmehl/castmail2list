@@ -1,0 +1,277 @@
+# German translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-10-16 14:58+0200\n"
+"PO-Revision-Date: 2025-10-16 15:08+0200\n"
+"Last-Translator: \n"
+"Language-Team: de <LL@li.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.8\n"
+
+#: forms.py:21
+msgid "Mode"
+msgstr "Modus"
+
+#: forms.py:22
+msgid "Broadcast List"
+msgstr "Rundschreiben-Liste"
+
+#: forms.py:22
+msgid "Group List"
+msgstr "Gruppenliste"
+
+#: forms.py:25 templates/lists.html:18
+msgid "List Name"
+msgstr "Listenname"
+
+#: forms.py:26
+msgid "List Email Address"
+msgstr "E-Mail-Adresse der Liste"
+
+#: forms.py:27
+msgid "IMAP Server"
+msgstr "IMAP-Server"
+
+#: forms.py:28
+msgid "IMAP Port"
+msgstr "IMAP-Port"
+
+#: forms.py:29
+msgid "IMAP Username"
+msgstr "IMAP-Benutzername"
+
+#: forms.py:30
+msgid "IMAP Password"
+msgstr "IMAP-Passwort"
+
+#: forms.py:31
+msgid "From Address"
+msgstr "Absenderadresse"
+
+#: forms.py:33
+msgid "Allowed Senders"
+msgstr "Erlaubte Absender"
+
+#: forms.py:36
+msgid ""
+"Enter email addresses, separated by commas. Only relevant in Broadcast "
+"mode."
+msgstr ""
+"Trage E-Mail-Adressen ein, getrennt von Kommas, Nur relevant in "
+"Rundschreiben-Modus."
+
+#: forms.py:40
+msgid ""
+"Only allow subscribers to send messages to the list. Only relevant in "
+"Group mode."
+msgstr ""
+"Erlaubte nur Abonnenten, Nachrichten an die Liste zu senden. Nur "
+"relevant im Gruppen-Modus."
+
+#: forms.py:43 templates/add_list.html:46
+msgid "Save List"
+msgstr "Liste speichern"
+
+#: forms.py:49 templates/subscribers.html:31
+msgid "Name"
+msgstr "Name"
+
+#: forms.py:50
+msgid "Email Address"
+msgstr "E-Mail-Adresse"
+
+#: forms.py:51 templates/subscribers.html:33
+msgid "Comment"
+msgstr "Kommentar"
+
+#: forms.py:52
+msgid "Save Subscriber"
+msgstr "Abonnenten speichern"
+
+#: views.py:51
+#, python-format
+msgid "Mailing list \"%(name)s\" created successfully!"
+msgstr "Mailingliste \"%(name)s\" erfolgreich erstellt!"
+
+#: views.py:76
+#, python-format
+msgid "List \"%(name)s\" updated successfully!"
+msgstr "Liste “%(name)s” erfolgreich aktualisiert!"
+
+#: views.py:106
+#, python-format
+msgid "Successfully added \"%(email)s\" to the list!"
+msgstr "\"%(email)s” erfolgreich der Liste hinzugefügt!"
+
+#: views.py:109
+#, python-format
+msgid "Email \"%(email)s\" is already subscribed to this list."
+msgstr "E-Mail \"%(email)s” ist bereits Mitglied dieser Liste."
+
+#: views.py:130
+#, python-format
+msgid "List \"%(name)s\" deleted successfully!"
+msgstr "Liste \"%(name)s\" erfolgreich gelöscht!"
+
+#: views.py:141
+#, python-format
+msgid "Successfully removed \"%(email)s\" from the list!"
+msgstr "\"%(email)s\" erfolgreich aus der Liste entfernt!"
+
+#: views.py:154
+msgid "Subscriber updated successfully!"
+msgstr "Abonnent wurde erfolgreich aktualisiert!"
+
+#: templates/add_list.html:3
+msgid "Add New List"
+msgstr "Neue Liste hinzufügen"
+
+#: templates/add_list.html:6
+msgid "Add a New List"
+msgstr "Eine neue Liste hinzufügen"
+
+#: templates/base.html:21
+msgid "Home"
+msgstr "Startseite"
+
+#: templates/base.html:22
+msgid "Messages"
+msgstr "Nachrichten"
+
+#: templates/base.html:23
+msgid "Listen"
+msgstr "Listen"
+
+#: templates/edit_list.html:3
+msgid "Edit List"
+msgstr "Liste bearbeiten"
+
+#: templates/edit_list.html:6
+#, python-format
+msgid "Edit List: %(name)s"
+msgstr "Liste bearbeiten: %(name)s"
+
+#: templates/edit_list.html:11 templates/lists.html:30
+msgid "Manage Subscribers"
+msgstr "Abonnenten verwalten"
+
+#: templates/edit_list.html:36
+msgid "Leave empty to not update password"
+msgstr "Leer lassen, um das Passwort nicht zu ändern"
+
+#: templates/edit_list.html:47
+msgid "user@example.com,another@example.com"
+msgstr "benutzer@beispiel.de,anderer@beispiel.de"
+
+#: templates/edit_subscriber.html:3 templates/edit_subscriber.html:6
+msgid "Edit Subscriber"
+msgstr "Abonnent bearbeiten"
+
+#: templates/edit_subscriber.html:10
+#, python-format
+msgid "On list: %(name)s"
+msgstr "In Liste: %(name)s"
+
+#: templates/index.html:2 templates/lists.html:6
+msgid "Mailing Lists"
+msgstr "Mailinglisten"
+
+#: templates/index.html:4
+msgid "Overview"
+msgstr "Übersicht"
+
+#: templates/index.html:8
+msgid ""
+"Welcome to CastMail2List! Use the navigation above to manage your "
+"mailing lists and their subscribers."
+msgstr ""
+"Willkommen bei CastMail2List! Nutze die Navigation oben, um deine "
+"Mailinglisten und ihre Abonnenten zu verwalten."
+
+#: templates/lists.html:3
+msgid "Lists"
+msgstr "Listen"
+
+#: templates/lists.html:11
+msgid "Add new List"
+msgstr "Neue Liste hinzufügen"
+
+#: templates/lists.html:19
+msgid "List Address"
+msgstr "Listenadresse"
+
+#: templates/lists.html:20 templates/subscribers.html:34
+msgid "Actions"
+msgstr "Aktionen"
+
+#: templates/lists.html:29 templates/subscribers.html:44
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: templates/lists.html:31
+msgid "Are you sure you want to delete the list"
+msgstr "Bist du sicher, dass du die Liste löschen willst"
+
+#: templates/lists.html:31
+msgid "Delete List"
+msgstr "Liste löschen"
+
+#: templates/lists.html:39
+msgid "No mailing lists configured yet."
+msgstr "Es sind noch keine Mailinglisten eingerichtet."
+
+#: templates/messages.html:2 templates/messages.html:4
+msgid "Recent Messages"
+msgstr "Letzte Nachrichten"
+
+#: templates/messages.html:11
+msgid "from"
+msgstr "von"
+
+#: templates/subscribers.html:3
+msgid "Subscribers"
+msgstr "Abonnenten"
+
+#: templates/subscribers.html:7
+#, python-format
+msgid "Subscribers for \"%(name)s\""
+msgstr "Mailingliste \"%(name)s\" erfolgreich erstellt!"
+
+#: templates/subscribers.html:11
+msgid "Add Subscriber"
+msgstr "Abonnenten hinzufügen"
+
+#: templates/subscribers.html:26
+msgid "Current Subscribers"
+msgstr "Aktuelle Abonnenten"
+
+#: templates/subscribers.html:32
+msgid "Email"
+msgstr "E-Mail"
+
+#: templates/subscribers.html:45
+msgid "Are you sure you want to delete subscriber"
+msgstr "Bist du sicher, dass du den Abonnenten löschen willst"
+
+#: templates/subscribers.html:45
+msgid "from this list?"
+msgstr "aus dieser Liste?"
+
+#: templates/subscribers.html:45
+msgid "Delete"
+msgstr "Löschen"
+
+#: templates/subscribers.html:52
+msgid "No subscribers yet."
+msgstr "Noch keine Abonnenten vorhanden."

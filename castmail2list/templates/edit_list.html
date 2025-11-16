@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Edit List - {{ mailing_list.name }}{% endblock %}
+{% block title %}{{ _('Edit List') }} - {{ mailing_list.name }}{% endblock %}
 
 {% block content %}
-<h2>Edit List: {{ mailing_list.name }}</h2>
+<h2>{{ _('Edit List: %(name)s', name=mailing_list.name) }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
 <a href="{{ url_for('manage_subs', list_id=mailing_list.id) }}" role="button">
-    Manage Subscribers
+    {{ _('Manage Subscribers') }}
 </a>
 
 <form method="POST">
@@ -33,7 +33,7 @@
     {{ form.imap_user }}
 
     {{ form.imap_pass.label }}
-    {{ form.imap_pass(placeholder="Leave empty to not update password") }}
+    {{ form.imap_pass(placeholder=_("Leave empty to not update password")) }}
 
     {{ form.from_addr.label }}
     {{ form.from_addr }}
@@ -44,8 +44,8 @@
     </fieldset>
 
     {{ form.allowed_senders.label }}
-    {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
-    <small>{{ form.allowed_senders.description }}</small>
+    {{ form.allowed_senders(placeholder=_("user@example.com,another@example.com")) }}
+    <small>{{ _(form.allowed_senders.description) }}</small>
 
     {{ form.submit }}
 </form>
