@@ -73,14 +73,22 @@ def process_imap_inbox_msg(app: Flask, msg: MailMessage, mailbox: MailBox, ml: L
     logging.debug("Processing message: %s", msg.subject)
 
     # Detect whether message is a bounce
-    bounced_recipients = scan_message(msg.obj)  # type: ignore
-    if bounced_recipients:
+    if "+bounces--" in msg.to[0]:
         logging.info("Message %s is a bounce", msg.uid)
-        # # Move to Bounces folder and mark as seen
+        # Move to Bounces folder and mark as seen
         mailbox.flag(msg.uid, ["\\Seen"], True)  # type: ignore
         mailbox.move(msg.uid, app.config["IMAP_FOLDER_BOUNCES"])  # type: ignore
         return False
     logging.debug("Message %s is not a bounce", msg.uid)
+
+    # bounced_recipients = scan_message(msg.obj)  # type: ignore
+    # if bounced_recipients:
+    #     logging.info("Message %s is a bounce", msg.uid)
+    #     # # Move to Bounces folder and mark as seen
+    #     mailbox.flag(msg.uid, ["\\Seen"], True)  # type: ignore
+    #     mailbox.move(msg.uid, app.config["IMAP_FOLDER_BOUNCES"])  # type: ignore
+    #     return False
+    # logging.debug("Message %s is not a bounce", msg.uid)
 
     # Store message in database
     m = Message()
