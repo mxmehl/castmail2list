@@ -120,7 +120,7 @@ def init_routes(app: Flask):  # pylint: disable=too-many-statements
             flash_form_errors(form)
 
         return render_template(
-            "subscribers.html",
+            "list_subscribers.html",
             mailing_list=mailing_list,
             add_form=form,
         )
