@@ -7,7 +7,7 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<a href="{{ url_for('add_list') }}" role="button" class="outline">
+<a href="{{ url_for('list_add') }}" role="button" class="outline">
     {{ _('Add new List') }}
 </a>
 
@@ -26,9 +26,9 @@
         <td>{{ list.name }}</td>
         <td>{{ list.address }}</td>
         <td>
-            <a href="{{ url_for('edit_list', list_id=list.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
-            <a href="{{ url_for('manage_subs', list_id=list.id) }}" role="button" class="outline secondary">{{ _('Manage Subscribers') }} ({{ list.subscribers|length }})</a>
-            <a href="{{ url_for('delete_list', list_id=list.id) }}" role="button" class="outline secondary" onclick="return confirm('{{ _('Are you sure you want to delete the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Delete List') }}</a>
+            <a href="{{ url_for('list_edit', list_id=list.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
+            <a href="{{ url_for('list_subscribers', list_id=list.id) }}" role="button" class="outline secondary">{{ _('Manage Subscribers') }} ({{ list.subscribers|length }})</a>
+            <a href="{{ url_for('list_delete', list_id=list.id) }}" role="button" class="outline secondary" onclick="return confirm('{{ _('Are you sure you want to delete the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Delete List') }}</a>
         </td>
     </tr>
     {% endfor %}

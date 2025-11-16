@@ -79,7 +79,7 @@ msgstr ""
 "Erlaubte nur Abonnenten, Nachrichten an die Liste zu senden. Nur "
 "relevant im Gruppen-Modus."
 
-#: forms.py:43 templates/add_list.html:46
+#: forms.py:43 templates/list_add.html:46
 msgid "Save List"
 msgstr "Liste speichern"
 
@@ -133,11 +133,11 @@ msgstr "\"%(email)s\" erfolgreich aus der Liste entfernt!"
 msgid "Subscriber updated successfully!"
 msgstr "Abonnent wurde erfolgreich aktualisiert!"
 
-#: templates/add_list.html:3
+#: templates/list_add.html:3
 msgid "Add New List"
 msgstr "Neue Liste hinzufügen"
 
-#: templates/add_list.html:6
+#: templates/list_add.html:6
 msgid "Add a New List"
 msgstr "Eine neue Liste hinzufügen"
 
@@ -153,32 +153,32 @@ msgstr "Nachrichten"
 msgid "Listen"
 msgstr "Listen"
 
-#: templates/edit_list.html:3
+#: templates/list_edit.html:3
 msgid "Edit List"
 msgstr "Liste bearbeiten"
 
-#: templates/edit_list.html:6
+#: templates/list_edit.html:6
 #, python-format
 msgid "Edit List: %(name)s"
 msgstr "Liste bearbeiten: %(name)s"
 
-#: templates/edit_list.html:11 templates/lists.html:30
+#: templates/list_edit.html:11 templates/lists.html:30
 msgid "Manage Subscribers"
 msgstr "Abonnenten verwalten"
 
-#: templates/edit_list.html:36
+#: templates/list_edit.html:36
 msgid "Leave empty to not update password"
 msgstr "Leer lassen, um das Passwort nicht zu ändern"
 
-#: templates/edit_list.html:47
+#: templates/list_edit.html:47
 msgid "user@example.com,another@example.com"
 msgstr "benutzer@beispiel.de,anderer@beispiel.de"
 
-#: templates/edit_subscriber.html:3 templates/edit_subscriber.html:6
+#: templates/list_subscriber_edit.html:3 templates/list_subscriber_edit.html:6
 msgid "Edit Subscriber"
 msgstr "Abonnent bearbeiten"
 
-#: templates/edit_subscriber.html:10
+#: templates/list_subscriber_edit.html:10
 #, python-format
 msgid "On list: %(name)s"
 msgstr "In Liste: %(name)s"
