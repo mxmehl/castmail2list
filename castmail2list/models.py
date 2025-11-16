@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 
@@ -13,7 +14,7 @@ else:
     Model = db.Model
 
 
-class User(Model):  # pylint: disable=too-few-public-methods
+class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     """A user of the CastMail2List application"""
 
     def __init__(self, **kwargs):
