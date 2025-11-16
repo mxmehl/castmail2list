@@ -14,6 +14,18 @@ from wtforms import (
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
 
 
+class LoginForm(FlaskForm):
+    """
+    LoginForm is a form class used for user authentication.
+
+    Attributes:
+        username (StringField): A field for entering the username. It is required.
+        password (PasswordField): A field for entering the password. It is required.
+    """
+
+    username = StringField(label="Username", validators=[DataRequired()])
+    password = PasswordField(label="Password", validators=[DataRequired()])
+
 class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""
 

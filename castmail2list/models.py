@@ -13,6 +13,14 @@ else:
     Model = db.Model
 
 
+class User(Model):  # pylint: disable=too-few-public-methods
+    """A user of the CastMail2List application"""
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True)
+    name = db.Column(db.String(1000))
+
+
 class List(Model):  # pylint: disable=too-few-public-methods
     """A mailing list"""
 
