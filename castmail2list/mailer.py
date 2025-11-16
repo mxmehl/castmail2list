@@ -156,7 +156,7 @@ def send_msg_to_subscribers(
             )
             return
     # In group mode, ensure the original sender is one of the subscribers
-    if ml.mode == "group" and subscribers:
+    if ml.mode == "group" and subscribers and ml.only_subscribers_send:
         subscriber_emails = [sub.email for sub in subscribers]
         if not msg.from_values or msg.from_values.email not in subscriber_emails:
             logging.error(

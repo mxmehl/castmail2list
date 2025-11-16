@@ -2,6 +2,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     EmailField,
     IntegerField,
     PasswordField,
@@ -31,6 +32,10 @@ class MailingListForm(FlaskForm):
         "Allowed Senders",
         validators=[Optional()],
         description="Enter email addresses, separated by commas. Only relevant in Broadcast mode.",
+    )
+    only_subscribers_send = BooleanField(
+        "Only allow subscribers to send messages to the list. Only relevant in Group mode.",
+        default=False,
     )
     submit = SubmitField("Save List")
 

@@ -38,6 +38,11 @@
     {{ form.from_addr.label }}
     {{ form.from_addr }}
 
+    <fieldset>
+        {{ form.only_subscribers_send(role="switch") }}
+        {{ form.only_subscribers_send.label }}
+    </fieldset>
+
     {{ form.allowed_senders.label }}
     {{ form.allowed_senders(placeholder="user@example.com,another@example.com") }}
     <small>{{ form.allowed_senders.description }}</small>
