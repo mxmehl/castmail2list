@@ -43,6 +43,29 @@ class MailingListForm(FlaskForm):
     submit = SubmitField(_("Save List"))
 
 
+class BounceListForm(FlaskForm):
+    """Form for creating and editing the bounce handling list"""
+
+    name = StringField(
+        _("List Name"),
+        validators=[DataRequired(), Length(min=1, max=100)],
+        default="Bounce Handler",
+        description=_("Internal name for the bounce handler"),
+    )
+    address = EmailField(
+        _("Bounce Email Address"),
+        validators=[DataRequired(), Email()],
+        description=_(
+            "Email address that will receive bounce notification. It will be the Envelope-Sender for all outgoing mails."
+        ),
+    )
+    imap_host = StringField(_("IMAP Server"), validators=[Optional(), Length(max=200)])
+    imap_port = IntegerField(_("IMAP Port"), validators=[Optional(), NumberRange(min=1, max=65535)])
+    imap_user = StringField(_("IMAP Username"), validators=[DataRequired(), Length(max=200)])
+    imap_pass = PasswordField(_("IMAP Password"), validators=[Optional()])
+    submit = SubmitField(_("Save Bounce Settings"))
+
+
 class SubscriberAddForm(FlaskForm):
     """Form for adding new subscribers"""
 
