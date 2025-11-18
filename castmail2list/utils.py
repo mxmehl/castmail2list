@@ -355,6 +355,12 @@ def create_email_account(host_type: str, email: str, password: str) -> bool:
     except subprocess.CalledProcessError as e:
         logging.error("Failed to create email account %s: %s", email, e)
         return False
+    except FileNotFoundError as e:
+        logging.error(
+            "Uberspace command not found. Ensure application actually runs on Uberspace host: %s",
+            e,
+        )
+        return False
 
 
 def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
