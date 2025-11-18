@@ -6,7 +6,8 @@ import os
 from .app import configure_logging, create_app
 
 # Configure logging for production
-configure_logging(debug=False)
+debug = os.environ.get("DEBUG", "false").lower() == "true"
+configure_logging(debug=debug)
 
 # Get config path from environment variable or use default
 config_path = os.environ.get("CONFIG_FILE", "config.yaml")
