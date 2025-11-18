@@ -13,13 +13,13 @@
     <fieldset class="grid">
         {{ form.csrf_token }}
 
-        {{ add_form.name(placeholder=add_form.name.label.text) }}
+        {{ form.name(placeholder=form.name.label.text) }}
 
-        {{ add_form.email(placeholder=add_form.email.label.text) }}
+        {{ form.email(placeholder=form.email.label.text) }}
 
-        {{ add_form.comment(placeholder=add_form.comment.label.text) }}
+        {{ form.comment(placeholder=form.comment.label.text) }}
 
-        {{ add_form.submit }}
+        {{ form.submit }}
     </fieldset>
 </form>
 
@@ -44,8 +44,8 @@
             </td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
             <td>
-                <a href="{{ url_for('list_subscriber_edit', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
-                <a href="{{ url_for('list_subscriber_delete', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline danger" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ subscriber.name }} <{{ subscriber.email }}> {{ _('from this list?') }}')">{{ _('Delete') }}</a>
+                <a href="{{ url_for('lists.subscriber_edit', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline">{{ _('Edit') }}</a>
+                <a href="{{ url_for('lists.subscriber_delete', list_id=mailing_list.id, subscriber_id=subscriber.id) }}" role="button" class="outline danger" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ subscriber.name }} <{{ subscriber.email }}> {{ _('from this list?') }}')">{{ _('Delete') }}</a>
             </td>
         </tr>
         {% endfor %}
