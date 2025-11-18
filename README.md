@@ -1,5 +1,20 @@
 # CastMail2List
 
+## Usage
+
+In production with gunicorn:
+
+```sh
+gunicorn "castmail2list.wsgi:app" -c gunicorn.conf.py -e CONFIG_FILE=/path/to/config.yaml
+```
+
+For local development:
+
+```sh
+poetry run castmail2list
+```
+
+
 ## Configuration
 
 CastMail2List supports loading configuration from YAML files. There are some defaults and some required configuration keys.
