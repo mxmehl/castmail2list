@@ -34,14 +34,6 @@ class MailingListForm(FlaskForm):
     # Basics
     name = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=100)])
     address = EmailField(_("List Email Address"), validators=[DataRequired(), Email()])
-    from_addr = EmailField(
-        _("From Address"),
-        validators=[Optional(), Email()],
-        description=_(
-            "Optional 'From' address for emails sent by the list. "
-            "If left empty, the list address will be used."
-        ),
-    )
     avoid_duplicates = BooleanField(
         _("Avoid duplicate copies of messages for subscribers"),
         default=True,
@@ -54,6 +46,14 @@ class MailingListForm(FlaskForm):
             ("group", _("Group List: Many-to-many communication, discussion group")),
         ],
         default="broadcast",
+    )
+    from_addr = EmailField(
+        _("From Address"),
+        validators=[Optional(), Email()],
+        description=_(
+            "Optional 'From' address for emails sent by the list. If left empty, the list address "
+            "will be used. Only relevant in Broadcast mode."
+        ),
     )
     allowed_senders = StringField(
         _("Allowed Senders"),
