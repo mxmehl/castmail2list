@@ -42,6 +42,10 @@ class MailingListForm(FlaskForm):
             "If left empty, the list address will be used."
         ),
     )
+    avoid_duplicates = BooleanField(
+        _("Avoid duplicate copies of messages for subscribers"),
+        default=True,
+    )
     # Modes
     mode = RadioField(
         _("Mode of the Mailing List"),

@@ -19,13 +19,13 @@ from ..utils import (
 lists = Blueprint("lists", __name__, url_prefix="/lists")
 
 
-
 @lists.route("/", methods=["GET"])
 @login_required
 def show_all():
     """Show all mailing lists"""
     active_lists = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=Config)
+
 
 @lists.route("/add", methods=["GET", "POST"])
 @login_required
@@ -149,7 +149,9 @@ def subscribers_manage(list_id):
 @login_required
 def delete(list_id):
     """Delete (soft-delete) a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(
+        id=list_id, deleted=False
+    ).first_or_404()
     # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
     mailing_list.deleted = True
     mailing_list.deleted_at = datetime.now(timezone.utc)
