@@ -160,9 +160,17 @@ def main():
         type=str,
         help="Path to YAML configuration file (environment variables override YAML values)",
     )
-    parser.add_argument("--seed-only", action="store_true", help="Seed the database and exit")
     parser.add_argument(
-        "--seed", action="store_true", help="Seed the database and continue to start the server"
+        "--seed-only",
+        type=str,
+        metavar="SEED_FILE",
+        help="Seed the database with a seed file and exit",
+    )
+    parser.add_argument(
+        "--seed",
+        type=str,
+        metavar="SEED_FILE",
+        help="Seed the database with a seed file and continue to start the server",
     )
     parser.add_argument(
         "--create-admin",
@@ -184,11 +192,11 @@ def main():
 
     # Seed database if requested
     if args.seed_only:
-        seed_database(app)
+        seed_database(app, seed_file=args.seed_only)
         print("Database seeded (seed-only).")
         return
     if args.seed:
-        seed_database(app)
+        seed_database(app, seed_file=args.seed)
 
     # Create admin user if requested
     if args.create_admin:

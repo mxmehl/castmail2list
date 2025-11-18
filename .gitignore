@@ -212,3 +212,5 @@ __marimo__/
 
 # SCSS compiled files
 *.scss.css*
+# Local seed file
+seed.json
