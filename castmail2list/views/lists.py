@@ -9,7 +9,13 @@ from flask_login import login_required
 from ..config import Config
 from ..forms import MailingListForm, SubscriberAddForm
 from ..models import List, Subscriber, db
-from ..utils import flash_form_errors, is_email_a_list, normalize_email_list
+from ..utils import (
+    flash_form_errors,
+    is_email_a_list,
+    json_array_to_string,
+    normalize_email_list,
+    string_to_json_array,
+)
 
 lists = Blueprint("lists", __name__, url_prefix="/lists")
 
@@ -40,6 +46,7 @@ def add():
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
             allowed_senders=allowed_senders_data or "",
+            sender_auth=string_to_json_array(form.sender_auth.data),
             # IMAP settings with defaults
             imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
             imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
@@ -65,6 +72,7 @@ def edit(list_id):
     mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
+    # Handle form submission
     if form.validate_on_submit():
         # Only update imap_pass if a new value is provided
         old_pass = mailing_list.imap_pass
@@ -75,6 +83,9 @@ def edit(list_id):
         # Convert input to comma-separated for storage
         mailing_list.allowed_senders = normalize_email_list(form.allowed_senders.data)
 
+        # Convert sender_auth to JSON array
+        mailing_list.sender_auth = string_to_json_array(form.sender_auth.data)
+
         db.session.commit()
         flash(_('List "%(name)s" updated successfully!', name=mailing_list.name), "success")
         return redirect(url_for("lists.show_all"))
@@ -82,6 +93,10 @@ def edit(list_id):
     # Flash on form errors
     if form.submit.data and form.errors:
         flash_form_errors(form)
+
+    # Case: GET request, pre-fill sender_auth field
+    if not form.submit.data:
+        form.sender_auth.data = json_array_to_string(mailing_list.sender_auth)
 
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 

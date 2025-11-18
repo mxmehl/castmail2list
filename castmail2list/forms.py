@@ -63,6 +63,16 @@ class MailingListForm(FlaskForm):
         _("Only allow subscribers to send messages to the list. Only relevant in Group mode."),
         default=False,
     )
+    sender_auth = StringField(
+        _("Sender Authentication Passwords"),
+        validators=[Optional()],
+        description=_(
+            "Comma-separated list of passwords that senders must provide to send emails "
+            "to this list. This can be passed via 'listaddress+password1@example.com'. "
+            "Leave empty to disable sender authentication."
+        ),
+    )
+
     # IMAP Settings
     imap_host = StringField(_("IMAP Server"), validators=[Optional(), Length(max=200)])
     imap_port = IntegerField(_("IMAP Port"), validators=[Optional(), NumberRange(min=1, max=65535)])

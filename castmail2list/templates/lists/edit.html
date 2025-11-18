@@ -37,6 +37,10 @@
             {{ form.allowed_senders.label }}
             {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
             <small>{{ (form.allowed_senders.description) }}</small>
+
+            {{ form.sender_auth.label }}
+            {{ form.sender_auth(placeholder=("password1,password2")) }}
+            <small>{{ (form.sender_auth.description) }}</small>
         </fieldset>
     </details>
 
