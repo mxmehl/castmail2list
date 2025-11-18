@@ -14,6 +14,7 @@ from flask_migrate import Migrate
 from flask_wtf import CSRFProtect
 from sassutils.wsgi import SassMiddleware
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash
 
 from .config import Config
 from .imap_worker import poll_imap
@@ -127,6 +128,12 @@ def main():
     parser.add_argument(
         "--seed", action="store_true", help="Seed the database and continue to start the server"
     )
+    parser.add_argument(
+        "--create-admin",
+        nargs=2,
+        metavar=("USERNAME", "PASSWORD"),
+        help="Create an admin user and exit (usage: --create-admin admin secret)",
+    )  # new
     args = parser.parse_args()
 
     configure_logging(args.debug)
@@ -141,6 +148,20 @@ def main():
 
     if args.seed:
         seed_database(app)
+
+    if args.create_admin:
+        username, password = args.create_admin
+        # run inside app context to access DB
+        with app.app_context():
+            existing = User.query.filter_by(username=username).first()
+            if existing:
+                logging.error("Error: user '%s' already exists", username)
+                return
+            new_user = User(username=username, password=generate_password_hash(password), role="admin")
+            db.session.add(new_user)
+            db.session.commit()
+            logging.info("Admin user '%s' created", username)
+        return
 
     app.run(host=args.host, port=args.port, debug=args.debug)
 
