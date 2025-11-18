@@ -146,7 +146,7 @@ def main():
 
     # Compile SCSS to CSS
     scss_files = [
-        ("castmail2list/static/scss/custom.scss", "castmail2list/static/css/custom.scss.css")
+        ("castmail2list/static/scss/main.scss", "castmail2list/static/css/main.scss.css")
     ]
     compile_scss("sass", scss_files)
 

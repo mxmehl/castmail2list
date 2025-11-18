@@ -1,3 +1,11 @@
+// Import Pico CSS framework with custom theme color
+@use "pico" with (
+  $theme-color: "amber"
+);
+
+/*********************************
+ * Custom styles for CastMail2List
+ ********************************/
 // Flask flash messages
 .flashes {
 
