@@ -214,3 +214,5 @@ __marimo__/
 *.scss.css*
 # Local seed file
 seed.json
+# Config file
+config.yaml
