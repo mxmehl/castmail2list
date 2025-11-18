@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from flask import flash
+from imap_tools import MailBox, MailboxLoginError
 
 from . import __version__
 from .models import MailingList, Subscriber
@@ -139,7 +140,8 @@ def parse_bounce_address(bounce_address: str) -> str | None:
 
 
 def is_email_a_list(email: str) -> bool:
-    """
+    """IMAP_DEFAULT_DOMAIN = os.getenv("IMAP_DEFAULT_DOMAIN", "***REMOVED***")
+
     Check if the given email address is the address of one of the configured mailing lists.
 
     Args:
@@ -293,3 +295,32 @@ def run_only_once(app):
     if app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true":
         return True
     return False
+
+
+def check_email_account_works(
+    imap_host: str, imap_port: int, imap_user: str, imap_password: str
+) -> bool:
+    """
+    Check if an email account exists on the IMAP server.
+
+    Args:
+        app (Flask): The Flask application instance for accessing configuration
+        email (str): The email address to check
+    Returns:
+        bool: True if the email account exists, False otherwise
+    """
+    try:
+        with MailBox(imap_host, imap_port).login(imap_user, imap_password):
+            logging.debug("Successfully logged in to IMAP server %s as %s", imap_host, imap_user)
+            return True
+    except MailboxLoginError:
+        logging.warning("Failed to log in to IMAP server %s as %s", imap_host, imap_user)
+        return False
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error(
+            "Error while checking email account on IMAP server %s as %s: %s",
+            imap_host,
+            imap_user,
+            e,
+        )
+        return False

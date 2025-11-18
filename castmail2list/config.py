@@ -14,6 +14,15 @@ class Config:  # pylint: disable=too-few-public-methods
     # General settings
     LANGUAGE = "en"  # Supported languages: "en", "de"
     DOMAIN = os.getenv("DOMAIN", "***REMOVED***")
+    HOST_TYPE = os.getenv(
+        "HOST_TYPE", "uberspace7"
+    )  # used for auto list creation. Can be: uberspace7, uberspace8
+    CREATE_LISTS_AUTOMATICALLY = os.getenv("CREATE_LISTS_AUTOMATICALLY", "true").lower() in (
+        "true",
+        "True",
+        "1",
+        "yes",
+    )
 
     # IMAP settings and defaults (used as defaults for new lists)
     IMAP_DEFAULT_HOST = os.getenv("IMAP_DEFAULT_HOST", "***REMOVED***")

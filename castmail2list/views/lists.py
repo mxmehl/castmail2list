@@ -10,6 +10,7 @@ from ..config import Config
 from ..forms import MailingListForm, SubscriberAddForm
 from ..models import MailingList, Subscriber, db
 from ..utils import (
+    check_email_account_works,
     flash_form_errors,
     is_email_a_list,
     json_array_to_string,
@@ -50,6 +51,19 @@ def add():
             imap_user=form.imap_user.data or form.address.data,
             imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
         )
+        # Verify that the email account works
+        if not check_email_account_works(
+            new_list.imap_host, int(new_list.imap_port), new_list.imap_user, new_list.imap_pass
+        ):
+            flash(
+                _(
+                    "Could not connect to the IMAP server with the provided credentials. "
+                    "Please check and try again."
+                ),
+                "error",
+            )
+            return render_template("lists/add.html", config=Config, form=form)
+        # Add and commit new list
         db.session.add(new_list)
         db.session.commit()
         flash(_('Mailing list "%(name)s" created successfully!', name=new_list.name), "success")
@@ -66,7 +80,9 @@ def add():
 @login_required
 def edit(list_id):
     """Edit a mailing list"""
-    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(
+        id=list_id, deleted=False
+    ).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
     # Handle form submission
@@ -76,6 +92,22 @@ def edit(list_id):
         form.populate_obj(mailing_list)
         if not form.imap_pass.data:
             mailing_list.imap_pass = old_pass
+
+        # Verify that the email account works
+        if not check_email_account_works(
+            mailing_list.imap_host,
+            int(mailing_list.imap_port),
+            mailing_list.imap_user,
+            mailing_list.imap_pass,
+        ):
+            flash(
+                _(
+                    "Could not connect to the IMAP server with the provided credentials. "
+                    "Please check and try again."
+                ),
+                "error",
+            )
+            return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
         # Convert comma-separated fields to JSON array
         mailing_list.allowed_senders = string_to_json_array(form.allowed_senders.data)
