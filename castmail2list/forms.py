@@ -27,6 +27,7 @@ class LoginForm(FlaskForm):
     password = PasswordField(label="Password", validators=[DataRequired()])
     submit = SubmitField(_("Login"))
 
+
 class MailingListForm(FlaskForm):
     """Form for creating and editing mailing lists"""
 
@@ -43,7 +44,7 @@ class MailingListForm(FlaskForm):
     )
     # Modes
     mode = RadioField(
-        _("Mode"),
+        _("Mode of the Mailing List"),
         choices=[
             ("broadcast", _("Broadcast List: One-to-many communication, distribution list")),
             ("group", _("Group List: Many-to-many communication, discussion group")),
@@ -54,7 +55,8 @@ class MailingListForm(FlaskForm):
         _("Allowed Senders"),
         validators=[Optional()],
         description=_(
-            "Enter email addresses, separated by commas. Only relevant in Broadcast mode."
+            "Enter email addresses that are allowed to send emails to the list. "
+            "Separated by commas. Only relevant in Broadcast mode."
         ),
     )
     only_subscribers_send = BooleanField(
