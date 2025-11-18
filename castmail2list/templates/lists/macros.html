@@ -1,0 +1,74 @@
+{% macro list_form(form, isnew) %}
+
+<form method="POST">
+  {{ form.csrf_token }}
+
+  {{ form.name.label }}
+  {{ form.name }}
+
+  {{ form.address.label }}
+  {%- if isnew %}
+  {{ form.address(value="@" + config.IMAP_DEFAULT_DOMAIN) }}
+  {%- else %}
+  {{ form.address }}
+  {%- endif %}
+
+  {{ form.from_addr.label }}
+  {{ form.from_addr }}
+  <small>{{ (form.from_addr.description) }}</small>
+
+  <details name="mode" open="open">
+    <summary>{{ _('Mode Settings') }}</summary>
+
+    <fieldset id="select-mode">
+      {{ form.mode.label }}
+      {{ form.mode }}
+    </fieldset>
+
+    <fieldset class="mode-group">
+      {{ form.only_subscribers_send(role="switch") }}
+      {{ form.only_subscribers_send.label }}
+    </fieldset>
+
+    <fieldset class="mode-broadcast">
+      {{ form.allowed_senders.label }}
+      {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
+      <small>{{ (form.allowed_senders.description) }}</small>
+
+      {{ form.sender_auth.label }}
+      {{ form.sender_auth(placeholder=("password1,password2")) }}
+      <small>{{ (form.sender_auth.description) }}</small>
+    </fieldset>
+  </details>
+
+  <hr />
+
+  <details>
+    <summary>{{ _('IMAP Settings') }}</summary>
+    {{ form.imap_host.label }}
+    {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
+
+    {{ form.imap_port.label }}
+    {{ form.imap_port(placeholder=config.IMAP_DEFAULT_PORT) }}
+
+    {{ form.imap_user.label }}
+    {%- if isnew %}
+    {{ form.imap_user(placeholder=_("Leave empty to use list address")) }}
+    {%- else %}
+    {{ form.imap_user }}
+    {%- endif %}
+
+    {{ form.imap_pass.label }}
+    {%- if isnew %}
+    {{ form.imap_pass(placeholder=_("Leave empty to use configured default")) }}
+    {%- else %}
+    {{ form.imap_pass(placeholder=_("Leave empty to not update password")) }}
+    {%- endif %}
+  </details>
+
+  <br />
+
+  {{ form.submit(value=_('Save List')) }}
+</form>
+
+{% endmacro %}
