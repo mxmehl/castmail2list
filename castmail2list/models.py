@@ -29,6 +29,7 @@ class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True)
     password = db.Column(db.String)  # Hashed password
+    role = db.Column(db.String, default="admin")
 
 
 class List(Model):  # pylint: disable=too-few-public-methods
