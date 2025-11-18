@@ -3,12 +3,11 @@
 import logging
 from datetime import datetime, timezone
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_login import login_required, login_user, logout_user
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 
 from .config import Config
 from .forms import LoginForm, MailingListForm, SubscriberAddForm

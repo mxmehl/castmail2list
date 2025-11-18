@@ -157,7 +157,9 @@ def main():
             if existing:
                 logging.error("Error: user '%s' already exists", username)
                 return
-            new_user = User(username=username, password=generate_password_hash(password), role="admin")
+            new_user = User(
+                username=username, password=generate_password_hash(password), role="admin"
+            )
             db.session.add(new_user)
             db.session.commit()
             logging.info("Admin user '%s' created", username)
