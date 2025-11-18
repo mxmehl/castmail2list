@@ -13,6 +13,13 @@ if TYPE_CHECKING:
 else:
     Model = db.Model
 
+class AlembicVersion(Model):  # pylint: disable=too-few-public-methods
+    """Alembic version table mapping"""
+
+    def __init__(self, version_num: str):
+        self.version_num = version_num
+
+    version_num: str = db.Column(db.String(32), primary_key=True)
 
 class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     """A user of the CastMail2List application"""
