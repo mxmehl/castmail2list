@@ -15,7 +15,7 @@ from flask_wtf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
-from .config import Config
+from .config import AppConfig
 from .imap_worker import poll_imap
 from .models import User, db
 from .seeder import seed_database
@@ -64,11 +64,11 @@ def create_app(
 
     # Load config from YAML, if provided
     if yaml_config_path:
-        config = Config.from_yaml_and_env(yaml_config_path)
+        appconfig = AppConfig.from_yaml_and_env(yaml_config_path)
     else:
-        config = Config()  # default config
+        appconfig = AppConfig()  # default config
 
-    app.config.from_object(config)
+    app.config.from_object(appconfig)
 
     # apply overrides early so DB and other setup use them
     if config_overrides:
