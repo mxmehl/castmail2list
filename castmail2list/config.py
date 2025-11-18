@@ -6,12 +6,14 @@ import os
 class Config:  # pylint: disable=too-few-public-methods
     """Flask configuration from environment variables with defaults"""
 
+    # App settings
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///castmail2list.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
 
     # General settings
     LANGUAGE = "en"  # Supported languages: "en", "de"
+    DOMAIN = os.getenv("DOMAIN", "***REMOVED***")
 
     # IMAP settings and defaults (used as defaults for new lists)
     IMAP_DEFAULT_HOST = os.getenv("IMAP_DEFAULT_HOST", "***REMOVED***")

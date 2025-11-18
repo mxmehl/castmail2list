@@ -30,7 +30,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         message_id: str,
         subscribers: list[Subscriber],
     ) -> None:
-        # SMTP settings from app config
+        # Relevant settings from app config
+        self.app_domain: str = app.config["DOMAIN"]
         self.smtp_server: str = app.config["SMTP_HOST"]
         self.smtp_port: str | int = app.config["SMTP_PORT"]
         self.smtp_user: str = app.config["SMTP_USER"]
@@ -107,19 +108,26 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
             self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
 
+        # App
+        self.composed_msg["X-Mailer"] = "CastMail2List"
+        self.composed_msg["X-CastMail2List-Domain"] = self.app_domain
+        # List-specific headers
+        self.composed_msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
+        self.composed_msg["Precedence"] = "list"
+        # Sender
         self.composed_msg["From"] = self.from_header
+        self.composed_msg["Sender"] = self.ml.address
+        if self.x_mailfrom_header:
+            self.composed_msg["X-MailFrom"] = self.x_mailfrom_header
+        # Recipients
         if self.msg.cc:
             self.composed_msg["Cc"] = ", ".join(self.msg.cc)
+        # Message
         self.composed_msg["Subject"] = self.msg.subject
         self.composed_msg["Message-ID"] = self.message_id
         self.composed_msg["Date"] = self.msg.date_str or formatdate(localtime=True)
-        self.composed_msg["Sender"] = self.ml.address
-        self.composed_msg["List-Id"] = f"<{self.ml.address.replace('@', '.')}>"
-        self.composed_msg["X-Mailer"] = "CastMail2List"
-        if self.x_mailfrom_header:
-            self.composed_msg["X-MailFrom"] = self.x_mailfrom_header
-        self.composed_msg["Precedence"] = "list"
         self.composed_msg["Original-Message-ID"] = self.original_mid
+        # Threading and references
         self.composed_msg["In-Reply-To"] = (
             self.msg.headers.get("in-reply-to", ())[0]
             if self.msg.headers.get("in-reply-to", ())

@@ -62,6 +62,9 @@ def create_app(config_overrides: dict | None = None, start_imap: bool = True) ->
     if config_overrides:
         app.config.update(config_overrides)
 
+    # Debug logging of config (without sensitive info)
+    logging.debug("App configuration:\n%s", app.config)
+
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
     logging.info("Language set to: %s", app.config.get("LANGUAGE", "en"))
