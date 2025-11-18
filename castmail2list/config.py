@@ -24,6 +24,8 @@ class Config:  # pylint: disable=too-few-public-methods
     IMAP_FOLDER_PROCESSED = os.getenv("IMAP_FOLDER_PROCESSED", "Processed")
     IMAP_FOLDER_SENT = os.getenv("IMAP_FOLDER_SENT", "Sent")
     IMAP_FOLDER_BOUNCES = os.getenv("IMAP_FOLDER_BOUNCES", "Bounces")
+    IMAP_FOLDER_DENIED = os.getenv("IMAP_FOLDER_DENIED", "Denied")
+    IMAP_FOLDER_DUPLICATE = os.getenv("IMAP_FOLDER_DUPLICATE", "Duplicate")
 
     # SMTP settings (defaults for new lists)
     SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")

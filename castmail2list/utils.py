@@ -8,7 +8,7 @@ import sys
 from flask import flash
 
 from . import __version__
-from .models import List
+from .models import List, Subscriber
 
 
 def compile_scss(compiler: str, scss_files: list[tuple[str, str]]) -> None:
@@ -82,6 +82,18 @@ def json_array_to_string(json_array_str: str) -> str:
         return ""
 
 
+def json_array_to_list(json_array_str: str) -> list[str]:
+    """Convert a JSON array string back to a list of strings"""
+    try:
+        items = json.loads(json_array_str)
+        if isinstance(items, list):
+            return items
+        return []
+    except json.JSONDecodeError:
+        logging.warning("Failed to decode JSON array: %s", json_array_str)
+        return []
+
+
 def create_bounce_address(ml_address: str, recipient: str) -> str:
     """
     Construct the individualized Envelope From address for bounce handling.
@@ -136,3 +148,113 @@ def is_email_a_list(email: str) -> bool:
     """
     list_addresses = {lst.address.lower() for lst in List.query.filter_by(deleted=False).all()}
     return email.lower() in list_addresses
+
+
+def get_list_subscribers(ml: List) -> list[Subscriber]:
+    """
+    Get all (deduplicated) subscribers of a mailing list, including those from overlapping
+    lists, recursively.
+    """
+    visited_list_ids = set()
+    subscribers_dict = {}
+
+    def _collect_subscribers(list_obj: List):
+        logging.debug(
+            "Collecting subscribers for list: %s <%s> (id=%s)",
+            list_obj.name,
+            list_obj.address,
+            list_obj.id,
+        )
+        if list_obj.id in visited_list_ids:
+            logging.debug(
+                "List id %s already visited, skipping to avoid recursion loop.", list_obj.id
+            )
+            return
+        visited_list_ids.add(list_obj.id)
+
+        # Get direct subscribers
+        direct_subs = Subscriber.query.filter_by(list_id=list_obj.id).all()
+        logging.debug(
+            "Found %d direct subscribers for list <%s>: %s",
+            len(direct_subs),
+            list_obj.address,
+            ", ".join([sub.email for sub in direct_subs]),
+        )
+        for sub in direct_subs:
+            if sub.email not in subscribers_dict:
+                subscribers_dict[sub.email] = sub
+                logging.debug("Added subscriber: %s", sub.email)
+            else:
+                logging.debug("Subscriber %s already added, skipping.", sub.email)
+
+        # Find subscribers whose email matches another list address (nested lists)
+        all_lists = List.query.all()
+        ml_addresses = {l.address: l for l in all_lists}
+        for sub in direct_subs:
+            nested_list = ml_addresses.get(sub.email)
+            if nested_list:
+                logging.debug(
+                    "Subscriber %s is also a list address (%s), recursing into list id %s.",
+                    sub.email,
+                    nested_list.address,
+                    nested_list.id,
+                )
+                if nested_list.id not in visited_list_ids:
+                    _collect_subscribers(nested_list)
+                else:
+                    logging.debug("Nested list id %s already visited, skipping.", nested_list.id)
+
+    _collect_subscribers(ml)
+
+    # Remove any subscribers whose email is a list address (do not send to lists themselves)
+    all_lists = List.query.all()
+    ml_addresses = {l.address for l in all_lists}
+    result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
+
+    logging.debug(
+        "Found %d unique, non-list subscribers for the list <%s>: %s",
+        len(result),
+        ml.address,
+        ", ".join([sub.email for sub in result]),
+    )
+    return result
+
+
+def get_plus_suffix(email: str) -> str | None:
+    """
+    Extract the +suffix from an email address, if present.
+
+    Args:
+        email (str): The email address to extract the suffix from
+    Returns:
+        str | None: The suffix (without the +), or None if no suffix is present
+    """
+    local_part, _ = email.split("@", 1)
+    if "+" in local_part:
+        suffix = local_part.split("+", 1)[1]
+        return suffix
+    return None
+
+
+def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> bool:
+    """
+    Check if the given (expanded) To address corresponds to the mailing list address,
+    considering possible +suffixes and casing.
+
+    Args:
+        to_address (str): The (expanded) To email address
+        list_address (str): The mailing list address to compare against
+    Returns:
+        bool: True if the address matches the mailing list address, False otherwise
+    """
+    to_local_part, to_domain_part = to_address[0].split("@", 1)
+    list_local_part, list_domain_part = list_address.split("@", 1)
+
+    # Check domain parts (case-insensitive)
+    if to_domain_part.lower() != list_domain_part.lower():
+        return False
+
+    # Check local parts (case-insensitive, ignoring +suffix)
+    to_local_part_no_suffix = to_local_part.split("+", 1)[0].lower()
+
+    return to_local_part_no_suffix == list_local_part.lower()

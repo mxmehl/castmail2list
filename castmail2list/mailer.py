@@ -16,7 +16,7 @@ from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
 from .models import List, Subscriber
-from .utils import create_bounce_address
+from .utils import create_bounce_address, get_list_subscribers
 
 
 class Mail:  # pylint: disable=too-many-instance-attributes
@@ -208,76 +208,6 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         return self.composed_msg.as_bytes()
 
 
-def get_list_subscribers(ml: List) -> list[Subscriber]:
-    """
-    Get all (deduplicated) subscribers of a mailing list, including those from overlapping
-    lists, recursively.
-    """
-    visited_list_ids = set()
-    subscribers_dict = {}
-
-    def _collect_subscribers(list_obj: List):
-        logging.debug(
-            "Collecting subscribers for list: %s <%s> (id=%s)",
-            list_obj.name,
-            list_obj.address,
-            list_obj.id,
-        )
-        if list_obj.id in visited_list_ids:
-            logging.debug(
-                "List id %s already visited, skipping to avoid recursion loop.", list_obj.id
-            )
-            return
-        visited_list_ids.add(list_obj.id)
-
-        # Get direct subscribers
-        direct_subs = Subscriber.query.filter_by(list_id=list_obj.id).all()
-        logging.debug(
-            "Found %d direct subscribers for list <%s>: %s",
-            len(direct_subs),
-            list_obj.address,
-            ", ".join([sub.email for sub in direct_subs]),
-        )
-        for sub in direct_subs:
-            if sub.email not in subscribers_dict:
-                subscribers_dict[sub.email] = sub
-                logging.debug("Added subscriber: %s", sub.email)
-            else:
-                logging.debug("Subscriber %s already added, skipping.", sub.email)
-
-        # Find subscribers whose email matches another list address (nested lists)
-        all_lists = List.query.all()
-        ml_addresses = {l.address: l for l in all_lists}
-        for sub in direct_subs:
-            nested_list = ml_addresses.get(sub.email)
-            if nested_list:
-                logging.debug(
-                    "Subscriber %s is also a list address (%s), recursing into list id %s.",
-                    sub.email,
-                    nested_list.address,
-                    nested_list.id,
-                )
-                if nested_list.id not in visited_list_ids:
-                    _collect_subscribers(nested_list)
-                else:
-                    logging.debug("Nested list id %s already visited, skipping.", nested_list.id)
-
-    _collect_subscribers(ml)
-
-    # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    all_lists = List.query.all()
-    ml_addresses = {l.address for l in all_lists}
-    result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
-
-    logging.debug(
-        "Found %d unique, non-list subscribers for the list <%s>: %s",
-        len(result),
-        ml.address,
-        ", ".join([sub.email for sub in result]),
-    )
-    return result
-
-
 def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
     """Send message to all subscribers of a list"""
     subscribers: list[Subscriber] = get_list_subscribers(ml)
@@ -297,31 +227,8 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: Mai
     # Make sure there is content to send
     if not msg.text and not msg.html:
         logging.warning("No HTML or Plaintext content in message %s", msg.uid)
-    # In broadcast mode, ensure the original sender of the message is in the allowed senders list
-    if ml.mode == "broadcast" and ml.allowed_senders:
-        allowed_senders: list[str] = [
-            email.strip() for email in ml.allowed_senders.split(",") if email.strip()
-        ]
-        if not msg.from_values or msg.from_values.email not in allowed_senders:
-            logging.error(
-                "Sender %s not in allowed senders for list %s, skipping message %s",
-                msg.from_values.email if msg.from_values else "unknown",
-                ml.name,
-                msg.uid,
-            )
-            return
-    # In group mode, ensure the original sender is one of the subscribers
-    if ml.mode == "group" and subscribers and ml.only_subscribers_send:
-        subscriber_emails = [sub.email for sub in subscribers]
-        if not msg.from_values or msg.from_values.email not in subscriber_emails:
-            logging.error(
-                "Sender %s not a subscriber of list %s, skipping message %s",
-                msg.from_values.email if msg.from_values else "unknown",
-                ml.name,
-                msg.uid,
-            )
-            return
 
+    # --- Send to each subscriber individually ---
     for subscriber in subscribers:
         try:
             # Copy mail class to avoid cross-contamination between recipients
