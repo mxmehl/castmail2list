@@ -5,6 +5,7 @@ import os
 import time
 import traceback
 import uuid
+from datetime import datetime, timezone
 
 from flask import Flask
 from flufl.bounce import scan_message
@@ -20,6 +21,7 @@ from .utils import (
     is_expanded_address_the_mailing_list,
     json_array_to_list,
     parse_bounce_address,
+    remove_plus_suffix,
 )
 
 REQUIRED_FOLDERS_ENVS = [
@@ -100,6 +102,7 @@ def store_msg_in_db_and_imap(  # pylint: disable=too-many-arguments, too-many-po
     m.from_addr = msg.from_
     m.headers = str(dict(msg.headers.items()))
     m.raw = str(msg.obj)  # Get raw RFC822 message
+    m.received_at = datetime.now(timezone.utc)
     m.status = status
     m.error_info = error_info or {}
     db.session.add(m)
@@ -157,7 +160,7 @@ def detect_bounce(msg: MailMessage) -> str:
     return ""
 
 
-def validate_email_sender_authentication(msg: MailMessage, ml: List) -> bool:
+def validate_email_sender_authentication(msg: MailMessage, ml: List) -> str:
     """
     Validate sender authentication for a broadcast mailing list.
 
@@ -166,7 +169,7 @@ def validate_email_sender_authentication(msg: MailMessage, ml: List) -> bool:
         ml (List): Mailing list the message belongs to
 
     Returns:
-        bool: True if sender authentication is valid, False otherwise
+        str: The successful To address if authentication passed, else empty string
     """
     sender_auth_passwords = json_array_to_list(ml.sender_auth)
     sender_email = msg.from_values.email if msg.from_values else ""
@@ -181,8 +184,31 @@ def validate_email_sender_authentication(msg: MailMessage, ml: List) -> bool:
                     sender_email,
                     ml.address,
                 )
-                return True
-    return False
+                return to_addr
+    return ""
+
+
+def remove_password_in_to_address(msg: MailMessage, old_to: str, new_to: str) -> None:
+    """
+    Replace the To address in the MailMessage object.
+
+    Args:
+        msg (MailMessage): IMAP message to modify
+        old_to (str): The old To address to be replaced
+        new_to (str): The new To address to set
+
+    """
+    # Replace in msg.to
+    to_addresses = list(msg.to)
+    to_addresses = [new_to if old_to else to for to in to_addresses]
+    msg.to = tuple(to_addresses)
+
+    # Replace in msg.to_values
+    to_value_addresses = list(msg.to_values)
+    for to in to_value_addresses:
+        if to.email == old_to:
+            to.email = new_to
+    msg.to_values = tuple(to_value_addresses)
 
 
 def validate_email_all_checks(msg: MailMessage, ml: List) -> tuple[str, dict[str, str]]:
@@ -228,7 +254,12 @@ def validate_email_all_checks(msg: MailMessage, ml: List) -> tuple[str, dict[str
     # In broadcast mode, check sender authentication if configured
     # The password is provided via a +password suffix in the To address of the mailing list
     if ml.mode == "broadcast" and ml.sender_auth:
-        if not validate_email_sender_authentication(msg=msg, ml=ml):
+        if passed_to_address := validate_email_sender_authentication(msg=msg, ml=ml):
+            # Remove the +password suffix from the To address so subscribers don't see it
+            remove_password_in_to_address(
+                msg, old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
+            )
+        else:
             logging.warning(
                 "Sender failed authentication for list <%s>, skipping message %s",
                 ml.address,
