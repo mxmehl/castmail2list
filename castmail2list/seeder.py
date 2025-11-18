@@ -1,22 +1,12 @@
 """
-Database seeding helper.
+Database seeding helper for CastMail2List.
 
-Optional local overrides:
-Create castmail2list/local_secrets.py (ignored) and set a SEED dict, for example:
-
-SEED = {
-    "list": {
-        "name": "Custom Announcements",
-        "address": "custom@example.com",
-        "imap_pass": "supersecret-from-local",
-    },
-    "subscribers": [
-        {"name": "Carol", "email": "carol@example.com"},
-    ],
-}
+It may serve as setting up a demo instance, or allows to pre-seed productive data from a secret file
 """
 
+import json
 import logging
+import sys
 from typing import Any, Dict
 
 from alembic.config import Config
@@ -26,79 +16,32 @@ from werkzeug.security import generate_password_hash
 
 from .models import AlembicVersion, MailingList, Subscriber, User, db
 
-DEFAULT_SEED: Dict[str, Any] = {
-    "users": [
-        {
-            "username": "admin",
-            "password": "admin",
-        }
-    ],
-    "lists": [
-        {
-            "name": "General Announcements",
-            "address": "general@example.com",
-            "mode": "broadcast",
-            "imap_host": "imap.example.com",
-            "imap_port": 993,
-            "imap_user": "general@example.com",
-            "imap_pass": "supersecret",
-            "from_addr": "no-reply@example.com",
-            "allowed_senders": "admin@example.com",
-            "only_subscribers_send": False,
-            "subscribers": [
-                {"name": "Alice", "email": "alice@example.com"},
-                {"name": "Bob", "email": "bob@example.com"},
-            ],
-        },
-        {
-            "name": "Group Chat",
-            "address": "group@example.com",
-            "mode": "group",
-            "imap_host": "imap.example.com",
-            "imap_port": 993,
-            "imap_user": "general@example.com",
-            "imap_pass": "supersecret",
-            "from_addr": "",
-            "allowed_senders": "",
-            "only_subscribers_send": True,
-            "subscribers": [
-                {"name": "Carol", "email": "carol@example.com"},
-            ],
-        },
-    ],
-}
 
-
-def _merge_defaults(defaults: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+def _load_local_seed(seed_file: str) -> Dict[str, Any]:
     """
-    Merge local secrets overrides into defaults.
-    """
-    result = defaults.copy()
-    if "lists" in overrides and isinstance(overrides["lists"], list):
-        # Replace the entire lists array if present in overrides
-        result["lists"] = overrides["lists"]
-    if "users" in overrides and isinstance(overrides["users"], list):
-        # Replace the entire users array if present in overrides
-        result["users"] = overrides["users"]
-    return result
-
-
-def _load_local_seed() -> Dict[str, Any]:
-    """
-    Try to import local_secrets.SEED from package; return empty dict if not present
+    Try to import from a JSON file; return empty dict if not present
     """
     try:
-        from . import local_secrets  # pylint: disable=import-outside-toplevel
-    except Exception:  # pylint: disable=broad-except
-        return {}
-    return getattr(local_secrets, "SEED", {}) or {}
+        with open(seed_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        logging.critical("No local seed file found at %s.", seed_file)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        logging.critical("Error decoding JSON from seed file %s: %s", seed_file, e)
+        sys.exit(1)
 
 
-def seed_database(app: Flask) -> None:
+def seed_database(app: Flask, seed_file: str) -> None:
     """Create tables and seed DB if empty, using local overrides when present.
 
     Accepts an optional Flask `app`. If provided, this function will push `app.app_context()`
     while seeding. If `app` is None, the caller must have an active application context.
+
+    Args:
+        app (Flask): Optional Flask app to push context for seeding
+        seed_file (str): Path to a seed file (.py file)
     """
 
     def _do_seed() -> None:
@@ -109,18 +52,12 @@ def seed_database(app: Flask) -> None:
             logging.debug("Database already has lists — skipping seed.")
             return
 
-        local = _load_local_seed()
-        cfg = _merge_defaults(DEFAULT_SEED, local)
+        cfg: dict[str, list] = _load_local_seed(seed_file=seed_file)
 
-        logging.info("Seeding database with initial data (overrides present: %s).", bool(local))
+        logging.info("Seeding database with initial data from %s...", seed_file)
 
-        for lst_cfg in cfg.get("lists", []):
-            # ensure port is int
-            try:
-                lst_cfg["imap_port"] = int(lst_cfg.get("imap_port", 993))
-            except (TypeError, ValueError):
-                lst_cfg["imap_port"] = 993
-
+        cfg_lists: list[dict[str, str | int | list]] = cfg.get("lists", [])
+        for lst_cfg in cfg_lists:
             new_list = MailingList(
                 name=lst_cfg.get("name"),
                 address=lst_cfg.get("address"),
@@ -135,7 +72,8 @@ def seed_database(app: Flask) -> None:
             )
 
             subs = []
-            for s in lst_cfg.get("subscribers", []):
+            cfg_subs: list[dict[str, str]] = lst_cfg.get("subscribers", [])  # type: ignore
+            for s in cfg_subs:
                 subs.append(
                     Subscriber(
                         name=s.get("name"),
@@ -149,10 +87,11 @@ def seed_database(app: Flask) -> None:
             if subs:
                 db.session.add_all(subs)
 
-        for user_cfg in cfg.get("users", []):
+        cfg_user: list[dict[str, str]] = cfg.get("users", [])
+        for user_cfg in cfg_user:
             new_user = User(
                 username=user_cfg.get("username"),
-                password=generate_password_hash(user_cfg.get("password")),
+                password=generate_password_hash(password=user_cfg.get("password", "")),
             )
             db.session.add(new_user)
 

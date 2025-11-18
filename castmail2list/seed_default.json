@@ -1,0 +1,52 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin"
+    }
+  ],
+  "lists": [
+    {
+      "name": "General Announcements",
+      "address": "general@example.com",
+      "mode": "broadcast",
+      "imap_host": "imap.example.com",
+      "imap_port": 993,
+      "imap_user": "general@example.com",
+      "imap_pass": "supersecret",
+      "from_addr": "no-reply@example.com",
+      "allowed_senders": [
+        "admin@example.com"
+      ],
+      "only_subscribers_send": false,
+      "subscribers": [
+        {
+          "name": "Alice",
+          "email": "alice@example.com"
+        },
+        {
+          "name": "Bob",
+          "email": "bob@example.com"
+        }
+      ]
+    },
+    {
+      "name": "Group Chat",
+      "address": "group@example.com",
+      "mode": "group",
+      "imap_host": "imap.example.com",
+      "imap_port": 993,
+      "imap_user": "general@example.com",
+      "imap_pass": "supersecret",
+      "from_addr": "",
+      "allowed_senders": [],
+      "only_subscribers_send": true,
+      "subscribers": [
+        {
+          "name": "Carol",
+          "email": "carol@example.com"
+        }
+      ]
+    }
+  ]
+}
