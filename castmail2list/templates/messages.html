@@ -5,11 +5,26 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<ul>
-    {% for m in messages %}
-    <li>
-        <b>{{ m.subject }}</b> {{ _('from') }} <a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a> ({{ m.received_at }})
-    </li>
-    {% endfor %}
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>{{ _('Subject') }}</th>
+            <th>{{ _('From') }}</th>
+            <th>{{ _('Received At') }}</th>
+            <th>{{ _('List') }}</th>
+            <th>{{ _('Status') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in messages %}
+        <tr>
+            <td><b>{{ m.subject }}</b></td>
+            <td><a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a></td>
+            <td>{{ m.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+            <td>{{ m.list.name }}</td>
+            <td>{{ m.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
