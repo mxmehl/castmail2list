@@ -31,6 +31,7 @@ flask-login = "^0.6.3"
 wtforms = {extras = ["email"], version = "^3.2.1"}
 pyyaml = "^6.0.1"
 jsonschema = "^4.25.1"
+gunicorn = "^23.0.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^6.1.0"

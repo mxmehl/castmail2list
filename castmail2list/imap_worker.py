@@ -301,12 +301,10 @@ def check_all_lists_for_messages(app: Flask) -> None:
     Args:
         app: Flask app context
     """
-    logging.info("Checking for new messages...")
-
     # Iterate over all configured lists
     maillists = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
-        logging.debug("Checking list: %s (%s)", ml.name, ml.address)
+        logging.info("Polling '%s' (%s)", ml.name, ml.address)
         try:
             with MailBox(host=ml.imap_host, port=int(ml.imap_port)).login(
                 username=ml.imap_user, password=ml.imap_pass
