@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import subprocess
 import sys
 
@@ -273,3 +274,15 @@ def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> 
     to_local_part_no_suffix = to_local_part.split("+", 1)[0].lower()
 
     return to_local_part_no_suffix == list_local_part.lower()
+
+
+def run_only_once(app):
+    """Ensure that something is only run once if Flask is run in Debug mode. Check if Flask is run
+    in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is"""
+    logging.debug("FLASK_DEBUG=%s, WERKZEUG_RUN_MAIN=%s", app.debug, os.getenv("WERKZEUG_RUN_MAIN"))
+
+    if not app.debug:
+        return True
+    if app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true":
+        return True
+    return False
