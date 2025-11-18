@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from flask import Flask
 from flufl.bounce import scan_message
-from imap_tools import MailBox
+from imap_tools import MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
@@ -333,6 +333,13 @@ def check_all_lists_for_messages(app: Flask) -> None:
 
                     # Send the message to all subscribers of the list
                     send_msg_to_subscribers(app=app, msg=msg, ml=ml, mailbox=mailbox)
+        except MailboxLoginError as e:
+            logging.error(
+                "IMAP login failed for list %s (%s): %s",
+                ml.name,
+                ml.address,
+                str(e),
+            )
         except Exception as e:  # pylint: disable=broad-except
             logging.error(
                 "Error processing list %s: %s\nTraceback: %s", ml.name, e, traceback.format_exc()

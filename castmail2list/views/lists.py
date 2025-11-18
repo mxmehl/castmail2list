@@ -1,8 +1,9 @@
 """Lists blueprint for CastMail2List application"""
 
+import logging
 from datetime import datetime, timezone
 
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
 from flask_login import login_required
 
@@ -11,6 +12,7 @@ from ..forms import MailingListForm, SubscriberAddForm
 from ..models import MailingList, Subscriber, db
 from ..utils import (
     check_email_account_works,
+    create_email_account,
     flash_form_errors,
     is_email_a_list,
     json_array_to_string,
@@ -55,14 +57,42 @@ def add():
         if not check_email_account_works(
             new_list.imap_host, int(new_list.imap_port), new_list.imap_user, new_list.imap_pass
         ):
-            flash(
-                _(
-                    "Could not connect to the IMAP server with the provided credentials. "
-                    "Please check and try again."
-                ),
-                "error",
-            )
-            return render_template("lists/add.html", config=Config, form=form)
+            if current_app.config["CREATE_LISTS_AUTOMATICALLY"]:
+                # Try to create the email account automatically
+                created = create_email_account(
+                    host_type=current_app.config["HOST_TYPE"],
+                    email=new_list.address,
+                    password=new_list.imap_pass,
+                )
+                # Case: account created, consider it will work now
+                if created:
+                    logging.info("Created email account %s automatically", new_list.address)
+                # Case: account not created, show error
+                else:
+                    logging.error(
+                        "Failed to create email account %s automatically", new_list.address
+                    )
+                    flash(
+                        _(
+                            "Could not connect to the IMAP server with the provided credentials. "
+                            "Creation of the email account with this data also failed. Check the "
+                            "logs for details."
+                        ),
+                        "error",
+                    )
+                    return render_template("lists/add.html", config=Config, form=form, retry=True)
+            # Case: automatic account creation disabled, show error
+            else:
+                flash(
+                    _(
+                        "Could not connect to the IMAP server with the provided credentials. "
+                        "Automatic creation of email accounts is disabled. "
+                        "Please check and try again."
+                    ),
+                    "error",
+                )
+                return render_template("lists/add.html", config=Config, form=form, retry=True)
+
         # Add and commit new list
         db.session.add(new_list)
         db.session.commit()
