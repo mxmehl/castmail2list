@@ -2,12 +2,28 @@
 
 import logging
 import subprocess
+import sys
 
 from flask import flash
 
 from . import __version__
 from .models import List
 
+
+def compile_scss(compiler: str, scss_files: list[tuple[str, str]]) -> None:
+    """Compile SCSS files to CSS using an external compiler"""
+    for scss_input, css_output in scss_files:
+        try:
+            logging.info("Compiling %s to %s", scss_input, css_output)
+            subprocess.run([compiler, scss_input, css_output], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.critical("Error compiling %s: %s", scss_input, e)
+            sys.exit(1)
+        except FileNotFoundError as e:
+            logging.critical(
+                "Sass compiler not found. Please ensure '%s' is installed: %s", compiler, e
+            )
+            sys.exit(1)
 
 def flash_form_errors(form):
     """Flash all errors from a Flask-WTF form"""

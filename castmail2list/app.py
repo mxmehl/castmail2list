@@ -12,7 +12,6 @@ from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf import CSRFProtect
-from sassutils.wsgi import SassMiddleware
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
@@ -20,7 +19,7 @@ from .config import Config
 from .imap_worker import poll_imap
 from .models import User, db
 from .seeder import seed_database
-from .utils import get_version_info
+from .utils import compile_scss, get_version_info
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
@@ -102,19 +101,6 @@ def create_app() -> Flask:
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # Settings for SCSS conversion
-    app.wsgi_app = SassMiddleware(  # type: ignore
-        app.wsgi_app,
-        {
-            "castmail2list": {
-                "sass_path": "static/scss",
-                "css_path": "static/css",
-                "wsgi_path": "/static/css",
-                "strip_extension": False,
-            }
-        },
-    )
-
     # Register views and routes
     app.register_blueprint(auth)
     app.register_blueprint(lists)
@@ -152,19 +138,27 @@ def main():
     )  # new
     args = parser.parse_args()
 
+    # Configure logging
     configure_logging(args.debug)
 
+    # Create Flask app
     app = create_app()
 
-    # seeding actions
+    # Compile SCSS to CSS
+    scss_files = [
+        ("castmail2list/static/scss/custom.scss", "castmail2list/static/css/custom.scss.css")
+    ]
+    compile_scss("sass", scss_files)
+
+    # Seed database if requested
     if args.seed_only:
         seed_database(app)
         print("Database seeded (seed-only).")
         return
-
     if args.seed:
         seed_database(app)
 
+    # Create admin user if requested
     if args.create_admin:
         username, password = args.create_admin
         # run inside app context to access DB
@@ -181,7 +175,13 @@ def main():
             logging.info("Admin user '%s' created", username)
         return
 
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    # Run the Flask app
+    app.run(
+        host=args.host,
+        port=args.port,
+        debug=args.debug,
+        extra_files=[bundle[0] for bundle in scss_files],  # watch SCSS file for changes
+    )
 
 
 if __name__ == "__main__":
