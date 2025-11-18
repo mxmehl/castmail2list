@@ -13,24 +13,23 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .config import Config
 from .forms import LoginForm, MailingListForm, SubscriberAddForm
 from .models import List, Message, Subscriber, User, db
-from .utils import flash_form_errors, is_email_a_list, normalize_email_list
+from .utils import (
+    flash_form_errors,
+    get_version_info,
+    is_email_a_list,
+    normalize_email_list,
+)
 
 
 def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-statements
     """Initialize Flask routes"""
 
-    # def is_authenticated():
-    #     """Check if the current session matches a valid user and password hash"""
-    #     username = session.get("username")
-    #     auth_signature = session.get("auth_signature")
-    #     users = app.config.get("USERS", {})
-    #     secret = app.config["STREAM_SECRET"]
-
-    #     if username not in users:
-    #         return False
-
-    #     expected_signature = compute_session_signature(username, users[username], secret)
-    #     return auth_signature == expected_signature
+    # Inject variables into templates
+    @app.context_processor
+    def inject_vars():
+        return {
+            "version_info": get_version_info(),
+        }
 
     @app.route("/login", methods=["GET", "POST"])
     @limiter.limit(app.config.get("RATE_LIMIT_LOGIN", ""))
@@ -55,11 +54,11 @@ def init_routes(app: Flask, limiter: Limiter):  # pylint: disable=too-many-state
 
         return render_template("login.html", form=form)
 
-    @app.route('/logout')
+    @app.route("/logout")
     @login_required
     def logout():
         logout_user()
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
     @app.route("/")
     @login_required
