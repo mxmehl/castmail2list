@@ -15,7 +15,7 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import List, Subscriber
+from .models import MailingList, Subscriber
 from .utils import create_bounce_address, get_list_subscribers
 
 
@@ -25,7 +25,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         app: Flask,
-        ml: List,
+        ml: MailingList,
         msg: MailMessage,
         message_id: str,
         subscribers: list[Subscriber],
@@ -38,7 +38,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.smtp_starttls: bool = app.config["SMTP_STARTTLS"]
         # Arguments as class attributes
         self.message_id: str = message_id
-        self.ml: List = ml
+        self.ml: MailingList = ml
         self.msg: MailMessage = msg
         self.subscribers: list[Subscriber] = subscribers
         # Additional attributes we need for sending
@@ -220,7 +220,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         return self.composed_msg.as_bytes()
 
 
-def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: MailBox) -> None:
+def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: MailingList, mailbox: MailBox) -> None:
     """Send message to all subscribers of a list"""
     subscribers: list[Subscriber] = get_list_subscribers(ml)
     logging.info(

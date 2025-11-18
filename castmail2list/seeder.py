@@ -24,7 +24,7 @@ from alembic.script import ScriptDirectory
 from flask import Flask
 from werkzeug.security import generate_password_hash
 
-from .models import AlembicVersion, List, Subscriber, User, db
+from .models import AlembicVersion, MailingList, Subscriber, User, db
 
 DEFAULT_SEED: Dict[str, Any] = {
     "users": [
@@ -105,7 +105,7 @@ def seed_database(app: Flask) -> None:
         # ensure tables exist (app caller should have context)
         db.create_all()
 
-        if List.query.first():
+        if MailingList.query.first():
             logging.debug("Database already has lists — skipping seed.")
             return
 
@@ -121,7 +121,7 @@ def seed_database(app: Flask) -> None:
             except (TypeError, ValueError):
                 lst_cfg["imap_port"] = 993
 
-            new_list = List(
+            new_list = MailingList(
                 name=lst_cfg.get("name"),
                 address=lst_cfg.get("address"),
                 mode=lst_cfg.get("mode"),

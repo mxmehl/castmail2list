@@ -8,7 +8,7 @@ from flask_login import login_required
 
 from ..config import Config
 from ..forms import MailingListForm, SubscriberAddForm
-from ..models import List, Subscriber, db
+from ..models import MailingList, Subscriber, db
 from ..utils import (
     flash_form_errors,
     is_email_a_list,
@@ -24,7 +24,7 @@ lists = Blueprint("lists", __name__, url_prefix="/lists")
 @login_required
 def show_all():
     """Show all mailing lists"""
-    active_lists = List.query.filter_by(deleted=False).all()
+    active_lists = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=Config)
 
 @lists.route("/add", methods=["GET", "POST"])
@@ -35,7 +35,7 @@ def add():
 
     if form.validate_on_submit():
         # Convert input to comma-separated for storage
-        new_list = List(
+        new_list = MailingList(
             mode=form.mode.data,
             name=form.name.data,
             address=form.address.data,
@@ -66,7 +66,7 @@ def add():
 @login_required
 def edit(list_id):
     """Edit a mailing list"""
-    mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
     # Handle form submission
@@ -101,7 +101,7 @@ def edit(list_id):
 @login_required
 def subscribers_manage(list_id):
     """Manage subscribers for a mailing list"""
-    mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
     form = SubscriberAddForm()
 
     # Handle adding subscribers
@@ -149,7 +149,7 @@ def subscribers_manage(list_id):
 @login_required
 def delete(list_id):
     """Delete (soft-delete) a mailing list"""
-    mailing_list: List = List.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
     # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
     mailing_list.deleted = True
     mailing_list.deleted_at = datetime.now(timezone.utc)
@@ -162,7 +162,7 @@ def delete(list_id):
 @login_required
 def subscriber_delete(list_id, subscriber_id):
     """Delete a subscriber from a mailing list"""
-    mailing_list = List.query.filter_by(id=list_id).first_or_404()
+    mailing_list = MailingList.query.filter_by(id=list_id).first_or_404()
     subscriber = Subscriber.query.get_or_404(subscriber_id)
     if subscriber.list_id == mailing_list.id:
         email = subscriber.email
@@ -176,7 +176,7 @@ def subscriber_delete(list_id, subscriber_id):
 @login_required
 def subscriber_edit(list_id, subscriber_id):
     """Edit a subscriber of a mailing list"""
-    mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
     if form.validate_on_submit():
