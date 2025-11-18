@@ -1,5 +1,7 @@
 """Flask-WTF forms for castmail2list application"""
 
+from email.utils import parseaddr
+
 from flask_babel import lazy_gettext as _  # Using lazy_gettext for form field labels
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -10,6 +12,7 @@ from wtforms import (
     RadioField,
     StringField,
     SubmitField,
+    ValidationError,
 )
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
 
@@ -26,6 +29,27 @@ class LoginForm(FlaskForm):
     username = StringField(label="Username", validators=[DataRequired()])
     password = PasswordField(label="Password", validators=[DataRequired()])
     submit = SubmitField(_("Login"))
+
+
+def email_with_opt_display_name(form, field):
+    """Custom validator for multiple ways of providing email addresses:
+
+    foo@bar.com
+    John Doe <foo@bar.com>
+    "John P. Doe" <foo@bar.com>
+    """
+    _, addr = parseaddr(field.data or "")
+    if not addr:
+        raise ValidationError("Invalid email format")
+
+    # Temporarily replace field.data with the bare address
+    original = field.data
+    field.data = addr
+
+    try:
+        Email()(form, field)
+    finally:
+        field.data = original
 
 
 class MailingListForm(FlaskForm):
@@ -47,9 +71,9 @@ class MailingListForm(FlaskForm):
         ],
         default="broadcast",
     )
-    from_addr = EmailField(
+    from_addr = StringField(
         _("From Address"),
-        validators=[Optional(), Email()],
+        validators=[Optional(), email_with_opt_display_name],
         description=_(
             "Optional 'From' address for emails sent by the list. If left empty, the list address "
             "will be used. Only relevant in Broadcast mode."
