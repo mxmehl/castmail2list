@@ -39,7 +39,7 @@
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
-                <a href="{{ url_for('subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
                 {% if subscriber.subscriber_type == "list" %}({{ _('List') }}){% endif %}
             </td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>

@@ -27,11 +27,11 @@ def login():
             logging.warning(
                 "Failed login attempt for user %s from IP %s", username, request.remote_addr
             )
-            return redirect(url_for("login"))
+            return redirect(url_for("auth.login"))
 
         login_user(user, remember=True)
         logging.info("User %s logged in successfully from IP %s", username, request.remote_addr)
-        return redirect(request.args.get("next") or url_for("index"))
+        return redirect(request.args.get("next") or url_for("general.index"))
 
     return render_template("login.html", form=form)
 
@@ -41,4 +41,4 @@ def login():
 def logout():
     """Handle user logout requests"""
     logout_user()
-    return redirect(url_for("index"))
+    return redirect(url_for("general.index"))
