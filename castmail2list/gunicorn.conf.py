@@ -13,7 +13,7 @@ timeout = 30
 # Logging
 accesslog = "-"  # Log to stdout
 errorlog = "-"   # Log to stderr
-loglevel = "debug"
+loglevel = "info"
 
 # Process naming
 proc_name = "castmail2list"

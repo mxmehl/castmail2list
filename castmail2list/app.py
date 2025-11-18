@@ -1,4 +1,4 @@
-"""Flask app for CastMail2List"""
+"""Flask app and CLI for CastMail2List"""
 
 import argparse
 import logging
@@ -154,12 +154,7 @@ def main():
     parser.add_argument("-H", "--host", default="127.0.0.1")
     parser.add_argument("-p", "--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        help="Path to YAML configuration file (environment variables override YAML values)",
-    )
+    parser.add_argument("-c", "--config", type=str, help="Path to YAML configuration file")
     parser.add_argument(
         "--seed-only",
         type=str,

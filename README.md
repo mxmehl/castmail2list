@@ -2,16 +2,16 @@
 
 ## Usage
 
-In production with gunicorn:
+For production use (using gunicorn as WSGI):
 
 ```sh
-gunicorn "castmail2list.wsgi:app" -c gunicorn.conf.py -e CONFIG_FILE=/path/to/config.yaml
+castmail2list --help
 ```
 
-For local development:
+For local development and administrative commands (using Flask directly):
 
 ```sh
-poetry run castmail2list
+castmail2list-cli --help
 ```
 
 
