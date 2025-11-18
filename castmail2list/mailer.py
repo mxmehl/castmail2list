@@ -22,12 +22,13 @@ from .utils import create_bounce_address, get_list_subscribers
 class Mail:  # pylint: disable=too-many-instance-attributes
     """Class for an email sent to multiple recipients via SMTP"""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         app: Flask,
         ml: List,
         msg: MailMessage,
         message_id: str,
+        subscribers: list[Subscriber],
     ) -> None:
         # SMTP settings from app config
         self.smtp_server: str = app.config["SMTP_HOST"]
@@ -39,6 +40,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.message_id: str = message_id
         self.ml: List = ml
         self.msg: MailMessage = msg
+        self.subscribers: list[Subscriber] = subscribers
         # Additional attributes we need for sending
         self.composed_msg: MIMEMultipart | MIMEText | None = None
         self.from_header: str = ""
@@ -85,10 +87,13 @@ class Mail:  # pylint: disable=too-many-instance-attributes
                 f"{self.msg.from_values.name or self.msg.from_values.email} "
                 f"via {self.ml.name} <{self.ml.address}>"
             )
-            # Reply-To: Set to list address to avoid replies going to all subscribers
-            self.reply_to = self.ml.address
-            # TODO: If sender is not member of list, consider adding them as Reply-To. Or perhaps
-            # List and sender?
+            # Set Reply-To:
+            # * Set to list address to avoid replies going to all subscribers
+            # * If sender is not a recipient of the list, add them as Reply-To as well
+            if self.msg.from_values.email not in [sub.email for sub in self.subscribers]:
+                self.reply_to = f"{self.msg.from_values.email}, {self.ml.address}"
+            else:
+                self.reply_to = self.ml.address
             # Add X-MailFrom with original sender address
             self.x_mailfrom_header = self.msg.from_values.email
         else:
@@ -221,7 +226,7 @@ def send_msg_to_subscribers(app: Flask, msg: MailMessage, ml: List, mailbox: Mai
 
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
-    mail = Mail(app=app, ml=ml, msg=msg, message_id=new_msgid)
+    mail = Mail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
 
     # --- Sanity checks ---
     # Make sure there is content to send
