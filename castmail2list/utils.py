@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from flask import flash
+from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
 
 from . import __version__
@@ -374,3 +375,29 @@ def create_email_account(host_type: str, email: str, password: str) -> bool:
     except subprocess.CalledProcessError as e:
         logging.error("Failed to create email account %s: %s", email, e)
         return False
+
+
+def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
+    """
+    Check if the mailing list has recommended security settings.
+
+    Args:
+        ml (MailingList): The mailing list to check
+    Returns:
+        list[tuple[str, str]]: A list of warnings about missing recommended settings
+    """
+    findings = []
+
+    if ml.mode == "broadcast":
+        if not json_array_to_list(ml.allowed_senders) and not json_array_to_list(ml.sender_auth):
+            findings.append(
+                (
+                    _(
+                        "In Broadcast mode, it is recommended to set Allowed Senders and/or "
+                        "Sender Authentication Passwords!"
+                    ),
+                    "warning",
+                )
+            )
+
+    return findings
