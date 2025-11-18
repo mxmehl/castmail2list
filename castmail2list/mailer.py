@@ -103,8 +103,9 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
         if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
             # Remove list address from To and CC headers to avoid confusion
-            # TODO: Depending on list settings as broadcast or real mailing list, this needs to be
-            # handled differently
+            # TODO: Depending on list settings as broadcast or real mailing list, this may be
+            # handled differently. In Group mode, it might be helpful to keep it.
+            # In group mode, it's part of Reply-To
             self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
             self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
 
