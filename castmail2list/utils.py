@@ -1,6 +1,5 @@
 """Utility functions for Castmail2List application"""
 
-import json
 import logging
 import os
 import subprocess
@@ -59,42 +58,24 @@ def normalize_email_list(input_str: str) -> str:
     return ", ".join(emails)
 
 
-def string_to_json_array(input_str: str) -> str:
-    """Normalize a string of strings into a comma-separated list"""
-    # Accepts either comma or newline separated, returns JSON array string
+def list_to_string(listobj: list[str]) -> str:
+    """Convert a list to a comma-separated string"""
+    if isinstance(listobj, list):
+        return ", ".join(listobj)
+    logging.warning("Input is not a list: %s", listobj)
+    return ""
+
+
+def string_to_list(input_str: str) -> list[str]:
+    """Normalize a string of strings into a list"""
+    # Accepts either comma or newline separated, returns list of strings
     if not input_str:
-        return "[]"
+        return []
     # Replace newlines with commas, then split
     strings = [
         string.strip() for string in input_str.replace("\n", ",").split(",") if string.strip()
     ]
-    # Create JSON array string
-    json_array = json.dumps(strings)
-    return json_array
-
-
-def json_array_to_string(json_array_str: str) -> str:
-    """Convert a JSON array string back to a comma-separated string"""
-    try:
-        items = json.loads(json_array_str)
-        if isinstance(items, list):
-            return ", ".join(items)
-        return ""
-    except json.JSONDecodeError:
-        logging.warning("Failed to decode JSON array: %s", json_array_str)
-        return ""
-
-
-def json_array_to_list(json_array_str: str) -> list[str]:
-    """Convert a JSON array string back to a list of strings"""
-    try:
-        items = json.loads(json_array_str)
-        if isinstance(items, list):
-            return items
-        return []
-    except json.JSONDecodeError:
-        logging.warning("Failed to decode JSON array: %s", json_array_str)
-        return []
+    return strings
 
 
 def create_bounce_address(ml_address: str, recipient: str) -> str:
@@ -389,7 +370,7 @@ def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
     findings = []
 
     if ml.mode == "broadcast":
-        if not json_array_to_list(ml.allowed_senders) and not json_array_to_list(ml.sender_auth):
+        if not ml.allowed_senders and not ml.sender_auth:
             findings.append(
                 (
                     _(

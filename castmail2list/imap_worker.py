@@ -18,7 +18,6 @@ from .utils import (
     get_list_subscribers,
     get_plus_suffix,
     is_expanded_address_the_mailing_list,
-    json_array_to_list,
     parse_bounce_address,
     remove_plus_suffix,
     run_only_once,
@@ -233,8 +232,8 @@ def validate_email_all_checks(
 
     # --- Sender not allowed checks ---
     # In broadcast mode, ensure the original sender of the message is in the allowed senders list
-    if ml.mode == "broadcast" and (allowed_senders := json_array_to_list(ml.allowed_senders)):
-        if not msg.from_values or msg.from_values.email not in allowed_senders:
+    if ml.mode == "broadcast" and ml.allowed_senders:
+        if not msg.from_values or msg.from_values.email not in ml.allowed_senders:
             logging.warning(
                 "Sender <%s> not in allowed senders for list <%s>, skipping message %s",
                 msg.from_values.email if msg.from_values else "unknown",
@@ -246,9 +245,9 @@ def validate_email_all_checks(
 
     # In broadcast mode, check sender authentication if configured
     # The password is provided via a +password suffix in the To address of the mailing list
-    if ml.mode == "broadcast" and (sender_auth_passwords := json_array_to_list(ml.sender_auth)):
+    if ml.mode == "broadcast" and ml.sender_auth:
         if passed_to_address := validate_email_sender_authentication(
-            msg=msg, ml=ml, sender_auth_passwords=sender_auth_passwords
+            msg=msg, ml=ml, sender_auth_passwords=ml.sender_auth
         ):
             # Remove the +password suffix from the To address so subscribers don't see it
             remove_password_in_to_address(
