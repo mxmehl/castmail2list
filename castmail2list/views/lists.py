@@ -48,10 +48,10 @@ def add():
             allowed_senders=string_to_list(form.allowed_senders.data),
             sender_auth=string_to_list(form.sender_auth.data),
             # IMAP settings with defaults
-            imap_host=form.imap_host.data or Config.IMAP_DEFAULT_HOST,
-            imap_port=form.imap_port.data or Config.IMAP_DEFAULT_PORT,
+            imap_host=form.imap_host.data or current_app.config["IMAP_DEFAULT_HOST"],
+            imap_port=form.imap_port.data or current_app.config["IMAP_DEFAULT_PORT"],
             imap_user=form.imap_user.data or form.address.data,
-            imap_pass=form.imap_pass.data or Config.IMAP_DEFAULT_PASS,
+            imap_pass=form.imap_pass.data or current_app.config["IMAP_DEFAULT_PASS"],
         )
         # Verify that the email account works
         if not check_email_account_works(

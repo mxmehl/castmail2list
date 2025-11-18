@@ -48,15 +48,27 @@ def configure_logging(debug: bool) -> None:
     )
 
 
-def create_app(config_overrides: dict | None = None, start_imap: bool = True) -> Flask:
+def create_app(
+    config_overrides: dict | None = None,
+    start_imap: bool = True,
+    yaml_config_path: str | None = None,
+) -> Flask:
     """Create Flask app
 
     Parameters:
     - config_overrides: optional dict to update app.config before DB init (useful for tests)
     - start_imap: whether to start the background IMAP polling thread
+    - yaml_config_path: optional path to YAML configuration file
     """
     app = Flask(__name__)
-    app.config.from_object(Config)
+
+    # Load config from YAML, if provided
+    if yaml_config_path:
+        config = Config.from_yaml_and_env(yaml_config_path)
+    else:
+        config = Config()  # default config
+
+    app.config.from_object(config)
 
     # apply overrides early so DB and other setup use them
     if config_overrides:
@@ -142,6 +154,12 @@ def main():
     parser.add_argument("-H", "--host", default="127.0.0.1")
     parser.add_argument("-p", "--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        help="Path to YAML configuration file (environment variables override YAML values)",
+    )
     parser.add_argument("--seed-only", action="store_true", help="Seed the database and exit")
     parser.add_argument(
         "--seed", action="store_true", help="Seed the database and continue to start the server"
@@ -151,14 +169,14 @@ def main():
         nargs=2,
         metavar=("USERNAME", "PASSWORD"),
         help="Create an admin user and exit (usage: --create-admin admin secret)",
-    )  # new
+    )
     args = parser.parse_args()
 
     # Configure logging
     configure_logging(args.debug)
 
     # Create Flask app
-    app = create_app()
+    app = create_app(yaml_config_path=args.config)
 
     # Compile SCSS to CSS
     scss_files = [("castmail2list/static/scss/main.scss", "castmail2list/static/css/main.scss.css")]
