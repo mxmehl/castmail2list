@@ -13,13 +13,15 @@ general = Blueprint("general", __name__)
 @general.route("/")
 @login_required
 def index():
-    active_lists = List.query.filter_by(deleted=False).all()
+    """Show dashboard"""
+    active_lists: list[List] = List.query.filter_by(deleted=False).all()
     return render_template("index.html", lists=active_lists)
 
 
 @general.route("/messages")
 @login_required
 def messages() -> str:
+    """Show recent messages"""
     msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).limit(20).all()
     return render_template("messages.html", messages=msgs)
 
@@ -39,7 +41,7 @@ def subscriber(email):
     # Get list information for each subscription
     subscriber_lists = []
     for sub in subscriptions:
-        mailing_list = List.query.get(sub.list_id)
+        mailing_list: List | None = List.query.get(sub.list_id)
         if mailing_list:
             subscriber_lists.append({"list": mailing_list, "subscriber": sub})
 

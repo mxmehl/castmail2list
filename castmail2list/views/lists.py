@@ -61,6 +61,7 @@ def add():
 @lists.route("/<int:list_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit(list_id):
+    """Edit a mailing list"""
     mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
@@ -88,6 +89,7 @@ def edit(list_id):
 @lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
 @login_required
 def subscribers_manage(list_id):
+    """Manage subscribers for a mailing list"""
     mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
     form = SubscriberAddForm()
 
@@ -135,6 +137,7 @@ def subscribers_manage(list_id):
 @lists.route("/<int:list_id>/delete", methods=["GET"])
 @login_required
 def delete(list_id):
+    """Delete (soft-delete) a mailing list"""
     mailing_list: List = List.query.filter_by(id=list_id, deleted=False).first_or_404()
     # Soft-delete: mark the list deleted so IDs remain for messages/subscribers
     mailing_list.deleted = True
@@ -147,6 +150,7 @@ def delete(list_id):
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
 @login_required
 def subscriber_delete(list_id, subscriber_id):
+    """Delete a subscriber from a mailing list"""
     mailing_list = List.query.filter_by(id=list_id).first_or_404()
     subscriber = Subscriber.query.get_or_404(subscriber_id)
     if subscriber.list_id == mailing_list.id:
@@ -160,6 +164,7 @@ def subscriber_delete(list_id, subscriber_id):
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
 @login_required
 def subscriber_edit(list_id, subscriber_id):
+    """Edit a subscriber of a mailing list"""
     mailing_list = List.query.filter_by(id=list_id, deleted=False).first_or_404()
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
