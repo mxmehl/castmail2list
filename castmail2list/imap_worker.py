@@ -127,23 +127,23 @@ def detect_bounce(msg: MailMessage) -> str:
     """
     # Check To addresses for bounce marker
     for to in msg.to:
-        if bounced_recipients := parse_bounce_address(to):
+        if bounced_recipient := parse_bounce_address(to):
             logging.debug(
                 "Bounce detected by parse_bounce_address() for message %s, recipient: %s",
                 msg.uid,
-                bounced_recipients,
+                bounced_recipient,
             )
-            return bounced_recipients
+            return bounced_recipient
 
     # Use flufl.bounce to scan message
-    bounced_recipients = scan_message(msg.obj)  # type: ignore
-    if bounced_recipients:
+    bounced_recipients_flufl: set[bytes] = scan_message(msg.obj)  # type: ignore
+    if bounced_recipients_flufl:
         logging.debug(
             "Bounce detected by flufl.bounce.scan_message() for message %s, recipients: %s",
             msg.uid,
-            bounced_recipients,
+            bounced_recipients_flufl,
         )
-        return ",".join(bounced_recipients)
+        return ", ".join(addr.decode("utf-8") for addr in bounced_recipients_flufl)
 
     return ""
 
