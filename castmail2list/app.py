@@ -23,6 +23,7 @@ from .utils import compile_scss, get_version_info
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
+from .views.messages import messages
 
 
 def configure_logging(debug: bool) -> None:
@@ -104,8 +105,9 @@ def create_app() -> Flask:
 
     # Register views and routes
     app.register_blueprint(auth)
-    app.register_blueprint(lists)
     app.register_blueprint(general)
+    app.register_blueprint(messages)
+    app.register_blueprint(lists)
 
     # Inject variables into templates
     @app.context_processor
@@ -146,9 +148,7 @@ def main():
     app = create_app()
 
     # Compile SCSS to CSS
-    scss_files = [
-        ("castmail2list/static/scss/main.scss", "castmail2list/static/css/main.scss.css")
-    ]
+    scss_files = [("castmail2list/static/scss/main.scss", "castmail2list/static/css/main.scss.css")]
     compile_scss("sass", scss_files)
 
     # Seed database if requested

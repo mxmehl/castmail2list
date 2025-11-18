@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import login_required
 
 from ..config import Config
-from ..models import List, Message, Subscriber
+from ..models import List, Subscriber
 
 general = Blueprint("general", __name__)
 
@@ -16,14 +16,6 @@ def index():
     """Show dashboard"""
     active_lists: list[List] = List.query.filter_by(deleted=False).all()
     return render_template("index.html", lists=active_lists)
-
-
-@general.route("/messages")
-@login_required
-def messages() -> str:
-    """Show recent messages"""
-    msgs: list[Message] = Message.query.order_by(Message.received_at.desc()).limit(20).all()
-    return render_template("messages.html", messages=msgs)
 
 
 @general.route("/subscriber/<email>")
