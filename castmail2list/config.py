@@ -1,48 +1,124 @@
 """Configuration for CastMail2List"""
 
-import os
+import logging
+from pathlib import Path
+from typing import Any
+
+import yaml
+from jsonschema import FormatChecker, validate
+from jsonschema.exceptions import ValidationError
+
+CONFIG_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "SQLALCHEMY_DATABASE_URI": {"type": "string"},
+        "SECRET_KEY": {"type": "string"},
+        "LANGUAGE": {"type": "string"},
+        "DOMAIN": {"type": "string"},
+        "HOST_TYPE": {"type": "string"},
+        "CREATE_LISTS_AUTOMATICALLY": {"type": "boolean"},
+        "POLL_INTERVAL_SECONDS": {"type": "integer"},
+        "IMAP_DEFAULT_HOST": {"type": "string"},
+        "IMAP_DEFAULT_PORT": {"type": "integer"},
+        "IMAP_DEFAULT_PASS": {"type": "string"},
+        "IMAP_FOLDER_INBOX": {"type": "string"},
+        "IMAP_FOLDER_PROCESSED": {"type": "string"},
+        "IMAP_FOLDER_SENT": {"type": "string"},
+        "IMAP_FOLDER_BOUNCES": {"type": "string"},
+        "IMAP_FOLDER_DENIED": {"type": "string"},
+        "IMAP_FOLDER_DUPLICATE": {"type": "string"},
+        "SMTP_HOST": {"type": "string"},
+        "SMTP_PORT": {"type": "integer"},
+        "SMTP_USER": {"type": "string"},
+        "SMTP_PASS": {"type": "string"},
+        "SMTP_STARTTLS": {"type": "boolean"},
+    },
+    "required": ["SQLALCHEMY_DATABASE_URI", "SECRET_KEY", "DOMAIN", "HOST_TYPE", "SMTP_HOST"],
+    "additionalProperties": False,
+}
 
 
 class Config:  # pylint: disable=too-few-public-methods
-    """Flask configuration from environment variables with defaults"""
+    """Flask configuration from YAML file with some defaults"""
 
     # App settings
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///castmail2list.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv("SECRET_KEY", "devkey")
+    SQLALCHEMY_DATABASE_URI: str = "sqlite:///castmail2list.db"
+    SECRET_KEY: str = ""
 
     # General settings
-    LANGUAGE = "en"  # Supported languages: "en", "de"
-    DOMAIN = os.getenv("DOMAIN", "***REMOVED***")
-    HOST_TYPE = os.getenv(
-        "HOST_TYPE", "uberspace7"
-    )  # used for auto list creation. Can be: uberspace7, uberspace8
-    CREATE_LISTS_AUTOMATICALLY = os.getenv("CREATE_LISTS_AUTOMATICALLY", "true").lower() in (
-        "true",
-        "True",
-        "1",
-        "yes",
-    )
+    LANGUAGE: str = "en"  # Supported languages: "en", "de"
+    DOMAIN: str = ""
+    HOST_TYPE = ""  # used for auto list creation. Can be: empty, uberspace7, uberspace8
+    CREATE_LISTS_AUTOMATICALLY: bool = False
+    POLL_INTERVAL_SECONDS: int = 60
 
     # IMAP settings and defaults (used as defaults for new lists)
-    IMAP_DEFAULT_HOST = os.getenv("IMAP_DEFAULT_HOST", "***REMOVED***")
-    IMAP_DEFAULT_DOMAIN = os.getenv("IMAP_DEFAULT_DOMAIN", "***REMOVED***")
-    IMAP_DEFAULT_PORT = os.getenv("IMAP_DEFAULT_PORT", "993")
-    IMAP_DEFAULT_PASS = os.getenv("IMAP_DEFAULT_PASS", "testtest123")
+    IMAP_DEFAULT_HOST: str = ""
+    IMAP_DEFAULT_PORT: int = 993
+    IMAP_DEFAULT_PASS: str = ""
 
     # IMAP folder names
-    IMAP_FOLDER_INBOX = os.getenv("IMAP_FOLDER_INBOX", "INBOX")
-    IMAP_FOLDER_PROCESSED = os.getenv("IMAP_FOLDER_PROCESSED", "Processed")
-    IMAP_FOLDER_SENT = os.getenv("IMAP_FOLDER_SENT", "Sent")
-    IMAP_FOLDER_BOUNCES = os.getenv("IMAP_FOLDER_BOUNCES", "Bounces")
-    IMAP_FOLDER_DENIED = os.getenv("IMAP_FOLDER_DENIED", "Denied")
-    IMAP_FOLDER_DUPLICATE = os.getenv("IMAP_FOLDER_DUPLICATE", "Duplicate")
+    IMAP_FOLDER_INBOX: str = "INBOX"
+    IMAP_FOLDER_PROCESSED: str = "Processed"
+    IMAP_FOLDER_SENT: str = "Sent"
+    IMAP_FOLDER_BOUNCES: str = "Bounces"
+    IMAP_FOLDER_DENIED: str = "Denied"
+    IMAP_FOLDER_DUPLICATE: str = "Duplicate"
 
-    # SMTP settings (defaults for new lists)
-    SMTP_HOST = os.getenv("SMTP_HOST", "***REMOVED***")
-    SMTP_PORT = os.getenv("SMTP_PORT", "587")
-    SMTP_USER = os.getenv("SMTP_USER", "test-list@***REMOVED***")
-    SMTP_PASS = os.getenv("SMTP_PASS", "testtest123")
-    SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").lower() in ("true", "1", "yes")
+    # SMTP settings
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_STARTTLS = True
 
-    POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", "10"))
+    @classmethod
+    def validate_config_schema(cls, cfg: dict, schema: dict) -> None:
+        """Validate the config against a JSON schema"""
+        try:
+            validate(instance=cfg, schema=schema, format_checker=FormatChecker())
+        except ValidationError as e:
+            logging.critical("Config validation failed: %s", e.message)
+            raise ValueError(e) from None
+        logging.debug("Config validated successfully against schema.")
+
+    @classmethod
+    def load_from_yaml(cls, yaml_path: str | Path) -> dict[str, Any]:
+        """Load configuration from YAML file.
+
+        Args:
+            yaml_path: Path to YAML configuration file
+
+        Returns:
+            Dictionary with configuration values
+        """
+        yaml_path = Path(yaml_path)
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
+
+        with open(yaml_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+            cls.validate_config_schema(data, CONFIG_SCHEMA)
+            return data
+
+    @classmethod
+    def from_yaml_and_env(cls, yaml_path: str | Path) -> "Config":
+        """Create Config instance from YAML file, overriding class defaults
+
+        Args:
+            yaml_path (str | Path): Path to YAML configuration file
+
+        Returns:
+            Config instance with merged configuration
+        """
+        config = cls()
+
+        # Load from YAML if provided
+        if yaml_path:
+            yaml_config = cls.load_from_yaml(yaml_path)
+            for key, value in yaml_config.items():
+                if hasattr(config, key.upper()):
+                    setattr(config, key.upper(), value)
+
+        # Environment variables override YAML (re-apply from env)
+        return config

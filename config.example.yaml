@@ -1,0 +1,33 @@
+# Example configuration file for CastMail2List
+# Copy this file to config.yaml and adjust the values to your needs
+
+# App settings
+SQLALCHEMY_DATABASE_URI: "" # Default: "sqlite:///castmail2list.db"
+SECRET_KEY: "" # Default: ""
+
+# General settings
+LANGUAGE: "en" # Supported languages: "en", "de". Default: "en"
+DOMAIN: "example.com" # Default: ""
+HOST_TYPE: "uberspace7" # Can be: uberspace7, uberspace8. Default: ""
+CREATE_LISTS_AUTOMATICALLY: true # Default: false
+POLL_INTERVAL_SECONDS: 60 # Default: 60
+
+# IMAP settings and defaults (used as defaults for new lists)
+IMAP_DEFAULT_HOST: "imap.example.com" # Default: ""
+IMAP_DEFAULT_PORT: "993" # Default: 993
+IMAP_DEFAULT_PASS: "your-password-here" # Default: ""
+
+# IMAP folder names
+IMAP_FOLDER_INBOX: "INBOX" # Default: "INBOX"
+IMAP_FOLDER_PROCESSED: "Processed" # Default: "Processed"
+IMAP_FOLDER_SENT: "Sent" # Default: "Sent"
+IMAP_FOLDER_BOUNCES: "Bounces" # Default: "Bounces"
+IMAP_FOLDER_DENIED: "Denied" # Default: "Denied"
+IMAP_FOLDER_DUPLICATE: "Duplicate" # Default: "Duplicate"
+
+# SMTP settings (all lists use the same SMTP server)
+SMTP_HOST: "smtp.example.com" # Default: ""
+SMTP_PORT: "587" # Default: 587
+SMTP_USER: "list@example.com" # Default: ""
+SMTP_PASS: "your-password-here" # Default: ""
+SMTP_STARTTLS: true # Default: true

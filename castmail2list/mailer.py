@@ -214,7 +214,8 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             ) as server:
                 if self.smtp_starttls:
                     server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
+                if self.smtp_user and self.smtp_password:
+                    server.login(self.smtp_user, self.smtp_password)
                 server.sendmail(
                     from_addr=create_bounce_address(
                         ml_address=self.ml.address, recipient=recipient

@@ -122,8 +122,7 @@ def parse_bounce_address(bounce_address: str) -> str | None:
 
 
 def is_email_a_list(email: str) -> bool:
-    """IMAP_DEFAULT_DOMAIN = os.getenv("IMAP_DEFAULT_DOMAIN", "***REMOVED***")
-
+    """
     Check if the given email address is the address of one of the configured mailing lists.
 
     Args:
