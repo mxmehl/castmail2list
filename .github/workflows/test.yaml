@@ -82,10 +82,10 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - uses: ./.github/actions/poetrybuild
-      - name: Test formatting with isort and black
-        run: |
-          poetry run isort --check castmail2list/
-          poetry run black --check .
+      - name: Test formatting with isort
+        run: poetry run isort --check castmail2list/
+      - name: Test formatting with black
+        run: poetry run black --check .
 
   mypy:
     runs-on: ubuntu-24.04
