@@ -33,7 +33,7 @@ CONFIG_SCHEMA = {
         "SMTP_PASS": {"type": "string"},
         "SMTP_STARTTLS": {"type": "boolean"},
     },
-    "required": ["SQLALCHEMY_DATABASE_URI", "SECRET_KEY", "DOMAIN", "HOST_TYPE", "SMTP_HOST"],
+    "required": ["SECRET_KEY", "DOMAIN", "HOST_TYPE", "SMTP_HOST"],
     "additionalProperties": False,
 }
 
