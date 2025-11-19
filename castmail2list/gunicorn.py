@@ -8,11 +8,30 @@ import argparse
 import os
 import subprocess
 
+from .utils import get_app_bin_dir
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "-c", "--app-config", type=str, required=True, help="Path to YAML configuration file"
 )
-parser.add_argument("-g", "--gunicorn-config", type=str, help="Path to Gunicorn configuration file")
+parser.add_argument(
+    "-gc",
+    "--gunicorn-config",
+    type=str,
+    help=(
+        "Path to Gunicorn configuration file. Defaults to gunicorn.conf.py "
+        "in the castmail2list package directory."
+    ),
+)
+parser.add_argument(
+    "-ge",
+    "--gunicorn-exec",
+    type=str,
+    help=(
+        "Path to Gunicorn executable. Defaults to using Gunicorn from the current Python "
+        "environment."
+    ),
+)
 parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
 
 
@@ -26,9 +45,14 @@ def main():
         # Get path of this file to define location of the default gunicorn config
         gunicorn_config_path = os.path.join(os.path.dirname(__file__), "gunicorn.conf.py")
 
+    if args.gunicorn_exec:
+        gunicorn_exec = args.gunicorn_exec
+    else:
+        gunicorn_exec = str(get_app_bin_dir() / "gunicorn")
+
     subprocess.run(
         [
-            "gunicorn",
+            gunicorn_exec,
             "-c",
             gunicorn_config_path,
             "castmail2list.wsgi:app",

@@ -4,6 +4,7 @@ import logging
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from flask import flash
 from flask_babel import _
@@ -399,3 +400,9 @@ def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
             )
 
     return findings
+
+def get_app_bin_dir() -> Path:
+    """
+    Get the directory where this app's executable resides in the current Python environment.
+    """
+    return Path(sys.executable).parent

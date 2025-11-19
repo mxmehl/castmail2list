@@ -21,7 +21,7 @@ from .config import AppConfig
 from .imap_worker import poll_imap
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
-from .utils import compile_scss, get_version_info
+from .utils import compile_scss, get_app_bin_dir, get_version_info
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
@@ -61,6 +61,7 @@ def create_app(
     - yaml_config_path: optional path to YAML configuration file
     """
     app = Flask(__name__)
+    logging.debug("Executable bin path: %s", get_app_bin_dir())
 
     # Load config from YAML, if provided
     if yaml_config_path:
