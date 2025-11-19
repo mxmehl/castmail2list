@@ -13,12 +13,13 @@ from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_migrate import Migrate, check, downgrade, upgrade
 from flask_wtf import CSRFProtect
+from sqlalchemy.exc import OperationalError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
 from .config import AppConfig
 from .imap_worker import poll_imap
-from .models import User, db
+from .models import AlembicVersion, User, db
 from .seeder import seed_database
 from .utils import compile_scss, get_version_info
 from .views.auth import auth
@@ -212,6 +213,21 @@ def main():
     if args.db_seed:
         seed_database(app, seed_file=args.seed)
         return
+
+    # Identify and abort if database seems to be empty
+    with app.app_context():
+        try:
+            # get alembic version, first entry, version column
+            alembic_version = db.session.query(AlembicVersion).first()
+            logging.debug(
+                "Database revision: %s", alembic_version.version_num if alembic_version else None
+            )
+        except OperationalError as e:
+            logging.info("Database error: %s", e)
+            logging.critical(
+                "Database does not seem to be initialized. Run with --db init to initialize."
+            )
+            return
 
     # Compile SCSS to CSS
     curpath = Path(__file__).parent.resolve()
