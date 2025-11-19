@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import threading
 from logging.config import dictConfig
 from pathlib import Path
 
@@ -18,14 +17,21 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
 from .config import AppConfig
-from .imap_worker import poll_imap
+from .imap_worker import initialize_imap_polling
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
-from .utils import compile_scss, get_app_bin_dir, get_user_config_path, get_version_info
+from .utils import (
+    compile_scss_on_startup,
+    get_app_bin_dir,
+    get_user_config_path,
+    get_version_info,
+)
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
 from .views.messages import messages
+
+SCSS_FILES = [("static/scss/main.scss", "static/css/main.scss.css")]
 
 
 def configure_logging(debug: bool) -> None:
@@ -238,22 +244,17 @@ def main():
             )
             return
 
-    # Compile SCSS to CSS
-    curpath = Path(__file__).parent.resolve()
-    scss_files = [(f"{curpath}/static/scss/main.scss", f"{curpath}/static/css/main.scss.css")]
-    compile_scss("sass", scss_files)
-
+    # Compile SCSS files on startup
+    scss_files_abs = compile_scss_on_startup(scss_files=SCSS_FILES)
     # start background IMAP thread unless in testing
-    if not app.config.get("TESTING", True):
-        t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
-        t.start()
+    initialize_imap_polling(app)
 
     # Run the Flask app
     app.run(
         host=args.host,
         port=args.port,
         debug=args.debug,
-        extra_files=[bundle[0] for bundle in scss_files],  # watch SCSS file for changes
+        extra_files=[bundle[0] for bundle in scss_files_abs],  # watch SCSS files for changes
     )
 
 

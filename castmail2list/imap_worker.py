@@ -1,6 +1,7 @@
 """IMAP worker for CastMail2List"""
 
 import logging
+import threading
 import time
 import traceback
 import uuid
@@ -42,6 +43,12 @@ def poll_imap(app):
                 logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
             time.sleep(app.config["POLL_INTERVAL_SECONDS"])
 
+def initialize_imap_polling(app: Flask):
+    """Start IMAP polling thread if not in testing mode"""
+    if not app.config.get("TESTING", True):
+        logging.info("Starting IMAP polling thread...")
+        t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
+        t.start()
 
 def create_required_folders(app: Flask, mailbox: MailBox) -> None:
     """Create required IMAP folders if they don't exist."""
