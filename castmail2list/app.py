@@ -155,7 +155,7 @@ def main():
     parser.add_argument("-H", "--host", default="127.0.0.1")
     parser.add_argument("-p", "--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
-    parser.add_argument("-c", "--config", type=str, help="Path to YAML configuration file")
+    parser.add_argument("-c", "--app-config", type=str, help="Path to YAML configuration file")
     parser.add_argument(
         "--create-admin",
         nargs=2,
@@ -180,7 +180,7 @@ def main():
     configure_logging(args.debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=args.config)
+    app = create_app(yaml_config_path=args.app_config)
 
     # Create admin user if requested
     if args.create_admin:
