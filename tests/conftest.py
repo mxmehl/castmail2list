@@ -24,7 +24,7 @@ def fixture_client():
     """
     app = create_app(
         config_overrides={"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"},
-        start_imap=False,
+        # start_imap=False,
     )
 
     ctx = app.app_context()
@@ -53,7 +53,7 @@ def fixture_client_unauthed():
     """
     app = create_app(
         config_overrides={"TESTING": True, "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"},
-        start_imap=False,
+        # start_imap=False,
     )
 
     ctx = app.app_context()

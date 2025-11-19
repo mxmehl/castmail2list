@@ -49,7 +49,7 @@ def seed_database(app: Flask, seed_file: str) -> None:
         db.create_all()
 
         if MailingList.query.first():
-            logging.debug("Database already has lists — skipping seed.")
+            logging.warning("Database already has lists — skipping seed.")
             return
 
         cfg: dict[str, list] = _load_local_seed(seed_file=seed_file)

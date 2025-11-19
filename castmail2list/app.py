@@ -11,7 +11,7 @@ from flask_babel import Babel
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
-from flask_migrate import Migrate
+from flask_migrate import Migrate, check, downgrade, upgrade
 from flask_wtf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
@@ -51,14 +51,12 @@ def configure_logging(debug: bool) -> None:
 
 def create_app(
     config_overrides: dict | None = None,
-    start_imap: bool = True,
     yaml_config_path: str | None = None,
 ) -> Flask:
     """Create Flask app
 
     Parameters:
     - config_overrides: optional dict to update app.config before DB init (useful for tests)
-    - start_imap: whether to start the background IMAP polling thread
     - yaml_config_path: optional path to YAML configuration file
     """
     app = Flask(__name__)
@@ -90,10 +88,11 @@ def create_app(
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URI"]
     logging.info("Using database at %s", app.config["SQLALCHEMY_DATABASE_URI"])
     # Initialize the database
+    migrations_dir = str(Path(__file__).parent.resolve() / "migrations")
     db.init_app(app)
-    Migrate(app, db)
-    with app.app_context():
-        db.create_all()
+    Migrate(app=app, db=db, directory=migrations_dir)
+    # with app.app_context():
+    #     db.create_all()
 
     # Trust headers from reverse proxy (1 layer by default)
     app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
@@ -147,11 +146,6 @@ def create_app(
             "version_info": get_version_info(debug=app.debug),
         }
 
-    # start background IMAP thread unless disabled or in testing
-    if start_imap and not app.config.get("TESTING", False):
-        t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
-        t.start()
-
     return app
 
 
@@ -180,6 +174,12 @@ def main():
         metavar=("USERNAME", "PASSWORD"),
         help="Create an admin user and exit (usage: --create-admin admin secret)",
     )
+    # DB Commands
+    parser.add_argument(
+        "--db",
+        choices=["check", "upgrade", "downgrade"],
+        help="Database commands, e.g. for migrations",
+    )
     args = parser.parse_args()
 
     # Configure logging
@@ -196,7 +196,6 @@ def main():
     # Seed database if requested
     if args.seed_only:
         seed_database(app, seed_file=args.seed_only)
-        print("Database seeded (seed-only).")
         return
     if args.seed:
         seed_database(app, seed_file=args.seed)
@@ -217,6 +216,21 @@ def main():
             db.session.commit()
             logging.info("Admin user '%s' created", username)
         return
+
+    # Handle DB commands if provided
+    if args.db is not None:
+        with app.app_context():
+            migrations_dir = str(Path(__file__).parent.resolve() / "migrations")
+            if args.db == "check":
+                check()
+            elif args.db == "upgrade":
+                upgrade(directory=migrations_dir)
+            return
+
+    # start background IMAP thread unless in testing
+    if not app.config.get("TESTING", True):
+        t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
+        t.start()
 
     # Run the Flask app
     app.run(
