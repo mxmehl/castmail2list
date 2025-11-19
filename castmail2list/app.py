@@ -171,6 +171,17 @@ def create_app(
     return app
 
 
+def create_app_wrapper(app_config_path: str, debug: bool, one_off: bool) -> Flask:
+    """Wrapper to create app from arguments. Both for direct Flask app and WSGI (gunicorn)"""
+    # Configure logging
+    configure_logging(debug)
+
+    # Create Flask app
+    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off)
+
+    return app
+
+
 def main():
     """Run the app"""
     parser = argparse.ArgumentParser(
@@ -206,15 +217,12 @@ def main():
     )
     args = parser.parse_args()
 
-    # Configure logging
-    configure_logging(args.debug)
-
-    # Create Flask app
+    # Create the Flask application
     one_off = False
     if args.db or args.create_admin or args.db_seed:
         # one-off call for most CLI commands
         one_off = True
-    app = create_app(yaml_config_path=args.app_config, one_off_call=one_off)
+    app = create_app_wrapper(app_config_path=args.app_config, debug=args.debug, one_off=one_off)
 
     # Create admin user if requested
     if args.create_admin:
