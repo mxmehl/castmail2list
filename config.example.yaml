@@ -4,7 +4,7 @@
 # Database settings
 # Configure the database connection URI, according to SQLAlchemy format:
 # https://docs.sqlalchemy.org/en/20/core/engines.html
-# Default: sqlite:///{app.instance_path}/castmail2list.db
+# Default: sqlite:///{XDG_CONFIG_HOME}/castmail2list.db
 DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
 
 # General settings

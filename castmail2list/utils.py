@@ -410,7 +410,7 @@ def get_app_bin_dir() -> Path:
     return Path(sys.executable).parent
 
 
-def get_user_config_path(name: str = "castmail2list", file: str = "") -> Path:
+def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     """
     Get the user configuration directory for the application.
 
@@ -418,9 +418,9 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> Path:
         app_name (str): The name of the application
         file (str): Optional filename to append to the config directory
     Returns:
-        Path: The path to the user configuration directory
+        str: The path to the user configuration directory
     """
     config_path = Path(user_config_path(appname=name, ensure_exists=True))
     if file:
         config_path = config_path / file
-    return config_path
+    return str(config_path)
