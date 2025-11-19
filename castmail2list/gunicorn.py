@@ -8,11 +8,17 @@ import argparse
 import os
 import subprocess
 
-from .utils import get_app_bin_dir
+from .utils import get_app_bin_dir, get_user_config_path
 
-parser = argparse.ArgumentParser(description=__doc__)
+parser = argparse.ArgumentParser(
+    description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
 parser.add_argument(
-    "-c", "--app-config", type=str, required=True, help="Path to YAML configuration file"
+    "-c",
+    "--app-config",
+    type=str,
+    help="Path to YAML configuration file",
+    default=get_user_config_path(file="config.yaml"),
 )
 parser.add_argument(
     "-gc",
