@@ -20,6 +20,7 @@ CONFIG_SCHEMA = {
         "POLL_INTERVAL_SECONDS": {"type": "integer"},
         "IMAP_DEFAULT_HOST": {"type": "string"},
         "IMAP_DEFAULT_PORT": {"type": "integer"},
+        "IMAP_DEFAULT_USER_DOMAIN": {"type": "string"},
         "IMAP_DEFAULT_PASS": {"type": "string"},
         "IMAP_FOLDER_INBOX": {"type": "string"},
         "IMAP_FOLDER_PROCESSED": {"type": "string"},
@@ -55,6 +56,7 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     # IMAP settings and defaults (used as defaults for new lists)
     IMAP_DEFAULT_HOST: str = ""
     IMAP_DEFAULT_PORT: int = 993
+    IMAP_DEFAULT_USER_DOMAIN: str = ""
     IMAP_DEFAULT_PASS: str = ""
 
     # IMAP folder names

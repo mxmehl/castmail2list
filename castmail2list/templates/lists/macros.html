@@ -8,7 +8,7 @@
 
   {{ form.address.label }}
   {%- if isnew %}
-  {{ form.address(value="@" + config.DOMAIN) }}
+  {{ form.address(value="@" + config.IMAP_DEFAULT_USER_DOMAIN) }}
   {%- else %}
   {{ form.address }}
   {%- endif %}
