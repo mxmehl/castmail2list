@@ -12,6 +12,8 @@ readme = "README.md"
 keywords = []
 license = "GPL-3.0-only"
 classifiers = []
+# Add ignored files to the package
+include = ["castmail2list/translations/**/*.mo"]
 
 [tool.poetry.scripts]
 castmail2list-cli = "castmail2list.app:main"
