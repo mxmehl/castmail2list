@@ -3,7 +3,7 @@
 # pylint: disable=invalid-name
 
 # Server socket
-bind = "0.0.0.0:8000"
+bind = "0.0.0.0:2278"
 
 # Worker processes
 workers = 1

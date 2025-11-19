@@ -92,14 +92,18 @@ class AppConfig:  # pylint: disable=too-few-public-methods
         Returns:
             Dictionary with configuration values
         """
-        yaml_path = Path(yaml_path)
-        if not yaml_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {yaml_path}")
-
-        with open(yaml_path, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-            cls.validate_config_schema(data, CONFIG_SCHEMA)
-            return data
+        logging.debug("Loading configuration from YAML file: %s", yaml_path)
+        try:
+            with open(yaml_path, encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+                cls.validate_config_schema(data, CONFIG_SCHEMA)
+                return data
+        except FileNotFoundError as e:
+            logging.critical("Configuration file not found: %s", yaml_path)
+            raise e
+        except yaml.YAMLError as e:
+            logging.critical("Error parsing YAML configuration file: %s", e)
+            raise e
 
     @classmethod
     def from_yaml_and_env(cls, yaml_path: str | Path) -> "AppConfig":
