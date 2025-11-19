@@ -9,7 +9,7 @@ import logging
 import sys
 from typing import Any, Dict
 
-from alembic.config import Config
+from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
 from flask import Flask
 from werkzeug.security import generate_password_hash
@@ -97,7 +97,8 @@ def seed_database(app: Flask, seed_file: str) -> None:
 
         # Get the latest alembic revision and write it into DB
         try:
-            alembic_cfg = Config("alembic.ini")
+            alembic_cfg = AlembicConfig()
+            alembic_cfg.set_main_option("script_location", "castmail2list:migrations")
             script = ScriptDirectory.from_config(alembic_cfg)
             head_revision = script.get_current_head()
             if not head_revision:
@@ -109,6 +110,7 @@ def seed_database(app: Flask, seed_file: str) -> None:
                 db.session.add(alembic_version)
         except Exception as e:  # pylint: disable=broad-except
             logging.warning("Could not determine or add Alembic revision: %s", e)
+            raise e
 
         db.session.commit()
         logging.info("✅ Seed data inserted.")
