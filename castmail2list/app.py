@@ -91,8 +91,6 @@ def create_app(
     migrations_dir = str(Path(__file__).parent.resolve() / "migrations")
     db.init_app(app)
     Migrate(app=app, db=db, directory=migrations_dir)
-    # with app.app_context():
-    #     db.create_all()
 
     # Trust headers from reverse proxy (1 layer by default)
     app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
@@ -157,18 +155,6 @@ def main():
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
     parser.add_argument("-c", "--config", type=str, help="Path to YAML configuration file")
     parser.add_argument(
-        "--seed-only",
-        type=str,
-        metavar="SEED_FILE",
-        help="Seed the database with a seed file and exit",
-    )
-    parser.add_argument(
-        "--seed",
-        type=str,
-        metavar="SEED_FILE",
-        help="Seed the database with a seed file and continue to start the server",
-    )
-    parser.add_argument(
         "--create-admin",
         nargs=2,
         metavar=("USERNAME", "PASSWORD"),
@@ -177,8 +163,14 @@ def main():
     # DB Commands
     parser.add_argument(
         "--db",
-        choices=["check", "upgrade", "downgrade"],
+        choices=["check", "upgrade", "downgrade", "init"],
         help="Database commands, e.g. for migrations",
+    )
+    parser.add_argument(
+        "--db-seed",
+        type=str,
+        metavar="SEED_FILE",
+        help="Seed the database with a seed file and exit",
     )
     args = parser.parse_args()
 
@@ -192,13 +184,6 @@ def main():
     curpath = Path(__file__).parent.resolve()
     scss_files = [(f"{curpath}/static/scss/main.scss", f"{curpath}/static/css/main.scss.css")]
     compile_scss("sass", scss_files)
-
-    # Seed database if requested
-    if args.seed_only:
-        seed_database(app, seed_file=args.seed_only)
-        return
-    if args.seed:
-        seed_database(app, seed_file=args.seed)
 
     # Create admin user if requested
     if args.create_admin:
@@ -220,12 +205,18 @@ def main():
     # Handle DB commands if provided
     if args.db is not None:
         with app.app_context():
-            migrations_dir = str(Path(__file__).parent.resolve() / "migrations")
             if args.db == "check":
                 check()
-            elif args.db == "upgrade":
-                upgrade(directory=migrations_dir)
+            elif args.db in ("init", "upgrade"):
+                upgrade()
+            elif args.db == "downgrade":
+                downgrade()
             return
+
+    # Seed database if requested
+    if args.db_seed:
+        seed_database(app, seed_file=args.seed)
+        return
 
     # start background IMAP thread unless in testing
     if not app.config.get("TESTING", True):
