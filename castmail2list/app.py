@@ -4,6 +4,7 @@ import argparse
 import logging
 import threading
 from logging.config import dictConfig
+from pathlib import Path
 
 from flask import Flask
 from flask_babel import Babel
@@ -83,6 +84,12 @@ def create_app(
     app.jinja_env.globals["current_language"] = app.config.get("LANGUAGE", "en")
 
     # Database
+    # default to SQLite in instance path
+    if not app.config.get("DATABASE_URI"):
+        app.config["DATABASE_URI"] = "sqlite:///" + app.instance_path + "/castmail2list.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URI"]
+    logging.info("Using database at %s", app.config["SQLALCHEMY_DATABASE_URI"])
+    # Initialize the database
     db.init_app(app)
     Migrate(app, db)
     with app.app_context():
@@ -182,7 +189,8 @@ def main():
     app = create_app(yaml_config_path=args.config)
 
     # Compile SCSS to CSS
-    scss_files = [("castmail2list/static/scss/main.scss", "castmail2list/static/css/main.scss.css")]
+    curpath = Path(__file__).parent.resolve()
+    scss_files = [(f"{curpath}/static/scss/main.scss", f"{curpath}/static/css/main.scss.css")]
     compile_scss("sass", scss_files)
 
     # Seed database if requested
