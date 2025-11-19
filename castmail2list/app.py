@@ -189,7 +189,6 @@ def main():
     )
     parser.add_argument("-H", "--host", type=str, help="Host of Flask app", default="127.0.0.1")
     parser.add_argument("-p", "--port", type=int, help="Port of Flask app", default=2278)
-    parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
     parser.add_argument(
         "-c",
         "--app-config",
@@ -214,6 +213,9 @@ def main():
         type=str,
         metavar="SEED_FILE",
         help="Seed the database with a seed file and exit",
+    )
+    parser.add_argument(
+        "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
     )
     args = parser.parse_args()
 
