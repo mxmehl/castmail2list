@@ -216,3 +216,5 @@ __marimo__/
 seed.json
 # Config file
 config.yaml
+# Databases
+*.db

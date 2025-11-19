@@ -84,9 +84,9 @@ def create_app(
     app.jinja_env.globals["current_language"] = app.config.get("LANGUAGE", "en")
 
     # Database
-    # default to SQLite in instance path
+    # default to SQLite in config dir if no DATABASE_URI set
     if not app.config.get("DATABASE_URI"):
-        app.config["DATABASE_URI"] = "sqlite:///" + app.instance_path + "/castmail2list.db"
+        app.config["DATABASE_URI"] = "sqlite:///" + get_user_config_path(file="castmail2list.db")
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["DATABASE_URI"]
     logging.info("Using database at %s", app.config["SQLALCHEMY_DATABASE_URI"])
     # Initialize the database
@@ -220,7 +220,7 @@ def main():
 
     # Seed database if requested
     if args.db_seed:
-        seed_database(app, seed_file=args.seed)
+        seed_database(app, seed_file=args.db_seed)
         return
 
     # Identify and abort if database seems to be empty
