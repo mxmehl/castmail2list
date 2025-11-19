@@ -43,12 +43,14 @@ def poll_imap(app):
                 logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
             time.sleep(app.config["POLL_INTERVAL_SECONDS"])
 
+
 def initialize_imap_polling(app: Flask):
     """Start IMAP polling thread if not in testing mode"""
     if not app.config.get("TESTING", True):
         logging.info("Starting IMAP polling thread...")
         t = threading.Thread(target=poll_imap, args=(app,), daemon=True)
         t.start()
+
 
 def create_required_folders(app: Flask, mailbox: MailBox) -> None:
     """Create required IMAP folders if they don't exist."""
@@ -109,14 +111,14 @@ def store_msg_in_db_and_imap(  # pylint: disable=too-many-arguments, too-many-po
             msg.uid,
             m.message_id,
         )
-        target_folder = "duplicate"
+        target_folder = app.config["IMAP_FOLDER_DUPLICATE"]
 
     # Mark message as seen and move to target folder
     mailbox.flag(msg.uid, ["\\Seen"], True)  # type: ignore
     mailbox.move(msg.uid, target_folder)  # type: ignore
     logging.debug("Marked message %s as seen and moved to folder '%s'", msg.uid, target_folder)
 
-    return target_folder != "duplicate"
+    return target_folder != app.config["IMAP_FOLDER_DUPLICATE"]
 
 
 def detect_bounce(msg: MailMessage) -> str:
