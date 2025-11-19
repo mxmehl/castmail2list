@@ -16,6 +16,7 @@ from sqlalchemy.exc import OperationalError
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash
 
+from . import __version__
 from .config import AppConfig
 from .imap_worker import initialize_imap_polling
 from .models import AlembicVersion, User, db
@@ -214,6 +215,7 @@ def main():
         metavar="SEED_FILE",
         help="Seed the database with a seed file and exit",
     )
+    parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     parser.add_argument(
         "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
     )

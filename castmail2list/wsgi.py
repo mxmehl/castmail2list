@@ -9,6 +9,7 @@ import subprocess
 
 from flask import Flask
 
+from . import __version__
 from .app import create_app_wrapper
 from .utils import get_app_bin_dir, get_user_config_path
 
@@ -70,6 +71,7 @@ def gunicorn():
     parser.add_argument(
         "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
     )
+    parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     args = parser.parse_args()
 
     if args.gunicorn_config:

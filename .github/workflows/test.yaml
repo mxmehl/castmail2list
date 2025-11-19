@@ -34,7 +34,9 @@ jobs:
           python: ${{ matrix.python-version }}
           poetry_args: --only main
       - name: Execute castmail2list
-        run: poetry run castmail2list --help
+        run: |
+          poetry run castmail2list --help
+          poetry run castmail2list-cli --version
 
   # Test building the package and installing it via pip3
   test-build-install:
@@ -54,6 +56,7 @@ jobs:
       - name: Run package
         run: |
           castmail2list --version
+          castmail2list-cli --version
           castmail2list --help
 
   # pytest:
