@@ -17,7 +17,7 @@ include = ["castmail2list/translations/**/*.mo"]
 
 [tool.poetry.scripts]
 castmail2list-cli = "castmail2list.app:main"
-castmail2list = "castmail2list.gunicorn:main"
+castmail2list = "castmail2list.wsgi:gunicorn"
 
 [tool.poetry.dependencies]
 python = "^3.10"
