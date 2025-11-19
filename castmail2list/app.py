@@ -59,12 +59,17 @@ def configure_logging(debug: bool) -> None:
 def create_app(
     config_overrides: dict | None = None,
     yaml_config_path: str | None = None,
+    one_off_call: bool = False,
 ) -> Flask:
     """Create Flask app
 
-    Parameters:
-    - config_overrides: optional dict to update app.config before DB init (useful for tests)
-    - yaml_config_path: optional path to YAML configuration file
+    Args:
+        config_overrides (dict): optional dict to update app.config before DB init (e.g. for tests)
+        yaml_config_path (str): optional path to YAML configuration file
+        one_off_call (bool): if True, indicates this is a one-off call (e.g. for CLI commands)
+
+    Returns:
+        Flask: the Flask application
     """
     app = Flask(__name__)
     logging.debug("Executable bin path: %s", get_app_bin_dir())
@@ -80,9 +85,6 @@ def create_app(
     # apply overrides early so DB and other setup use them
     if config_overrides:
         app.config.update(config_overrides)
-
-    # Debug logging of config (without sensitive info)
-    logging.debug("App configuration:\n%s", app.config)
 
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
@@ -110,22 +112,6 @@ def create_app(
         SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="Lax"
     )
 
-    # Set up rate limiting
-    app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
-    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
-    app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
-    limiter = Limiter(
-        get_remote_address,
-        default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
-        storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
-    )
-    limiter.init_app(app)
-
-    if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
-        logging.warning(
-            "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
-        )
-
     # Enable CSRF protection
     CSRFProtect(app)
 
@@ -151,6 +137,36 @@ def create_app(
         return {
             "version_info": get_version_info(debug=app.debug),
         }
+
+    # ---------------
+    # From here on, only for permanently running app, not one-off calls
+    if one_off_call:
+        return app
+
+    # Set up rate limiting
+    app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
+    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
+    app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
+    limiter = Limiter(
+        get_remote_address,
+        default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
+        storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
+    )
+    limiter.init_app(app)
+
+    if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
+        logging.warning(
+            "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
+        )
+
+    # Start background IMAP thread unless in testing
+    initialize_imap_polling(app)
+
+    # Compile SCSS files on startup
+    app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
+
+    # Debug logging of config
+    logging.debug("App configuration:\n%s", app.config)
 
     return app
 
@@ -194,7 +210,11 @@ def main():
     configure_logging(args.debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=args.app_config)
+    one_off = False
+    if args.db or args.create_admin or args.db_seed:
+        # one-off call for most CLI commands
+        one_off = True
+    app = create_app(yaml_config_path=args.app_config, one_off_call=one_off)
 
     # Create admin user if requested
     if args.create_admin:
@@ -244,17 +264,14 @@ def main():
             )
             return
 
-    # Compile SCSS files on startup
-    scss_files_abs = compile_scss_on_startup(scss_files=SCSS_FILES)
-    # start background IMAP thread unless in testing
-    initialize_imap_polling(app)
-
     # Run the Flask app
     app.run(
         host=args.host,
         port=args.port,
         debug=args.debug,
-        extra_files=[bundle[0] for bundle in scss_files_abs],  # watch SCSS files for changes
+        extra_files=[
+            bundle[0] for bundle in app.config["SCSS_FILES"]
+        ],  # watch SCSS files for changes
     )
 
 
