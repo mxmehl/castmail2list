@@ -36,8 +36,20 @@ def flash_form_errors(form):
             flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
 
-def get_version_info():
-    """Get the version information of the application"""
+def get_version_info(debug: bool = False) -> str:
+    """
+    Get the current version information of the application. If in debug mode, include git commit
+    hash.
+
+    Example: "1.2.3 (a1b2c3d)" in debug mode, "1.2.3" otherwise.
+
+    Args:
+        debug (bool): Whether to include git commit hash information
+    Returns:
+        str: The version information string
+    """
+    if not debug:
+        return __version__
     # Get short git commit hash if available
     try:
         commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
