@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from flask import flash
+from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
 from platformdirs import user_config_path
@@ -15,20 +15,37 @@ from . import __version__
 from .models import MailingList, Subscriber
 
 
-def compile_scss(compiler: str, scss_files: list[tuple[str, str]]) -> None:
+def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
     """Compile SCSS files to CSS using an external compiler"""
+    try:
+        logging.info("Compiling %s to %s", scss_input, css_output)
+        subprocess.run([compiler, scss_input, css_output], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.critical("Error compiling %s: %s", scss_input, e)
+        sys.exit(1)
+    except FileNotFoundError as e:
+        logging.critical(
+            "Sass compiler not found. Please ensure '%s' is installed: %s", compiler, e
+        )
+        sys.exit(1)
+
+
+def compile_scss_on_startup(scss_files: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Compile SCSS to CSS on application startup.
+
+    Args:
+        scss_files (list[tuple[str, str]]): List of tuples with relative paths
+    Return:
+        list: List of compiled (input, output) absolute file paths
+    """
+    curpath = Path(__file__).parent.resolve()
+    compiled_files: list[tuple[str, str]] = []
     for scss_input, css_output in scss_files:
-        try:
-            logging.info("Compiling %s to %s", scss_input, css_output)
-            subprocess.run([compiler, scss_input, css_output], check=True)
-        except subprocess.CalledProcessError as e:
-            logging.critical("Error compiling %s: %s", scss_input, e)
-            sys.exit(1)
-        except FileNotFoundError as e:
-            logging.critical(
-                "Sass compiler not found. Please ensure '%s' is installed: %s", compiler, e
-            )
-            sys.exit(1)
+        scss_input_abs = str(curpath / Path(scss_input))
+        css_output_abs = str(curpath / Path(css_output))
+        compile_scss("sass", scss_input=scss_input_abs, css_output=css_output_abs)
+        compiled_files.append((scss_input_abs, css_output_abs))
+    return compiled_files
 
 
 def flash_form_errors(form):
@@ -280,7 +297,7 @@ def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> 
     return to_local_part_no_suffix == list_local_part.lower()
 
 
-def run_only_once(app):
+def run_only_once(app: Flask):
     """Ensure that something is only run once if Flask is run in Debug mode. Check if Flask is run
     in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is"""
     logging.debug("FLASK_DEBUG=%s, WERKZEUG_RUN_MAIN=%s", app.debug, os.getenv("WERKZEUG_RUN_MAIN"))
