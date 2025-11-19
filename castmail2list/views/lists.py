@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, flash, redirect, render_template, url_
 from flask_babel import _
 from flask_login import login_required
 
-from ..config import Config
+from ..config import AppConfig
 from ..forms import MailingListForm, SubscriberAddForm
 from ..models import MailingList, Subscriber, db
 from ..utils import (
@@ -27,7 +27,7 @@ lists = Blueprint("lists", __name__, url_prefix="/lists")
 def show_all():
     """Show all mailing lists"""
     active_lists = MailingList.query.filter_by(deleted=False).all()
-    return render_template("lists/index.html", lists=active_lists, config=Config)
+    return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
 @lists.route("/add", methods=["GET", "POST"])
@@ -80,7 +80,7 @@ def add():
                         ),
                         "error",
                     )
-                    return render_template("lists/add.html", config=Config, form=form, retry=True)
+                    return render_template("lists/add.html", config=AppConfig, form=form, retry=True)
             # Case: automatic account creation disabled, show error
             else:
                 flash(
@@ -91,7 +91,7 @@ def add():
                     ),
                     "error",
                 )
-                return render_template("lists/add.html", config=Config, form=form, retry=True)
+                return render_template("lists/add.html", config=AppConfig, form=form, retry=True)
 
         # Add and commit new list
         db.session.add(new_list)
@@ -108,7 +108,7 @@ def add():
     if form.submit.data and form.errors:
         flash_form_errors(form)
 
-    return render_template("lists/add.html", config=Config, form=form)
+    return render_template("lists/add.html", config=AppConfig, form=form)
 
 
 @lists.route("/<int:list_id>/edit", methods=["GET", "POST"])

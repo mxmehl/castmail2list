@@ -38,7 +38,7 @@ CONFIG_SCHEMA = {
 }
 
 
-class Config:  # pylint: disable=too-few-public-methods
+class AppConfig:  # pylint: disable=too-few-public-methods
     """Flask configuration from YAML file with some defaults"""
 
     # App settings
@@ -102,7 +102,7 @@ class Config:  # pylint: disable=too-few-public-methods
             return data
 
     @classmethod
-    def from_yaml_and_env(cls, yaml_path: str | Path) -> "Config":
+    def from_yaml_and_env(cls, yaml_path: str | Path) -> "AppConfig":
         """Create Config instance from YAML file, overriding class defaults
 
         Args:

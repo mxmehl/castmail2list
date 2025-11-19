@@ -4,7 +4,7 @@ from flask import Blueprint, flash, render_template
 from flask_babel import _
 from flask_login import login_required
 
-from ..config import Config
+from ..config import AppConfig
 from ..models import MailingList, Subscriber
 
 general = Blueprint("general", __name__)
@@ -45,4 +45,4 @@ def subscriber(email):
 def settings():
     """Manage application settings"""
 
-    return render_template("settings.html", config=Config)
+    return render_template("settings.html", config=AppConfig)
