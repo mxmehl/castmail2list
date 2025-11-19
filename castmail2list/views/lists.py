@@ -80,7 +80,9 @@ def add():
                         ),
                         "error",
                     )
-                    return render_template("lists/add.html", config=AppConfig, form=form, retry=True)
+                    return render_template(
+                        "lists/add.html", config=AppConfig, form=form, retry=True
+                    )
             # Case: automatic account creation disabled, show error
             else:
                 flash(

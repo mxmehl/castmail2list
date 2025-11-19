@@ -1,5 +1,7 @@
 """WSGI entry point for production servers like gunicorn"""
 
+# pylint: disable=duplicate-code
+
 import argparse
 import logging
 import os

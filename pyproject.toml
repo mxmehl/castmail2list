@@ -5,13 +5,27 @@
 [tool.poetry]
 name = "castmail2list"
 version = "0.1.0"
-description = "Super-simple mailing list broadcasting emails from an IMAP account to a list of subscribers"
+description = "Simple mailing list software with IMAP mailbox backend, web interface, and multiple list modes."
 repository = "https://github.com/mxmehl/castmail2list"
 authors = ["Max Mehl <mail@mehl.mx>"]
 readme = "README.md"
 keywords = []
 license = "GPL-3.0-only"
-classifiers = []
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: Flask",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Topic :: Communications :: Email",
+    "Topic :: Communications :: Email :: Mailing List Servers",
+    "Topic :: Communications :: Email :: Post-Office :: IMAP",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Software Development :: Libraries :: Application Frameworks"
+]
 # Add ignored files to the package
 include = ["castmail2list/translations/**/*.mo"]
 
@@ -31,7 +45,7 @@ flask-babel = "^4.0.0"
 flufl-bounce = "^4.0"
 flask-limiter = "^4.0.0"
 flask-login = "^0.6.3"
-wtforms = {extras = ["email"], version = "^3.2.1"}
+wtforms = { extras = ["email"], version = "^3.2.1" }
 pyyaml = "^6.0.1"
 jsonschema = "^4.25.1"
 gunicorn = "^23.0.0"
@@ -59,7 +73,7 @@ line-length = 100
 
 # MYPY settings
 [tool.mypy]
-files = ["castmail2list/*.py"]
+files = ["castmail2list/*.py", "tests/*.py"]
 disable_error_code = ["import-untyped"]
 check_untyped_defs = true
 
