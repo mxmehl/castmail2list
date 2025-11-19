@@ -180,11 +180,6 @@ def main():
     # Create Flask app
     app = create_app(yaml_config_path=args.config)
 
-    # Compile SCSS to CSS
-    curpath = Path(__file__).parent.resolve()
-    scss_files = [(f"{curpath}/static/scss/main.scss", f"{curpath}/static/css/main.scss.css")]
-    compile_scss("sass", scss_files)
-
     # Create admin user if requested
     if args.create_admin:
         username, password = args.create_admin
@@ -217,6 +212,11 @@ def main():
     if args.db_seed:
         seed_database(app, seed_file=args.seed)
         return
+
+    # Compile SCSS to CSS
+    curpath = Path(__file__).parent.resolve()
+    scss_files = [(f"{curpath}/static/scss/main.scss", f"{curpath}/static/css/main.scss.css")]
+    compile_scss("sass", scss_files)
 
     # start background IMAP thread unless in testing
     if not app.config.get("TESTING", True):
