@@ -28,7 +28,7 @@ def subscriber(email):
 
     if not subscriptions:
         flash(_('No subscriptions found for "%(email)s"', email=email), "warning")
-        return render_template("subscriber.html", email=email)
+        return render_template("subscriber.html", email=email), 404
 
     # Get list information for each subscription
     subscriber_lists = []

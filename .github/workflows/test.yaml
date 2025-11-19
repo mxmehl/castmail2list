@@ -59,14 +59,14 @@ jobs:
           castmail2list-cli --version
           castmail2list --help
 
-  # pytest:
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-  #     - uses: ./.github/actions/poetrybuild
-  #     - name: Test with pytest
-  #       run: |
-  #         poetry run pytest --cov=castmail2list
+  pytest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: ./.github/actions/poetrybuild
+      - name: Test with pytest
+        run: |
+          poetry run pytest --cov=castmail2list
 
   # Formatting
   pylint:
