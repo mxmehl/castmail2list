@@ -246,7 +246,7 @@ msgstr "Abonnenten"
 #: templates/subscribers.html:7
 #, python-format
 msgid "Subscribers for \"%(name)s\""
-msgstr "Mailingliste \"%(name)s\" erfolgreich erstellt!"
+msgstr "Abonnenten von \"%(name)s\""
 
 #: templates/subscribers.html:11
 msgid "Add Subscriber"
