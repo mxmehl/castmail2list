@@ -144,7 +144,7 @@ def create_app(
     @app.context_processor
     def inject_vars():
         return {
-            "version_info": get_version_info(),
+            "version_info": get_version_info(debug=app.debug),
         }
 
     # start background IMAP thread unless disabled or in testing
