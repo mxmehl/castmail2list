@@ -11,7 +11,7 @@ from jsonschema.exceptions import ValidationError
 CONFIG_SCHEMA = {
     "type": "object",
     "properties": {
-        "SQLALCHEMY_DATABASE_URI": {"type": "string"},
+        "DATABASE_URI": {"type": "string"},
         "SECRET_KEY": {"type": "string"},
         "LANGUAGE": {"type": "string"},
         "DOMAIN": {"type": "string"},
@@ -42,7 +42,7 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     """Flask configuration from YAML file with some defaults"""
 
     # App settings
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:///castmail2list.db"
+    DATABASE_URI: str = ""
     SECRET_KEY: str = ""
 
     # General settings

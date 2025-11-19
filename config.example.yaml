@@ -1,11 +1,14 @@
 # Example configuration file for CastMail2List
 # Copy this file to config.yaml and adjust the values to your needs
 
-# App settings
-SQLALCHEMY_DATABASE_URI: "" # Default: "sqlite:///castmail2list.db"
-SECRET_KEY: "" # Default: ""
+# Database settings
+# Configure the database connection URI, according to SQLAlchemy format:
+# https://docs.sqlalchemy.org/en/20/core/engines.html
+# Default: sqlite:///{app.instance_path}/castmail2list.db
+DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
 
 # General settings
+SECRET_KEY: "" # Default: ""
 LANGUAGE: "en" # Supported languages: "en", "de". Default: "en"
 DOMAIN: "example.com" # Default: ""
 HOST_TYPE: "uberspace7" # Can be: uberspace7, uberspace8. Default: ""
