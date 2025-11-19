@@ -9,6 +9,7 @@ from pathlib import Path
 from flask import flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
+from platformdirs import user_config_path
 
 from . import __version__
 from .models import MailingList, Subscriber
@@ -401,8 +402,25 @@ def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
 
     return findings
 
+
 def get_app_bin_dir() -> Path:
     """
     Get the directory where this app's executable resides in the current Python environment.
     """
     return Path(sys.executable).parent
+
+
+def get_user_config_path(name: str = "castmail2list", file: str = "") -> Path:
+    """
+    Get the user configuration directory for the application.
+
+    Args:
+        app_name (str): The name of the application
+        file (str): Optional filename to append to the config directory
+    Returns:
+        Path: The path to the user configuration directory
+    """
+    config_path = Path(user_config_path(appname=name, ensure_exists=True))
+    if file:
+        config_path = config_path / file
+    return config_path

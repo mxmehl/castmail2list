@@ -21,7 +21,7 @@ from .config import AppConfig
 from .imap_worker import poll_imap
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
-from .utils import compile_scss, get_app_bin_dir, get_version_info
+from .utils import compile_scss, get_app_bin_dir, get_user_config_path, get_version_info
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
@@ -151,11 +151,19 @@ def create_app(
 
 def main():
     """Run the app"""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-H", "--host", default="127.0.0.1")
-    parser.add_argument("-p", "--port", default=5000, type=int)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("-H", "--host", type=str, help="Host of Flask app", default="127.0.0.1")
+    parser.add_argument("-p", "--port", type=int, help="Port of Flask app", default=2278)
     parser.add_argument("--debug", action="store_true", help="Run in debug mode (development only)")
-    parser.add_argument("-c", "--app-config", type=str, help="Path to YAML configuration file")
+    parser.add_argument(
+        "-c",
+        "--app-config",
+        type=str,
+        help="Path to YAML configuration file",
+        default=get_user_config_path(file="config.yaml"),
+    )
     parser.add_argument(
         "--create-admin",
         nargs=2,
