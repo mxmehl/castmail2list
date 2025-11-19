@@ -17,7 +17,7 @@ POLL_INTERVAL_SECONDS: 60 # Default: 60
 
 # IMAP settings and defaults (used as defaults for new lists)
 IMAP_DEFAULT_HOST: "imap.example.com" # Default: ""
-IMAP_DEFAULT_PORT: "993" # Default: 993
+IMAP_DEFAULT_PORT: 993 # Default: 993
 IMAP_DEFAULT_PASS: "your-password-here" # Default: ""
 
 # IMAP folder names
@@ -30,7 +30,7 @@ IMAP_FOLDER_DUPLICATE: "Duplicate" # Default: "Duplicate"
 
 # SMTP settings (all lists use the same SMTP server)
 SMTP_HOST: "smtp.example.com" # Default: ""
-SMTP_PORT: "587" # Default: 587
+SMTP_PORT: 587 # Default: 587
 SMTP_USER: "list@example.com" # Default: ""
 SMTP_PASS: "your-password-here" # Default: ""
 SMTP_STARTTLS: true # Default: true
