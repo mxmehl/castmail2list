@@ -233,8 +233,23 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
 def send_msg_to_subscribers(
     app: Flask, msg: MailMessage, ml: MailingList, mailbox: MailBox
-) -> None:
-    """Send message to all subscribers of a list"""
+) -> tuple[list[str], list[str]]:
+    """
+    Send message to all subscribers of a list. Stores sent message in Sent folder via IMAP.
+
+    Args:
+        app (Flask): Flask application instance
+        msg (MailMessage): Message to send
+        ml (MailingList): Mailing list to send to
+        mailbox (MailBox): IMAP mailbox instance for storing sent messages
+
+    Returns:
+        tuple[list[str], list[str]]: Tuple of lists of successful and failed recipient email
+            addresses
+    """
+    sent_successful: list[str] = []
+    sent_failed: list[str] = []
+
     subscribers: list[Subscriber] = get_list_subscribers(ml)
     logging.info(
         "Sending message %s to %d subscribers of list <%s>: %s",
@@ -258,10 +273,12 @@ def send_msg_to_subscribers(
         try:
             # Copy mail class to avoid cross-contamination between recipients
             recipient_mail = deepcopy(mail)
+            # Send email to recipient
             sent_msg = recipient_mail.send_email_to_recipient(recipient=subscriber.email)
 
             # Store sent message in Sent folder via IMAP if we have one
             if sent_msg:
+                sent_successful.append(subscriber.email)
                 with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                     tmpfile.write(msg.obj.as_string())
                     tmpfile.flush()
@@ -273,14 +290,27 @@ def send_msg_to_subscribers(
                         message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
                     )
             else:
+                sent_failed.append(subscriber.email)
                 logging.info(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
                     subscriber.email,
                 )
         except Exception as e:  # pylint: disable=broad-except
+            sent_failed.append(subscriber.email)
             logging.error(
                 "Failed to send message to %s: %s\nTraceback: %s",
                 subscriber.email,
                 e,
                 traceback.format_exc(),
             )
+
+    # Unify sent email lists and log/return results
+    sent_successful = list(set(sent_successful))
+    sent_failed = list(set(sent_failed))
+    logging.info(
+        "Finished sending message %s. Successful: %d, Failed: %d",
+        msg.uid,
+        len(sent_successful),
+        len(sent_failed),
+    )
+    return sent_successful, sent_failed
