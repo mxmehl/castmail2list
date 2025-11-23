@@ -2,10 +2,10 @@
 Tests for IMAP worker bounce detection and scaffolding for future message handling.
 """
 
-import pytest
 from flask import Flask
 from imap_tools import MailboxLoginError, MailMessage
 
+import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
 from castmail2list.imap_worker import IncomingMessage, create_required_folders
 from castmail2list.models import MailingList, Message, Subscriber
@@ -14,7 +14,7 @@ from castmail2list.models import db as _db
 from .conftest import MailboxStub
 
 # Test files use local helper classes and imports inside functions; allow those
-# pylint: disable=import-outside-toplevel,too-few-public-methods,protected-access,missing-class-docstring,missing-function-docstring
+# pylint: disable=too-few-public-methods,protected-access
 
 
 def _call_detect_bounce(incoming: IncomingMessage) -> str:
@@ -115,19 +115,6 @@ def test_duplicate_detection_moves_to_duplicate(
 
     # Verify mailbox_stub recorded move to duplicate folder for the second UID
     assert mailbox_stub._moves.get("dup-2") == incoming2.app.config["IMAP_FOLDER_DUPLICATE"]
-
-
-# ---------------- Placeholder / scaffolding tests for future extensions ----------------
-
-
-@pytest.mark.skip(reason="To be implemented: allowed sender logic")
-def test_process_incoming_allowed_sender_placeholder():
-    """Placeholder: will assert behavior when sender not in allowed list (broadcast)."""
-
-
-@pytest.mark.skip(reason="To be implemented: duplicate detection logic")
-def test_process_incoming_duplicate_placeholder():
-    """Placeholder: will assert duplicate message handling and IMAP move target."""
 
 
 def test_broadcast_sender_not_allowed(
@@ -262,9 +249,11 @@ def test_create_required_folders_calls_create(client):
             self.created = False
 
         def exists(self, _name):
+            """Return False to simulate missing folder."""
             return False
 
         def create(self, folder=None):
+            """Create the folder (test stub)."""
             # accept and ignore the folder parameter to satisfy signature
             del folder
             self.created = True
@@ -282,19 +271,19 @@ def test_create_required_folders_calls_create(client):
 
 def test_initialize_imap_polling_starts_thread(monkeypatch):
     """initialize_imap_polling should start a background thread when TESTING is False."""
-    import castmail2list.imap_worker as imap_worker_mod
-
     started = {}
 
     class FakeThread:
         """Thread-like fake used to verify thread start is invoked."""
 
         def __init__(self, target=None, args=None, daemon=None):
+            """Initialize fake thread (no-op)."""
             # accept parameters and ignore them to satisfy signature
             del target, args, daemon
             started["created"] = True
 
         def start(self):
+            """Simulate starting the thread by recording state."""
             started["started"] = True
 
     monkeypatch.setattr(imap_worker_mod, "threading", type("T", (), {"Thread": FakeThread}))
@@ -309,16 +298,17 @@ def test_initialize_imap_polling_starts_thread(monkeypatch):
 def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
     """check_all_lists_for_messages should handle MailboxLoginError and other exceptions."""
     del mailing_list
-    import castmail2list.imap_worker as imap_worker_mod
 
     # Fake MailBox that raises MailboxLoginError when login() is called
     class FakeMailBoxLoginFail:
         """Fake MailBox that raises `MailboxLoginError` on login."""
 
         def __init__(self, *args, **kwargs):
-            pass
+            """Initialize fake mailbox that will raise on login."""
+            del args, kwargs
 
         def login(self, username=None, password=None):
+            """Raise a mailbox login error when login is attempted."""
             # accept and ignore username/password to satisfy signature
             del username, password
             # construct a realistic MailboxLoginError payload so __str__ does not fail
@@ -336,14 +326,18 @@ def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
 
         def __enter__(self):
             class MB:
+                """Fake MailBox whose fetch raises a runtime error"""
                 def __init__(self):
                     class Folder:
+                        """Simulate folder handler for MailBox"""
                         def set(self, _):
-                            pass
+                            """Simulate folder.set call."""
+                            del _
 
                     self.folder = Folder()
 
                 def fetch(self):
+                    """Simulate fetch raising an error."""
                     raise RuntimeError("fetch error")
 
             return MB()
@@ -355,9 +349,11 @@ def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
         """Fake MailBox whose fetch raises a runtime error inside the context manager."""
 
         def __init__(self, *args, **kwargs):
-            pass
+            """Init fake mailbox fetch fail (no-op)."""
+            del args, kwargs
 
         def login(self, username=None, password=None):
+            """Return a context manager which will raise from fetch()."""
             del username, password
             return FakeCM()
 
