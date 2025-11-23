@@ -10,11 +10,11 @@ from castmail2list import mailer
 from castmail2list.imap_worker import IncomingMessage, create_required_folders
 from castmail2list.models import MailingList, Message, Subscriber
 from castmail2list.models import db as _db
+from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
 
-# Test files use local helper classes and imports inside functions; allow those
-# pylint: disable=too-few-public-methods,protected-access
+# pylint: disable=protected-access
 
 
 def _call_detect_bounce(incoming: IncomingMessage) -> str:
@@ -31,6 +31,44 @@ def test_incoming_message_detect_bounce(bounce_samples, incoming_message_factory
     for filename, (mail_msg, expected) in bounce_samples.items():
         incoming = incoming_message_factory(mail_msg)
         assert _call_detect_bounce(incoming) == expected, f"Failed for {filename}"
+
+
+def test_detect_bounce_via_to_header(incoming_message_factory):
+    """_detect_bounce should find bounced recipient from special To header."""
+    recipient = "john.doe@gmail.com"
+    list_addr = "list@example.com"
+    raw = (
+        b"Subject: Bounce Test\nTo: "
+        + create_bounce_address(list_addr, recipient).encode()
+        + b"\nFrom: sender@example.com\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "detect-to-1"
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    bounced = incoming._detect_bounce()
+    assert isinstance(bounced, str)
+    # parse_bounce_address returns the bounced local part in our samples
+    assert bounced == "john.doe@gmail.com"
+
+
+def test_detect_bounce_via_flufl_scan(monkeypatch, incoming_message_factory):
+    """_detect_bounce should use flufl.bounce.scan_message when present."""
+    # Prepare a simple message without special To header
+    raw = b"Subject: Scan Test\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "detect-flufl-1"
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    # Monkeypatch the scan_message function used inside the imap_worker module
+    def _fake_scan(_msg):
+        return {b"flufl-recipient@example.com"}
+
+    monkeypatch.setattr(imap_worker_mod, "scan_message", _fake_scan)
+
+    bounced = incoming._detect_bounce()
+    assert isinstance(bounced, str)
+    assert "flufl-recipient@example.com" in bounced
 
 
 def test_incoming_message_no_bounce(incoming_message_factory):
@@ -327,9 +365,11 @@ def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
         def __enter__(self):
             class MB:
                 """Fake MailBox whose fetch raises a runtime error"""
+
                 def __init__(self):
                     class Folder:
                         """Simulate folder handler for MailBox"""
+
                         def set(self, _):
                             """Simulate folder.set call."""
                             del _
