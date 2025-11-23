@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import login_required
 
 from ..config import AppConfig
-from ..models import MailingList, Subscriber
+from ..models import MailingList, Subscriber, db
 
 general = Blueprint("general", __name__)
 
@@ -33,7 +33,7 @@ def subscriber(email):
     # Get list information for each subscription
     subscriber_lists = []
     for sub in subscriptions:
-        mailing_list: MailingList | None = MailingList.query.get(sub.list_id)
+        mailing_list: MailingList | None = db.session.get(MailingList, sub.list_id)
         if mailing_list:
             subscriber_lists.append({"list": mailing_list, "subscriber": sub})
 
