@@ -6,7 +6,8 @@ import pytest
 from imap_tools import MailMessage
 
 from castmail2list.imap_worker import IncomingMessage
-from castmail2list.models import MailingList
+from castmail2list.models import MailingList, Message, Subscriber
+from castmail2list.models import db as _db
 
 from .conftest import MailboxStub
 
@@ -124,3 +125,72 @@ def test_process_incoming_allowed_sender_placeholder():
 @pytest.mark.skip(reason="To be implemented: duplicate detection logic")
 def test_process_incoming_duplicate_placeholder():
     """Placeholder: will assert duplicate message handling and IMAP move target."""
+
+
+def test_broadcast_sender_not_allowed(
+    mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
+):
+    """Broadcast mode should reject senders not in `allowed_senders` and move to denied."""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = ["allowed@example.com"]
+
+    raw = b"Subject: Bad Sender\nTo: list@example.com\nFrom: badguy@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "bad-1"
+
+    incoming: IncomingMessage = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is False
+    assert mailbox_stub._moves.get("bad-1") == incoming.app.config["IMAP_FOLDER_DENIED"]
+
+
+def test_group_mode_subscriber_restrictions(
+    mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
+):
+    """
+    Group mode should only allow messages from subscribers when `only_subscribers_send` is set.
+    """
+    # Set up a group list with one subscriber
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    sub = Subscriber(list_id=mailing_list.id, email="member@example.com")
+    _db.session.add(sub)
+    _db.session.commit()
+
+    # Message from non-subscriber should be denied
+    raw1 = b"Subject: Group Test\nTo: list@example.com\nFrom: intruder@example.com\n\nBody"
+    msg1 = MailMessage.from_bytes(raw1)
+    msg1.uid = "grp-1"
+    incoming1: IncomingMessage = incoming_message_factory(msg1)
+    res1 = incoming1.process_incoming_msg()
+    assert res1 is False
+    assert mailbox_stub._moves.get("grp-1") == incoming1.app.config["IMAP_FOLDER_DENIED"]
+
+    # Message from subscriber should be allowed (no duplicate in DB, so processed)
+    raw2 = b"Subject: Group Test\nTo: list@example.com\nFrom: member@example.com\n\nBody"
+    msg2 = MailMessage.from_bytes(raw2)
+    msg2.uid = "grp-2"
+    incoming2: IncomingMessage = incoming_message_factory(msg2)
+    res2 = incoming2.process_incoming_msg()
+    assert res2 is True
+    assert mailbox_stub._moves.get("grp-2") == incoming2.app.config["IMAP_FOLDER_PROCESSED"]
+
+
+def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_stub: MailboxStub):
+    """A valid message should be stored in DB with status 'ok' and moved to processed folder."""
+    raw = (
+        b"Subject: Store Test\nMessage-ID: <store-1@example.com>"
+        b"\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "store-1"  # type: ignore[attr-defined]
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+    # Verify DB has a Message with our Message-ID
+    stored = Message.query.filter_by(message_id="store-1@example.com").first()
+    assert stored is not None
+    assert stored.status == "ok"
+    assert mailbox_stub._moves.get("store-1") == incoming.app.config["IMAP_FOLDER_PROCESSED"]

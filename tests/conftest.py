@@ -122,7 +122,7 @@ def fixture_client_unauthed():
 
 
 @pytest.fixture(name="mailing_list")
-def fixture_mailing_list(client):  # depends on authenticated client & DB
+def fixture_mailing_list(client) -> MailingList:  # depends on authenticated client & DB
     """Return the default mailing list created by the client fixture.
 
     The `client` fixture is not used directly here but is required to ensure the
@@ -217,6 +217,10 @@ def fixture_incoming_message_factory(client, mailing_list, mailbox_stub):
     Keeps test code terse and centralizes construction details."""
 
     def _factory(mail_msg: MailMessage) -> IncomingMessage:
+        # Ensure a non-empty DOMAIN to avoid duplicate-from-same-instance matches in tests
+        if not client.application.config.get("DOMAIN"):
+            client.application.config["DOMAIN"] = "lists.example.com"
+
         return IncomingMessage(
             app=client.application,
             mailbox=mailbox_stub,
