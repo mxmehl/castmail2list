@@ -5,6 +5,7 @@ Tests for IMAP worker bounce detection and scaffolding for future message handli
 import pytest
 from imap_tools import MailMessage
 
+from castmail2list import mailer
 from castmail2list.imap_worker import IncomingMessage
 from castmail2list.models import MailingList, Message, Subscriber
 from castmail2list.models import db as _db
@@ -194,3 +195,55 @@ def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_st
     assert stored is not None
     assert stored.status == "ok"
     assert mailbox_stub._moves.get("store-1") == incoming.app.config["IMAP_FOLDER_PROCESSED"]
+
+
+def test_send_msg_to_subscribers_called_for_ok_message(
+    monkeypatch, incoming_message_factory, mailbox_stub
+):
+    """Ensure `send_msg_to_subscribers` is invoked for messages that pass checks."""
+    # Arrange: create a simple message that should be OK
+    raw = (
+        b"Subject: Send Test\nMessage-ID: <send-1@example.com>"
+        b"\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "send-1"
+
+    incoming: IncomingMessage = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+    # Ensure there's at least one subscriber to send to
+    _db.session.add(Subscriber(list_id=incoming.ml.id, email="recipient@example.com"))
+    _db.session.commit()
+
+    # Patch Mail.send_email_to_recipient to avoid SMTP
+    def _fake_send(_self, _recipient):
+        return b"OK"
+
+    monkeypatch.setattr(mailer.Mail, "send_email_to_recipient", _fake_send, raising=True)
+
+    sent_successful, _ = mailer.send_msg_to_subscribers(
+        app=incoming.app, msg=msg, ml=incoming.ml, mailbox=mailbox_stub
+    )
+
+    assert isinstance(sent_successful, list)
+
+
+def test_send_msg_not_called_for_bounce(bounce_samples, incoming_message_factory, monkeypatch):
+    """Ensure `send_msg_to_subscribers` is NOT called for bounce messages."""
+    # Pick one bounce sample
+    _, (bounce_msg, _) = next(iter(bounce_samples.items()))
+
+    called = {}
+
+    def _spy(_app, _msg, _ml, _mailbox):
+        called["called"] = True
+        return [], []
+
+    monkeypatch.setattr(mailer, "send_msg_to_subscribers", _spy)
+
+    incoming: IncomingMessage = incoming_message_factory(bounce_msg)
+    res = incoming.process_incoming_msg()
+    assert res is False
+    assert called.get("called") is None
