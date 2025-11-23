@@ -181,7 +181,7 @@ class MailboxStub:  # pylint: disable=too-few-public-methods
 
 
 @pytest.fixture(name="mailbox_stub")
-def fixture_mailbox_stub():
+def fixture_mailbox_stub() -> MailboxStub:
     """Provide a stub mailbox instance."""
     return MailboxStub()
 
