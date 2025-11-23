@@ -193,9 +193,9 @@ def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_st
     assert res is True
 
     # Verify DB has a Message with our Message-ID
-    stored = Message.query.filter_by(message_id="store-1@example.com").first()
-    assert stored is not None
-    assert stored.status == "ok"
+    stored_msg = Message.query.filter_by(message_id="store-1@example.com").first()
+    assert stored_msg is not None
+    assert stored_msg.status == "ok"
     assert mailbox_stub._moves.get("store-1") == incoming.app.config["IMAP_FOLDER_PROCESSED"]
 
 
@@ -238,6 +238,7 @@ def test_send_msg_not_called_for_bounce(bounce_samples, incoming_message_factory
     _, (bounce_msg, _) = next(iter(bounce_samples.items()))
 
     called = {}
+
     def _spy(_app, _msg, _ml, _mailbox):
         """Spy replacement for `send_msg_to_subscribers` used to observe calls."""
         called["called"] = True
@@ -253,8 +254,10 @@ def test_send_msg_not_called_for_bounce(bounce_samples, incoming_message_factory
 
 def test_create_required_folders_calls_create(client):
     """create_required_folders should call MailBox.folder.create when folder missing."""
+
     class FakeFolder:
         """Fake folder object used to verify create() is called."""
+
         def __init__(self):
             self.created = False
 
@@ -268,6 +271,7 @@ def test_create_required_folders_calls_create(client):
 
     class FakeMailbox:
         """Fake MailBox exposing a `folder` attribute like imap_tools.MailBox."""
+
         def __init__(self):
             self.folder = FakeFolder()
 
@@ -284,6 +288,7 @@ def test_initialize_imap_polling_starts_thread(monkeypatch):
 
     class FakeThread:
         """Thread-like fake used to verify thread start is invoked."""
+
         def __init__(self, target=None, args=None, daemon=None):
             # accept parameters and ignore them to satisfy signature
             del target, args, daemon
@@ -360,3 +365,92 @@ def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
 
     # Should not raise despite fetch() raising
     imap_worker_mod.check_all_lists_for_messages(client.application)
+
+
+def test_validate_sender_auth_when_from_missing(
+    mailing_list: MailingList, incoming_message_factory
+):
+    """When the message has no From header, sender authentication still works."""
+    # mailing_list fixture provided but not used directly here
+    mailing_list.mode = "broadcast"
+    mailing_list.sender_auth = ["pw"]
+
+    raw = b"Subject: Auth Test\nTo: list+pw@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "auth-no-from"
+
+    incoming: IncomingMessage = incoming_message_factory(msg)
+    passed = incoming._validate_email_sender_authentication()
+    # Current behaviour: authentication is checked by +suffix only,
+    # independent of From header presence
+    assert passed == "list+pw@example.com"
+
+
+def test_validate_duplicate_from_same_instance(incoming_message_factory, mailbox_stub: MailboxStub):
+    """
+    Messages containing the app DOMAIN in X-CastMail2List-Domain are treated as messages from same
+    instance sending to itself. This results in denial and storage with
+    'duplicate-from-same-instance' status, as we do not want to provoke a mail loop.
+    """
+    app: Flask = incoming_message_factory(MailMessage.from_bytes(b"Subject: x\n\n")).app
+    app.config["DOMAIN"] = "lists.example.com"
+
+    raw = (
+        b"Subject: Self\nMessage-ID: <self-1@example.com>\nTo: list@example.com\n"
+        b"From: me@example.com\nX-CastMail2List-Domain: lists.example.com\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "self-1"
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    res = incoming.process_incoming_msg()
+    assert res is False
+    assert mailbox_stub._moves.get("self-1") == incoming.app.config["IMAP_FOLDER_DENIED"]
+    stored_msg = Message.query.filter_by(
+        status="duplicate-from-same-instance", list_id=incoming.ml.id
+    ).first()
+    # status stored should reflect duplicate-from-same-instance
+    assert stored_msg is not None
+    assert stored_msg.status == "duplicate-from-same-instance"
+
+
+def test_bounce_messages_are_stored_in_bounces(
+    mailing_list, incoming_message_factory, mailbox_stub
+):
+    """A bounce message should result in stored status 'bounce-msg' and moved to bounces folder."""
+    # Use a simple To that parse_bounce_address recognizes (pattern +bounces--)
+    del mailing_list
+    raw = (
+        b"Subject: Bounce\nTo: list+bounces--recipient@example.com\n"
+        b"From: sender@example.com\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "bounce-store-1"
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    res = incoming.process_incoming_msg()
+    assert res is False
+
+    # Verify DB record exists and status is 'bounce-msg'
+    stored_msg = Message.query.filter_by(status="bounce-msg", list_id=incoming.ml.id).first()
+    assert stored_msg is not None
+    assert stored_msg.status == "bounce-msg"
+    assert mailbox_stub._moves.get("bounce-store-1") == incoming.app.config["IMAP_FOLDER_BOUNCES"]
+
+
+def test_store_msg_generates_message_id_when_missing(incoming_message_factory, mailbox_stub):
+    """When Message-ID header is missing, a generated id should be stored in DB."""
+    # mailbox_stub fixture isn't used directly in this test
+    del mailbox_stub
+    raw = b"Subject: No ID\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "noid-1"
+    incoming: IncomingMessage = incoming_message_factory(msg)
+
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+    all_msgs = Message.query.filter_by(list_id=incoming.ml.id).all()
+    stored_msg = all_msgs[-1] if all_msgs else None
+    assert stored_msg is not None
+    assert stored_msg.message_id != ""
