@@ -8,8 +8,7 @@ from imap_tools import MailboxLoginError, MailMessage
 import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
 from castmail2list.imap_worker import IncomingMessage, create_required_folders
-from castmail2list.models import MailingList, Message, Subscriber
-from castmail2list.models import db as _db
+from castmail2list.models import MailingList, Message, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
@@ -182,8 +181,8 @@ def test_group_mode_subscriber_restrictions(
     mailing_list.mode = "group"
     mailing_list.only_subscribers_send = True
     sub = Subscriber(list_id=mailing_list.id, email="member@example.com")
-    _db.session.add(sub)
-    _db.session.commit()
+    db.session.add(sub)
+    db.session.commit()
 
     # Message from non-subscriber should be denied
     raw1 = b"Subject: Group Test\nTo: list@example.com\nFrom: intruder@example.com\n\nBody"
@@ -241,8 +240,8 @@ def test_send_msg_to_subscribers_called_for_ok_message(
     assert res is True
 
     # Ensure there's at least one subscriber to send to
-    _db.session.add(Subscriber(list_id=incoming.ml.id, email="recipient@example.com"))
-    _db.session.commit()
+    db.session.add(Subscriber(list_id=incoming.ml.id, email="recipient@example.com"))
+    db.session.commit()
 
     # Patch Mail.send_email_to_recipient to avoid SMTP
     def _fake_send(_self, _recipient):

@@ -121,31 +121,6 @@ def fixture_client_unauthed():
 # ---------------------- Fixtures For IMAP Worker Tests ----------------------
 
 
-@pytest.fixture(name="mailing_list")
-def fixture_mailing_list(client) -> MailingList:  # depends on authenticated client & DB
-    """Return the default mailing list created by the client fixture.
-
-    The `client` fixture is not used directly here but is required to ensure the
-    application context and database are available. We explicitly delete the
-    reference to silence linter warnings about unused arguments.
-    """
-    del client
-    ml = MailingList.query.filter_by(address="list@example.com").first()
-    if ml is None:
-        ml = MailingList(
-            name="Test List",
-            address="list@example.com",
-            mode="broadcast",
-            imap_host="ml.local",
-            imap_port=993,
-            imap_user="user",
-            imap_pass="pass",
-        )
-        db.session.add(ml)
-        db.session.commit()
-    return ml
-
-
 class MailboxStub:  # pylint: disable=too-few-public-methods
     """
     Minimal stub of imap_tools.MailBox for testing logic without network.
@@ -229,3 +204,108 @@ def fixture_incoming_message_factory(client, mailing_list, mailbox_stub):
         )
 
     return _factory
+
+
+# ----------------------  Fixtures for MailingList Variants ----------------------
+
+
+@pytest.fixture(name="mailing_list")
+def fixture_mailing_list(client) -> MailingList:  # depends on authenticated client & DB
+    """Return the default mailing list created by the client fixture.
+
+    The `client` fixture is not used directly here but is required to ensure the
+    application context and database are available. We explicitly delete the
+    reference to silence linter warnings about unused arguments.
+    """
+    del client
+    ml = MailingList.query.filter_by(address="list@example.com").first()
+    if ml is None:
+        ml = MailingList(
+            name="Test List",
+            address="list@example.com",
+            mode="broadcast",
+            imap_host="ml.local",
+            imap_port=993,
+            imap_user="user",
+            imap_pass="pass",
+        )
+        db.session.add(ml)
+        db.session.commit()
+    return ml
+
+
+@pytest.fixture(name="broadcast_list")
+def fixture_broadcast_list(client) -> MailingList:
+    """Create a broadcast mode mailing list"""
+    del client  # ensure app context is available
+    ml = MailingList(
+        name="Broadcast List",
+        address="broadcast@example.com",
+        mode="broadcast",
+        avoid_duplicates=True,
+        imap_host="mail.example.com",
+        imap_port=993,
+        imap_user="user",
+        imap_pass="pass",
+    )
+    db.session.add(ml)
+    db.session.commit()
+    return ml
+
+
+@pytest.fixture(name="broadcast_list_with_from")
+def fixture_broadcast_list_with_from(client) -> MailingList:
+    """Create a broadcast mode mailing list with custom from_addr"""
+    del client
+    ml = MailingList(
+        name="Broadcast From List",
+        address="broadcast-from@example.com",
+        from_addr="custom@example.com",
+        mode="broadcast",
+        avoid_duplicates=True,
+        imap_host="mail.example.com",
+        imap_port=993,
+        imap_user="user",
+        imap_pass="pass",
+    )
+    db.session.add(ml)
+    db.session.commit()
+    return ml
+
+
+@pytest.fixture(name="broadcast_list_no_avoid_dup")
+def fixture_broadcast_list_no_avoid_dup(client) -> MailingList:
+    """Create a broadcast mode mailing list without avoid_duplicates"""
+    del client
+    ml = MailingList(
+        name="Broadcast No Dup",
+        address="broadcast-nodup@example.com",
+        mode="broadcast",
+        avoid_duplicates=False,
+        imap_host="mail.example.com",
+        imap_port=993,
+        imap_user="user",
+        imap_pass="pass",
+    )
+    db.session.add(ml)
+    db.session.commit()
+    return ml
+
+
+@pytest.fixture(name="group_list")
+def fixture_group_list(client) -> MailingList:
+    """Create a group mode mailing list"""
+    del client
+    ml = MailingList(
+        name="Group List",
+        address="group@example.com",
+        mode="group",
+        avoid_duplicates=True,
+        imap_host="mail.example.com",
+        imap_port=993,
+        imap_user="user",
+        imap_pass="pass",
+    )
+    db.session.add(ml)
+    db.session.commit()
+    return ml
