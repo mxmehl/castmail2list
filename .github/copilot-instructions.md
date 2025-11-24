@@ -61,6 +61,8 @@ Known CI and checks
     `pylint`, `isort`/`black`, and `mypy`.
   - The actions use a local `.github/actions/poetrybuild` helper to install dependencies
     (you do not need to replicate that exactly; using `poetry install` locally is fine).
+- Functions and classes need proper docstrings. We use `pylint` to enforce this. It should follow
+  the Google style.
 
 Project layout and where to make changes
 - Key files and directories (priority order):

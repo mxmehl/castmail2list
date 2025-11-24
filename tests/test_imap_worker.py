@@ -14,7 +14,7 @@ from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-few-public-methods
 
 
 def _call_detect_bounce(incoming: IncomingMessage) -> str:
