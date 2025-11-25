@@ -124,7 +124,7 @@ def create_app(
     # User loader function for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     # Register views and routes
     app.register_blueprint(auth)

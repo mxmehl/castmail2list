@@ -1,6 +1,18 @@
 """Tests for the utils module"""
 
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+from flask import Flask
+from pytest import MonkeyPatch
+
+from castmail2list import utils
+from castmail2list.models import MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address, parse_bounce_address
+
+# pylint: disable=protected-access,too-few-public-methods
 
 
 def test_create_bounce_address_normal() -> None:
@@ -61,3 +73,256 @@ def test_parse_bounce_address_hyphen() -> None:
     original_email = parse_bounce_address(bounce_address)
 
     assert original_email == "jane-test@gmail.com"
+
+
+def test_normalize_and_string_list_helpers() -> None:
+    """Normalize and list/string helper functions behave as expected."""
+    assert utils.normalize_email_list("a@x.com, b@y.com\nc@z.com") == "a@x.com, b@y.com, c@z.com"
+    assert utils.normalize_email_list("") == ""
+
+    assert utils.list_to_string(["one", "two"]) == "one, two"
+
+    assert utils.string_to_list("a, b\nc") == ["a", "b", "c"]
+    assert utils.string_to_list("") == []
+
+
+def test_get_version_info_debug_and_non_debug(monkeypatch: MonkeyPatch) -> None:
+    """get_version_info returns version and includes commit when debug."""
+    assert utils.get_version_info(debug=False) == utils.__version__
+
+    monkeypatch.setattr(subprocess, "check_output", lambda *_: b"deadbeef\n")
+    assert "(" in utils.get_version_info(debug=True)
+
+
+def test_run_only_once_behavior(monkeypatch: MonkeyPatch) -> None:
+    """run_only_once respects DEBUG and WERKZEUG_RUN_MAIN env var."""
+    app = Flask(__name__)
+    app.debug = False
+    assert utils.run_only_once(app) is True
+
+    app.debug = True
+    monkeypatch.setenv("WERKZEUG_RUN_MAIN", "true")
+    assert utils.run_only_once(app) is True
+
+    monkeypatch.setenv("WERKZEUG_RUN_MAIN", "false")
+    assert utils.run_only_once(app) is False
+
+
+def test_split_and_plus_suffix_helpers() -> None:
+    """split_email_address and plus-suffix helpers."""
+    local, domain = utils.split_email_address("foo+bar@example.org")
+    assert local == "foo+bar"
+    assert domain == "example.org"
+
+    assert utils.get_plus_suffix("foo+bar=example.org@example.org") == "bar=example.org"
+    assert utils.get_plus_suffix("no-suffix@example.org") is None
+    assert utils.remove_plus_suffix("foo+bar=whatever.tld@example.org") == "foo@example.org"
+
+
+def test_is_expanded_address_the_mailing_list() -> None:
+    """is_expanded_address_the_mailing_list matches addresses ignoring +suffix and case."""
+    assert utils.is_expanded_address_the_mailing_list("LiSt@EXAMPLE.com", "list@example.com")
+    assert utils.is_expanded_address_the_mailing_list("list+tag@EXAMPLE.com", "list@example.com")
+    assert not utils.is_expanded_address_the_mailing_list(
+        "other+test@example.com", "list+test@example.com"
+    )
+
+
+def test_get_app_bin_dir_and_user_config_path() -> None:
+    """get_app_bin_dir returns a Path and get_user_config_path appends a file name."""
+    bin_dir = utils.get_app_bin_dir()
+    assert isinstance(bin_dir, Path)
+
+    p = utils.get_user_config_path(name="castmail2list", file="conf.yaml")
+    assert isinstance(p, str)
+    assert p.endswith("conf.yaml")
+
+
+def test_create_email_account_subprocess(monkeypatch) -> None:
+    """create_email_account calls subprocess.run and handles failures."""
+    # Simulate subprocess.run success
+    calls = {}
+
+    def fake_run(cmd, check=True):  # pylint: disable=unused-argument
+        calls["cmd"] = cmd
+        # subprocess.run has no meaningful return value in our tests
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    ok = utils.create_email_account("uberspace7", "user@example.com", "pw")
+    assert ok is True
+    assert "uberspace" in calls["cmd"][0]
+
+    # Unsupported host type
+    assert utils.create_email_account("unknown", "user@example.com", "pw") is False
+
+    # Simulate CalledProcessError
+    def fake_run_fail(cmd, check=True):
+        raise subprocess.CalledProcessError(returncode=1, cmd=cmd)
+
+    monkeypatch.setattr(subprocess, "run", fake_run_fail)
+    assert utils.create_email_account("uberspace8", "user@example.com", "pw") is False
+
+
+def test_check_email_account_works_login_error(monkeypatch) -> None:
+    """check_email_account_works returns False on MailboxLoginError."""
+
+    class CustomLoginError(Exception):
+        """Local stand-in for imap_tools.MailboxLoginError in tests."""
+
+    # Ensure utils.MailboxLoginError refers to our test-specific class so we can
+    # raise it without depending on imap_tools constructor details.
+    monkeypatch.setattr(utils, "MailboxLoginError", CustomLoginError)
+
+    class DummyMailbox:
+        """Stub MailBox that raises on login."""
+
+        def __init__(self, host, port):
+            """Initialize with host and port."""
+            # no-op: constructor present to match MailBox signature
+
+        def login(self, user, password):
+            """Simulate login failure by raising the patched MailboxLoginError."""
+            raise CustomLoginError("authentication failed")
+
+    monkeypatch.setattr(utils, "MailBox", DummyMailbox)
+    assert utils.check_email_account_works("h", 993, "u", "p") is False
+
+
+def test_is_email_a_list_and_get_list_subscribers(client):
+    """is_email_a_list and get_list_subscribers work with DB-backed lists/subscribers."""
+    del client  # ensure app and DB fixtures are active
+
+    ml = MailingList(
+        name="T",
+        address="t@example.com",
+        deleted=False,
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add(ml)
+    db.session.commit()
+
+    assert utils.is_email_a_list("t@example.com") is True
+    assert utils.is_email_a_list("T@ExAmPle.com") is True
+
+    s = Subscriber(list_id=ml.id, email="alice@example.com")
+    db.session.add(s)
+    db.session.commit()
+
+    subs = utils.get_list_subscribers(ml)
+    assert any(sub.email == "alice@example.com" for sub in subs)
+
+
+def test_get_list_subscribers_no_subs(client):
+    """get_list_subscribers returns empty list when no subscribers exist."""
+    del client  # ensure app and DB fixtures are active
+
+    ml = MailingList(
+        name="EmptyList",
+        address="t@example.com",
+        deleted=False,
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add(ml)
+    db.session.commit()
+
+    subs = utils.get_list_subscribers(ml)
+    assert subs == []
+
+
+def test_get_list_subscribers_deduplicates(client):
+    """get_list_subscribers deduplicates subscribers with same email and with list as subscriber"""
+    del client  # ensure app and DB fixtures are active
+
+    ml1: MailingList = MailingList(
+        name="List 1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2: MailingList = MailingList(
+        name="List 2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2])
+    db.session.commit()
+
+    # Add subscribers with duplicate emails across lists
+    s11 = Subscriber(list_id=ml1.id, email="alice@example.com", name="Alice")
+    s12 = Subscriber(list_id=ml1.id, email="ALICE@example.com", name="Alice Dup")
+    s13 = Subscriber(list_id=ml1.id, email="bob@example.com")
+    s21 = Subscriber(list_id=ml2.id, email="alice@example.com")  # duplicate email
+    s22 = Subscriber(list_id=ml2.id, email="carol@example.com")
+    s23 = Subscriber(list_id=ml2.id, email="dave@example.com")
+    db.session.add_all([s11, s12, s13, s21, s22, s23])
+    db.session.commit()
+
+    # Get subscribers for ml1; should deduplicate
+    subs = utils.get_list_subscribers(ml1)
+    subs_emails = [sub.email for sub in subs]
+    assert len(subs) == 2  # alice and bob
+    assert subs_emails == ["alice@example.com", "bob@example.com"]
+    assert "ALICE@example.com" not in subs_emails  # deduplicated
+
+    # Add ml2 as subscriber for ml1
+    s14 = Subscriber(
+        list_id=ml1.id,
+        email="l2@example.com",
+        subscriber_type="list" if utils.is_email_a_list("l2@example.com") else "normal",
+    )
+    db.session.add(s14)
+    db.session.commit()
+
+    subs = utils.get_list_subscribers(ml1)
+    subs_emails = [sub.email for sub in subs]
+    assert s14.subscriber_type == "list"
+    assert len(subs) == 4  # alice, bob (from list1) + carol and dave (from list2)
+    assert "l2@example.com" not in subs_emails  # list email not included
+    assert subs_emails == [
+        "alice@example.com",
+        "bob@example.com",
+        "carol@example.com",
+        "dave@example.com",
+    ]
+
+
+def test_check_recommended_list_setting() -> None:
+    """check_recommended_list_setting returns warnings for broadcast lists missing security
+    settings."""
+
+    ml = MailingList(
+        name="RecList",
+        address="rec@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml.allowed_senders = []
+    ml.sender_auth = []
+
+    findings = utils.check_recommended_list_setting(ml)
+    assert findings and findings[0][1] == "warning"
+
+    ml.allowed_senders = ["foo@example.com"]
+    assert not utils.check_recommended_list_setting(ml)
+
+    ml.allowed_senders = []
+    ml.sender_auth = ["pass1", "pass2"]
+    assert not utils.check_recommended_list_setting(ml)

@@ -324,7 +324,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
         app: Flask app context
     """
     # Iterate over all configured lists
-    maillists = MailingList.query.filter_by(deleted=False).all()
+    maillists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
         logging.info("Polling '%s' (%s)", ml.name, ml.address)
         try:
