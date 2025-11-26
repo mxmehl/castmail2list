@@ -154,9 +154,7 @@ def add():
 @login_required
 def edit(list_id):
     """Edit a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(
-        id=list_id, deleted=False
-    ).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
     # Handle form submission
@@ -222,6 +220,13 @@ def edit(list_id):
     # Flash on form errors
     if form.submit.data and form.errors:
         flash_form_errors(form)
+
+    # Flash if list is deactivated
+    if mailing_list.deleted:
+        flash(
+            _("This mailing list is deactivated. Reactivate it to process incoming emails."),
+            "warning",
+        )
 
     # Case: GET request: populate form fields from list objects to comma-separated strings
     if not form.submit.data:
