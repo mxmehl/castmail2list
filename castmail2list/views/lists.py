@@ -154,7 +154,7 @@ def edit(list_id):
         new_address = form.address.data
         existing_list = MailingList.query.filter_by(address=new_address).first()
         if existing_list:
-            status = "deactivated" if existing_list.deleted else "active"
+            status = _("deactivated") if existing_list.deleted else _("active")
             flash(
                 _(
                     'A mailing list with the address "%(address)s" (%(status)s) already exists.',
