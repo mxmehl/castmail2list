@@ -174,62 +174,37 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
     lists, recursively.
     """
     visited_list_ids = set()
-    subscribers_dict = {}
+    subscribers_dict: dict[str, Subscriber] = {}
 
     def _collect_subscribers(list_obj: MailingList):
         """Recursively collect subscribers from the given mailing list and nested lists"""
-        logging.debug(
-            "Collecting subscribers for list: %s <%s> (id=%s)",
-            list_obj.name,
-            list_obj.address,
-            list_obj.id,
-        )
-        if list_obj.id in visited_list_ids:
-            logging.debug(
-                "List id %s already visited, skipping to avoid recursion loop.", list_obj.id
-            )
+        if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
             return
-        visited_list_ids.add(list_obj.id)
+        visited_list_ids.add(list_obj.id)  # Mark this list as visited
 
         # Exclude deleted lists
         if list_obj.deleted:
-            logging.warning("List id %s is marked deleted, skipping.", list_obj.id)
             return
 
         # Get direct subscribers
         direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=list_obj.id).all()
-        logging.debug(
-            "Found %d direct subscribers for list <%s>: %s",
-            len(direct_subs),
-            list_obj.address,
-            ", ".join([sub.email for sub in direct_subs]),
-        )
         for sub in direct_subs:
+            # Add subscriber if not already added
             if sub.email not in subscribers_dict:
                 subscribers_dict[sub.email] = sub
-                logging.debug("Added subscriber: %s", sub.email)
-            else:
-                logging.debug("Subscriber %s already added, skipping.", sub.email)
 
         # Iterate over direct subscribers. If any is a list, recurse into it
         for sub in direct_subs:
             if nested_list := is_email_a_list(sub.email):
-                logging.debug(
-                    "Subscriber %s is also a list address, recursing into list id %s.",
-                    sub.email,
-                    nested_list.id,
-                )
+                # Only recurse if the nested list hasn't been visited yet
                 if nested_list.id not in visited_list_ids:
                     _collect_subscribers(nested_list)
-                else:
-                    logging.debug("Nested list id %s already visited, skipping.", nested_list.id)
 
+    # Start collecting from the given mailing list
     _collect_subscribers(ml)
 
     # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    all_lists: list[MailingList] = MailingList.query.all()
-    ml_addresses = {l.address for l in all_lists}
-    result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
+    result = [sub for sub in subscribers_dict.values() if not is_email_a_list(sub.email)]
 
     logging.debug(
         "Found %d unique, non-list subscribers for the list <%s>: %s",
