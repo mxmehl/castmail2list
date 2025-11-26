@@ -9,16 +9,8 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-{%- if is_email_a_list(email) %}
-<p>
-    <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
-        {{ _('Edit List Settings') }}
-    </a>
-    <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
-        {{ _('View List Subscribers') }}
-    </a>
-</p>
-{%- endif %}
+{%- from "macros.html" import subscriber_list_buttons %}
+{{ subscriber_list_buttons(email) }}
 
 <h3>{{ _('Subscribed to Lists') }}</h3>
 {% if subscriber_lists %}

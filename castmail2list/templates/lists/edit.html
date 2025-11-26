@@ -11,7 +11,7 @@
     <a href="{{ url_for('lists.subscribers_manage', list_id=mailing_list.id) }}" role="button">{{ _('View List Subscribers') }}</a>
 </p>
 
-{%- from "lists/macros.html" import list_form %}
+{%- from "macros.html" import list_form %}
 {{ list_form(form, false) }}
 
 {%- endblock %}
