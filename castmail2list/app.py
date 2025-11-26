@@ -221,6 +221,9 @@ def main():
         metavar="SEED_FILE",
         help="Seed the database with a seed file and exit",
     )
+    parser.add_argument(
+        "--dry", action="store_true", help="Run in dry mode (no changes to emails or DB)"
+    )
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     parser.add_argument(
         "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
@@ -233,6 +236,11 @@ def main():
         # one-off call for most CLI commands
         one_off = True
     app = create_app_wrapper(app_config_path=args.app_config, debug=args.debug, one_off=one_off)
+
+    # Insert modes into config
+    if args.dry:
+        app.config["DRY"] = True
+        logging.warning("Running in DRY mode: no changes to emails or database will be made.")
 
     # Create admin user if requested
     if args.create_admin:

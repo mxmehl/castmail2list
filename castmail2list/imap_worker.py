@@ -269,6 +269,11 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
         m.received_at = datetime.now(timezone.utc)
         m.status = status
         m.error_info = error_info or {}
+        if self.app.config.get("DRY", False):
+            logging.info(
+                "[DRY MODE] Would store message uid %s in DB: %s", self.msg.uid, m.__dict__
+            )
+            return True
         db.session.add(m)
         try:
             db.session.commit()
@@ -323,6 +328,9 @@ def check_all_lists_for_messages(app: Flask) -> None:
     Args:
         app: Flask app context
     """
+    run_id = uuid.uuid4().hex[:8]
+    logging.debug("Checking all lists for new messages in run (%s)", run_id)
+
     # Iterate over all configured lists
     maillists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
@@ -337,7 +345,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 # --- INBOX processing ---
                 mailbox.folder.set(app.config["IMAP_FOLDER_INBOX"])
                 # Fetch unseen messages
-                for msg in mailbox.fetch():
+                for msg in mailbox.fetch(mark_seen=False):
                     incoming_msg = IncomingMessage(app, mailbox, msg, ml)
                     # Process incoming message. If OK, send to subscribers
                     if incoming_msg.process_incoming_msg():

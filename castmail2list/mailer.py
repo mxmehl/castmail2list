@@ -170,6 +170,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
     def send_email_to_recipient(
         self,
         recipient: str,
+        dry: bool = False,
     ) -> bytes:
         """
         Sends the mostly prepared list message to a recipient. Returns sent message as bytes.
@@ -205,6 +206,12 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         logging.debug("Email content: \n%s", self.composed_msg.as_string())
 
         # --- Send email ---
+        if dry:
+            logging.info(
+                "[DRY MODE] Would send the email to %s. Use --debug to see full email content.",
+                recipient,
+            )
+            return self.composed_msg.as_bytes()
         try:
             # Send the email
             with smtplib.SMTP(
@@ -274,7 +281,9 @@ def send_msg_to_subscribers(
             # Copy mail class to avoid cross-contamination between recipients
             recipient_mail = deepcopy(mail)
             # Send email to recipient
-            sent_msg = recipient_mail.send_email_to_recipient(recipient=subscriber.email)
+            sent_msg = recipient_mail.send_email_to_recipient(
+                recipient=subscriber.email, dry=app.config.get("DRY", False)
+            )
 
             # Store sent message in Sent folder via IMAP if we have one
             if sent_msg:
@@ -286,9 +295,18 @@ def send_msg_to_subscribers(
                         "Saving sent message to temp file %s to be stored in Sent folder",
                         tmpfile.name,
                     )
-                    mailbox.append(
-                        message=sent_msg, folder=app.config["IMAP_FOLDER_SENT"], flag_set=["\\Seen"]
-                    )
+                    if app.config.get("DRY", False):
+                        logging.info(
+                            "[DRY MODE] Would store sent message for %s in Sent folder "
+                            "and mark as read.",
+                            subscriber.email,
+                        )
+                    else:
+                        mailbox.append(
+                            message=sent_msg,
+                            folder=app.config["IMAP_FOLDER_SENT"],
+                            flag_set=["\\Seen"],
+                        )
             else:
                 sent_failed.append(subscriber.email)
                 logging.info(
