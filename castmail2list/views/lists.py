@@ -61,6 +61,23 @@ def add():
             imap_user=form.imap_user.data or form.address.data,
             imap_pass=form.imap_pass.data or current_app.config["IMAP_DEFAULT_PASS"],
         )
+        # Verify that the list address is unique
+        existing_list = MailingList.query.filter_by(address=new_list.address).first()
+        if existing_list:
+            status = "deactivated" if existing_list.deleted else "active"
+            flash(
+                _(
+                    'A mailing list with the address "%(address)s" (%(status)s) already exists.',
+                    address=new_list.address,
+                    status=status,
+                ),
+                "error",
+            )
+            logging.warning(
+                'Attempt to create mailing list with address "%s" failed. It already exists in DB.',
+                new_list.address,
+            )
+            return render_template("lists/add.html", config=AppConfig, form=form, retry=True)
         # Verify that the email account works
         if not check_email_account_works(
             new_list.imap_host, int(new_list.imap_port), new_list.imap_user, new_list.imap_pass
@@ -133,6 +150,28 @@ def edit(list_id):
 
     # Handle form submission
     if form.validate_on_submit():
+        # Verify that the list address is unique
+        new_address = form.address.data
+        existing_list = MailingList.query.filter_by(address=new_address).first()
+        if existing_list:
+            status = "deactivated" if existing_list.deleted else "active"
+            flash(
+                _(
+                    'A mailing list with the address "%(address)s" (%(status)s) already exists.',
+                    address=new_address,
+                    status=status,
+                ),
+                "error",
+            )
+            logging.warning(
+                "Attempt to change list %s's address to '%s' failed. It already exists in DB.",
+                mailing_list.id,
+                new_address,
+            )
+            return render_template(
+                "lists/edit.html", mailing_list=mailing_list, form=form, retry=True
+            )
+
         # Only update imap_pass if a new value is provided
         old_pass = mailing_list.imap_pass
         form.populate_obj(mailing_list)
