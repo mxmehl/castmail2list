@@ -32,7 +32,7 @@
             {%- endif %}
         </td>
         <td>
-            <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}" role="button" class="secondary">{{ _('Subscribers') }} ({{ list.subscribers|length }})</a>
+            <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}" role="button" class="secondary">{{ _('Subscribers') }}</a>
             <a href="{{ url_for('lists.reactivate', list_id=list.id) }}" role="button" class="" onclick="return confirm('{{ _('Are you sure you want to reactivate the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Reactivate') }}</a>
         </td>
     </tr>
@@ -41,6 +41,6 @@
 </table>
 
 {% else %}
-<p class="text-muted">{{ _('No deactivated mailing lists found.') }}</p>
+<p><em>{{ _('No deactivated mailing lists found.') }}</em></p>
 {% endif %}
 {% endblock %}

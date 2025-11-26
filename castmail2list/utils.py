@@ -10,6 +10,7 @@ from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
 from platformdirs import user_config_path
+from sqlalchemy import func
 
 from . import __version__
 from .models import MailingList, Subscriber
@@ -152,19 +153,19 @@ def parse_bounce_address(bounce_address: str) -> str | None:
         return None
 
 
-def is_email_a_list(email: str) -> bool:
+def is_email_a_list(email: str) -> MailingList | None:
     """
-    Check if the given email address is the address of one of the configured mailing lists.
+    Check if the given email address is the address of one of the configured active or inactive
+    mailing lists.
 
     Args:
         email (str): The email address to check
     Returns:
-        bool: True if the email is a mailing list address, False otherwise
+        MailingList | None: The MailingList object if the email is a list address, None otherwise
     """
-    list_addresses: set[str] = {
-        lst.address.lower() for lst in MailingList.query.filter_by(deleted=False).all()
-    }
-    return email.lower() in list_addresses
+    if ml := MailingList.query.filter(func.lower(MailingList.address) == func.lower(email)).first():
+        return ml
+    return None
 
 
 def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
@@ -173,65 +174,37 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
     lists, recursively.
     """
     visited_list_ids = set()
-    subscribers_dict = {}
+    subscribers_dict: dict[str, Subscriber] = {}
 
     def _collect_subscribers(list_obj: MailingList):
-        logging.debug(
-            "Collecting subscribers for list: %s <%s> (id=%s)",
-            list_obj.name,
-            list_obj.address,
-            list_obj.id,
-        )
-        if list_obj.id in visited_list_ids:
-            logging.debug(
-                "List id %s already visited, skipping to avoid recursion loop.", list_obj.id
-            )
+        """Recursively collect subscribers from the given mailing list and nested lists"""
+        if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
             return
-        visited_list_ids.add(list_obj.id)
+        visited_list_ids.add(list_obj.id)  # Mark this list as visited
 
         # Exclude deleted lists
         if list_obj.deleted:
-            logging.warning("List id %s is marked deleted, skipping.", list_obj.id)
             return
 
         # Get direct subscribers
-        direct_subs = Subscriber.query.filter_by(list_id=list_obj.id).all()
-        logging.debug(
-            "Found %d direct subscribers for list <%s>: %s",
-            len(direct_subs),
-            list_obj.address,
-            ", ".join([sub.email for sub in direct_subs]),
-        )
+        direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=list_obj.id).all()
         for sub in direct_subs:
+            # Add subscriber if not already added
             if sub.email not in subscribers_dict:
                 subscribers_dict[sub.email] = sub
-                logging.debug("Added subscriber: %s", sub.email)
-            else:
-                logging.debug("Subscriber %s already added, skipping.", sub.email)
 
-        # Find subscribers whose email matches another list address (nested lists)
-        all_lists: list[MailingList] = MailingList.query.all()
-        ml_addresses = {l.address: l for l in all_lists}
+        # Iterate over direct subscribers. If any is a list, recurse into it
         for sub in direct_subs:
-            nested_list = ml_addresses.get(sub.email)
-            if nested_list:
-                logging.debug(
-                    "Subscriber %s is also a list address (%s), recursing into list id %s.",
-                    sub.email,
-                    nested_list.address,
-                    nested_list.id,
-                )
+            if nested_list := is_email_a_list(sub.email):
+                # Only recurse if the nested list hasn't been visited yet
                 if nested_list.id not in visited_list_ids:
                     _collect_subscribers(nested_list)
-                else:
-                    logging.debug("Nested list id %s already visited, skipping.", nested_list.id)
 
+    # Start collecting from the given mailing list
     _collect_subscribers(ml)
 
     # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    all_lists: list[MailingList] = MailingList.query.all()
-    ml_addresses = {l.address for l in all_lists}
-    result = [sub for email, sub in subscribers_dict.items() if email not in ml_addresses]
+    result = [sub for sub in subscribers_dict.values() if not is_email_a_list(sub.email)]
 
     logging.debug(
         "Found %d unique, non-list subscribers for the list <%s>: %s",

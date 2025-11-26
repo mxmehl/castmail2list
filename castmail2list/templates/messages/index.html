@@ -5,7 +5,9 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<a href="{{ url_for('messages.bounces') }}" role="button">{{ _('View Bounce Messages') }}</a>
+<p>
+    <a href="{{ url_for('messages.bounces') }}" role="button">{{ _('View Bounce Messages') }}</a>
+</p>
 
 <table>
     <thead>

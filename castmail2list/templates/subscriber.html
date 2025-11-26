@@ -31,13 +31,13 @@
             <td>{{ item.subscriber.comment or "" }}</td>
             <td>
                 <a href="{{ url_for('lists.subscriber_edit', list_id=item.list.id, subscriber_id=item.subscriber.id) }}" role="button">{{ _('Edit') }}</a>
-                <a href="{{ url_for('lists.subscriber_delete', list_id=item.list.id, subscriber_id=item.subscriber.id) }}" role="button" class="danger" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ item.subscriber.name or email }} {{ _('from') }} {{ item.list.name }} <{{ item.list.address }}>?')">{{ _('Remove from List') }}</a>
+                <a href="{{ url_for('lists.subscriber_delete', list_id=item.list.id, subscriber_id=item.subscriber.id) }}" role="button" class="danger" onclick="return confirm('{{ _('Are you sure you want to delete subscriber') }} {{ item.subscriber.name or email }} {{ _('from') }} {{ item.list.name }} <{{ item.list.address }}>?')">{{ _('Remove from this List') }}</a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% else %}
-<p class="text-muted">{{ _('Not subscribed to any lists.') }}</p>
+<p><em>{{ _('Not subscribed to any lists.') }}</em></p>
 {% endif %}
 {% endblock %}

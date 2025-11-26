@@ -24,8 +24,10 @@ from .seeder import seed_database
 from .utils import (
     compile_scss_on_startup,
     get_app_bin_dir,
+    get_list_subscribers,
     get_user_config_path,
     get_version_info,
+    is_email_a_list,
 )
 from .views.auth import auth
 from .views.general import general
@@ -138,12 +140,16 @@ def create_app(
     app.register_blueprint(messages)
     app.register_blueprint(lists)
 
-    # Inject variables into templates
+    # Inject variables and functions into templates
     @app.context_processor
     def inject_vars():
         return {
             "version_info": get_version_info(debug=app.debug),
         }
+
+    app.jinja_env.globals.update(
+        get_list_subscribers=get_list_subscribers, is_email_a_list=is_email_a_list
+    )
 
     # ---------------
     # From here on, only for permanently running app, not one-off calls

@@ -194,7 +194,7 @@ def test_is_email_a_list_and_get_list_subscribers(client):
 
     ml = MailingList(
         name="T",
-        address="t@example.com",
+        address="t@example.COM",
         deleted=False,
         mode="broadcast",
         imap_host="imap.example",
@@ -205,8 +205,13 @@ def test_is_email_a_list_and_get_list_subscribers(client):
     db.session.add(ml)
     db.session.commit()
 
-    assert utils.is_email_a_list("t@example.com") is True
-    assert utils.is_email_a_list("T@ExAmPle.com") is True
+    # is_email_a_list finds the list regardless of case
+    assert utils.is_email_a_list("t@example.COM") == ml
+    assert utils.is_email_a_list("t@example.com") == ml
+    assert utils.is_email_a_list("T@ExAmPle.com") == ml
+
+    # is_email_a_list returns None for non-list address
+    assert utils.is_email_a_list("whatever@example.net") is None
 
     s = Subscriber(list_id=ml.id, email="alice@example.com")
     db.session.add(s)

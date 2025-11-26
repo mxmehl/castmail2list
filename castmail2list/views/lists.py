@@ -1,6 +1,7 @@
 """Lists blueprint for CastMail2List application"""
 
 import logging
+from typing import cast
 
 from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
@@ -14,6 +15,7 @@ from ..utils import (
     check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
+    get_list_subscribers,
     is_email_a_list,
     list_to_string,
     string_to_list,
@@ -21,12 +23,16 @@ from ..utils import (
 
 lists = Blueprint("lists", __name__, url_prefix="/lists")
 
+# -----------------------------------------------------------------
+# Viewing mailing lists
+# -----------------------------------------------------------------
+
 
 @lists.route("/", methods=["GET"])
 @login_required
 def show_all():
     """Show all active mailing lists"""
-    active_lists = MailingList.query.filter_by(deleted=False).all()
+    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
@@ -34,8 +40,13 @@ def show_all():
 @login_required
 def show_deactivated():
     """Show all deactivated mailing lists"""
-    deactivated_lists = MailingList.query.filter_by(deleted=True).all()
+    deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
+
+
+# -----------------------------------------------------------------
+# Managing lists themselves
+# -----------------------------------------------------------------
 
 
 @lists.route("/add", methods=["GET", "POST"])
@@ -49,7 +60,7 @@ def add():
         new_list = MailingList(
             mode=form.mode.data,
             name=form.name.data,
-            address=form.address.data,
+            address=form.address.data.lower(),
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
@@ -220,61 +231,6 @@ def edit(list_id):
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
 
-@lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
-@login_required
-def subscribers_manage(list_id):
-    """Manage subscribers of a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
-    form = SubscriberAddForm()
-
-    # Handle adding subscribers
-    if form.submit.data and form.validate_on_submit():
-        name = form.name.data
-        email = form.email.data.strip().lower()  # normalize before lookup/insert
-        comment = form.comment.data
-        subscriber_type = "list" if is_email_a_list(email) else "normal"
-        # Check if subscriber already exists, identified by email and list_id
-        existing_subscriber = Subscriber.query.filter_by(
-            list_id=mailing_list.id, email=email
-        ).first()
-
-        if not existing_subscriber:
-            new_subscriber = Subscriber(
-                list_id=mailing_list.id,
-                name=name,
-                email=email,
-                comment=comment,
-                subscriber_type=subscriber_type,
-            )
-            db.session.add(new_subscriber)
-            db.session.commit()
-            flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
-        else:
-            flash(
-                _('Email "%(email)s" is already subscribed to this list.', email=email),
-                "warning",
-            )
-
-        return redirect(url_for("lists.subscribers_manage", list_id=list_id))
-
-    # Flash on form errors
-    if form.submit.data and form.errors:
-        flash_form_errors(form)
-
-    # Flash if list is deactivated
-    if mailing_list.deleted:
-        flash(
-            _("This mailing list is deactivated. Reactivate it to process incoming emails."),
-            "warning",
-        )
-
-    return render_template(
-        "lists/subscribers_manage.html",
-        mailing_list=mailing_list,
-        form=form,
-    )
-
-
 @lists.route("/<int:list_id>/deactivate", methods=["GET"])
 @login_required
 def deactivate(list_id):
@@ -301,6 +257,91 @@ def reactivate(list_id):
     return redirect(url_for("lists.show_all"))
 
 
+# -----------------------------------------------------------------
+# Managing subscribers of lists
+# -----------------------------------------------------------------
+
+
+@lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
+@login_required
+def subscribers_manage(list_id):
+    """Manage subscribers of a mailing list"""
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
+    form = SubscriberAddForm()
+
+    # Handle adding subscribers
+    if form.submit.data and form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data.strip().lower()  # normalize before lookup/insert
+        comment = form.comment.data
+
+        # Check if subscriber already exists, identified by email and list_id
+        existing_subscriber = Subscriber.query.filter_by(
+            list_id=mailing_list.id, email=email
+        ).first()
+        if existing_subscriber:
+            flash(
+                _('Email "%(email)s" is already subscribed to this list.', email=email),
+                "warning",
+            )
+            logging.info(
+                'Attempt to add existing subscriber "%s" to mailing list %s',
+                email,
+                mailing_list.address,
+            )
+            return redirect(url_for("lists.subscribers_manage", list_id=list_id))
+
+        # Check if subscriber is an existing list. If so, set type and re-use name
+        if existing_list := is_email_a_list(email):
+            name = existing_list.name
+            subscriber_type = "list"
+        else:
+            subscriber_type = "normal"
+
+        # Add new subscriber
+        new_subscriber = Subscriber(
+            list_id=mailing_list.id,
+            name=name,
+            email=email,
+            comment=comment,
+            subscriber_type=subscriber_type,
+        )
+        db.session.add(new_subscriber)
+        db.session.commit()
+        flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
+
+        return redirect(url_for("lists.subscribers_manage", list_id=list_id))
+
+    # Flash on form errors
+    if form.submit.data and form.errors:
+        flash_form_errors(form)
+
+    # Flash if list is deactivated
+    if mailing_list.deleted:
+        flash(
+            _("This mailing list is deactivated. Reactivate it to process incoming emails."),
+            "warning",
+        )
+
+    # Get recursive subscribers for display
+    # all_recursive_subscribers = get_list_subscribers(mailing_list)
+    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
+    subscriber_lists = [
+        is_email_a_list(s.email) for s in subscribers_direct if s.subscriber_type == "list"
+    ]
+    subscribers_indirect = {}
+    for sub_list in subscriber_lists:
+        if sub_list:
+            subscribers_indirect[sub_list] = get_list_subscribers(sub_list)
+
+    return render_template(
+        "lists/subscribers_manage.html",
+        mailing_list=mailing_list,
+        subscribers_indirect=subscribers_indirect,
+        form=form,
+    )
+
+
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
 @login_required
 def subscriber_delete(list_id, subscriber_id):
@@ -324,15 +365,12 @@ def subscriber_edit(list_id, subscriber_id):
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
     if form.validate_on_submit():
-        subscriber.name = form.name.data
-        subscriber.email = form.email.data
-        subscriber.comment = form.comment.data
-        subscriber.subscriber_type = "list" if is_email_a_list(form.email.data) else "normal"
 
-        # Check if subscriber with new email already exists
+        # Check if subscriber with new email already exists in this list
         existing_subscriber = Subscriber.query.filter_by(
             list_id=mailing_list.id, email=form.email.data
         ).first()
+        # Avoid false positive when the email is unchanged (same subscriber)
         if existing_subscriber and existing_subscriber.id != subscriber.id:
             flash(
                 _(
@@ -341,12 +379,26 @@ def subscriber_edit(list_id, subscriber_id):
                 ),
                 "warning",
             )
-            return render_template(
-                "lists/subscriber_edit.html",
-                mailing_list=mailing_list,
-                form=form,
-                subscriber=subscriber,
+            return redirect(
+                url_for(
+                    "lists.subscriber_edit",
+                    mailing_list=mailing_list,
+                    form=form,
+                    subscriber=subscriber,
+                )
             )
+
+        # Update subscriber fields from form
+        subscriber.name = form.name.data
+        subscriber.email = form.email.data
+        subscriber.comment = form.comment.data
+
+        # Check if subscriber is an existing list. If so, set type and re-use name
+        if existing_list := is_email_a_list(form.email.data):
+            subscriber.name = existing_list.name
+            subscriber.subscriber_type = "list"
+        else:
+            subscriber.subscriber_type = "normal"
 
         # Commit updates
         db.session.commit()
@@ -369,6 +421,10 @@ def subscriber_edit(list_id, subscriber_id):
             ),
             "warning",
         )
+
+    # Flash if subscriber is itself a list
+    if is_email_a_list(subscriber.email):
+        flash(_("Note: This subscriber is itself a mailing list."), "message")
 
     return render_template(
         "lists/subscriber_edit.html", mailing_list=mailing_list, form=form, subscriber=subscriber
