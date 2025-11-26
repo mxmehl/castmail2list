@@ -49,7 +49,7 @@ def add():
         new_list = MailingList(
             mode=form.mode.data,
             name=form.name.data,
-            address=form.address.data,
+            address=form.address.data.lower(),
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
@@ -232,28 +232,41 @@ def subscribers_manage(list_id):
         name = form.name.data
         email = form.email.data.strip().lower()  # normalize before lookup/insert
         comment = form.comment.data
-        subscriber_type = "list" if is_email_a_list(email) else "normal"
+
         # Check if subscriber already exists, identified by email and list_id
         existing_subscriber = Subscriber.query.filter_by(
             list_id=mailing_list.id, email=email
         ).first()
-
-        if not existing_subscriber:
-            new_subscriber = Subscriber(
-                list_id=mailing_list.id,
-                name=name,
-                email=email,
-                comment=comment,
-                subscriber_type=subscriber_type,
-            )
-            db.session.add(new_subscriber)
-            db.session.commit()
-            flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
-        else:
+        if existing_subscriber:
             flash(
                 _('Email "%(email)s" is already subscribed to this list.', email=email),
                 "warning",
             )
+            logging.info(
+                'Attempt to add existing subscriber "%s" to mailing list %s',
+                email,
+                mailing_list.address,
+            )
+            return redirect(url_for("lists.subscribers_manage", list_id=list_id))
+
+        # Check if subscriber is an existing list. If so, set type and re-use name
+        if existing_list := is_email_a_list(email):
+            name = existing_list.name
+            subscriber_type = "list"
+        else:
+            subscriber_type = "normal"
+
+        # Add new subscriber
+        new_subscriber = Subscriber(
+            list_id=mailing_list.id,
+            name=name,
+            email=email,
+            comment=comment,
+            subscriber_type=subscriber_type,
+        )
+        db.session.add(new_subscriber)
+        db.session.commit()
+        flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
 
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
@@ -324,15 +337,12 @@ def subscriber_edit(list_id, subscriber_id):
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
     if form.validate_on_submit():
-        subscriber.name = form.name.data
-        subscriber.email = form.email.data
-        subscriber.comment = form.comment.data
-        subscriber.subscriber_type = "list" if is_email_a_list(form.email.data) else "normal"
 
-        # Check if subscriber with new email already exists
+        # Check if subscriber with new email already exists in this list
         existing_subscriber = Subscriber.query.filter_by(
             list_id=mailing_list.id, email=form.email.data
         ).first()
+        # Avoid false positive when the email is unchanged (same subscriber)
         if existing_subscriber and existing_subscriber.id != subscriber.id:
             flash(
                 _(
@@ -341,12 +351,26 @@ def subscriber_edit(list_id, subscriber_id):
                 ),
                 "warning",
             )
-            return render_template(
-                "lists/subscriber_edit.html",
-                mailing_list=mailing_list,
-                form=form,
-                subscriber=subscriber,
+            return redirect(
+                url_for(
+                    "lists.subscriber_edit",
+                    mailing_list=mailing_list,
+                    form=form,
+                    subscriber=subscriber,
+                )
             )
+
+        # Update subscriber fields from form
+        subscriber.name = form.name.data
+        subscriber.email = form.email.data
+        subscriber.comment = form.comment.data
+
+        # Check if subscriber is an existing list. If so, set type and re-use name
+        if existing_list := is_email_a_list(form.email.data):
+            subscriber.name = existing_list.name
+            subscriber.subscriber_type = "list"
+        else:
+            subscriber.subscriber_type = "normal"
 
         # Commit updates
         db.session.commit()

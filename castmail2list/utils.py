@@ -10,6 +10,7 @@ from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
 from platformdirs import user_config_path
+from sqlalchemy import func
 
 from . import __version__
 from .models import MailingList, Subscriber
@@ -152,19 +153,19 @@ def parse_bounce_address(bounce_address: str) -> str | None:
         return None
 
 
-def is_email_a_list(email: str) -> bool:
+def is_email_a_list(email: str) -> MailingList | None:
     """
-    Check if the given email address is the address of one of the configured mailing lists.
+    Check if the given email address is the address of one of the configured active or inactive
+    mailing lists.
 
     Args:
         email (str): The email address to check
     Returns:
-        bool: True if the email is a mailing list address, False otherwise
+        MailingList | None: The MailingList object if the email is a list address, None otherwise
     """
-    list_addresses: set[str] = {
-        lst.address.lower() for lst in MailingList.query.filter_by(deleted=False).all()
-    }
-    return email.lower() in list_addresses
+    if ml := MailingList.query.filter(func.lower(MailingList.address) == func.lower(email)).first():
+        return ml
+    return None
 
 
 def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
