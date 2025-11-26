@@ -33,7 +33,7 @@ from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
 from .views.messages import messages
-from .views.subscriber import subscribers
+from .views.subscribers import subscribers
 
 SCSS_FILES = [("static/scss/main.scss", "static/css/main.scss.css")]
 

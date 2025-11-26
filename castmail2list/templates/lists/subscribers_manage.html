@@ -41,7 +41,7 @@
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
-                <a href="{{ url_for('subscriber.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                <a href="{{ url_for('subscribers.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
                 {% if list %}
                 ({{ _('List') }}{%- if list.deleted %} - <strong>{{ _('Deactivated') }}</strong>{% endif %})
                 {% endif %}
@@ -76,7 +76,7 @@
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
-                <a href="{{ url_for('subscriber.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                <a href="{{ url_for('subscribers.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
             </td>
             <td><a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">
                     {{ list.name }}</a>

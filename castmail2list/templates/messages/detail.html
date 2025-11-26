@@ -12,7 +12,7 @@
     </tr>
     <tr>
         <th>{{ _('From') }}</th>
-        <td><a href="{{ url_for('subscriber.by_email', email=message.from_addr) }}">{{ message.from_addr }}</a></td>
+        <td><a href="{{ url_for('subscribers.by_email', email=message.from_addr) }}">{{ message.from_addr }}</a></td>
     </tr>
     <tr>
         <th>{{ _('Received At') }}</th>

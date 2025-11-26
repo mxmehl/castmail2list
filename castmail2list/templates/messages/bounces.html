@@ -21,7 +21,7 @@
             <td><a href="{{ url_for('messages.show', message_id=m.id)}}">{{ m.subject }}</a></td>
             <td>{{ m.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
             <td>{{ m.list.name }}</td>
-            <td><a href="{{ url_for('subscriber.by_email', email=bounced_recipient) }}">{{ bounced_recipient }}</a></td>
+            <td><a href="{{ url_for('subscribers.by_email', email=bounced_recipient) }}">{{ bounced_recipient }}</a></td>
         </tr>
         {% endfor %}
     </tbody>

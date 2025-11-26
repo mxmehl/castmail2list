@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Subscriber Overview') }}{% endblock %}
+
+{% block content %}
+<h2>{{ _('Subscriber Overview') }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+{% if subscribers %}
+<table class="striped">
+    <thead>
+        <tr>
+            <th>{{ _('Email') }}</th>
+            <th>{{ _('Subscribed Lists') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for email, lists in subscribers.items() %}
+        {%- if is_email_a_list(email) %}{% set list = is_email_a_list(email) %}{% endif %}
+        <tr>
+            <td>
+                <a href="{{ url_for('subscribers.by_email', email=email) }}">{{ email }}</a>
+                {% if list %}
+                ({{ _('List') }}{%- if list.deleted %} - <strong>{{ _('Deactivated') }}</strong>{% endif %})
+                {% endif %}
+            </td>
+            <td>
+                {% if lists %}
+                    {% for list in lists %}
+                        <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">{{ list.name }}</a>
+                        {% if list.deleted %} ({{ _('Deactivated') }}){% endif %}
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <em>{{ _('Not subscribed to any lists.') }}</em>
+                {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>{{ _('There are no subscribers anywhere.') }}</em></p>
+{% endif %}
+{% endblock %}

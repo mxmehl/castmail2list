@@ -5,8 +5,16 @@ from flask_babel import _
 from flask_login import login_required
 
 from ..models import MailingList, Subscriber, db
+from ..utils import get_all_subscribers
 
-subscribers = Blueprint("subscriber", __name__, url_prefix="/subscriber")
+subscribers = Blueprint("subscribers", __name__, url_prefix="/subscribers")
+
+
+@subscribers.route("/")
+@login_required
+def index():
+    """Show all subscribers across all lists"""
+    return render_template("subscribers/index.html", subscribers=get_all_subscribers())
 
 
 @subscribers.route("/<email>")
