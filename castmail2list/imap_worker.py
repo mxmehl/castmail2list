@@ -326,7 +326,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
     # Iterate over all configured lists
     maillists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
-        logging.info("Polling '%s' (%s)", ml.name, ml.address)
+        logging.info("Polling '%s' (%s) (%s)", ml.name, ml.address, run_id)
         try:
             with MailBox(host=ml.imap_host, port=int(ml.imap_port)).login(
                 username=ml.imap_user, password=ml.imap_pass

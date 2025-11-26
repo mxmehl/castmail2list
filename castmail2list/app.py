@@ -61,6 +61,7 @@ def create_app(
     config_overrides: dict | None = None,
     yaml_config_path: str | None = None,
     one_off_call: bool = False,
+    debug: bool = False,
 ) -> Flask:
     """Create Flask app
 
@@ -68,6 +69,7 @@ def create_app(
         config_overrides (dict): optional dict to update app.config before DB init (e.g. for tests)
         yaml_config_path (str): optional path to YAML configuration file
         one_off_call (bool): if True, indicates this is a one-off call (e.g. for CLI commands)
+        debug (bool): if True, enable debug mode
 
     Returns:
         Flask: the Flask application
@@ -82,6 +84,10 @@ def create_app(
         appconfig = AppConfig()  # default config
 
     app.config.from_object(appconfig)
+
+    # Enable debug mode if requested
+    app.debug = debug
+    app.config["DEBUG"] = debug
 
     # apply overrides early so DB and other setup use them
     if config_overrides:
@@ -178,7 +184,7 @@ def create_app_wrapper(app_config_path: str, debug: bool, one_off: bool) -> Flas
     configure_logging(debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off)
+    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug)
 
     return app
 
