@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Edit List') }} - {{ mailing_list.name }}{% endblock %}
+{% block title %}{{ _('Edit List Settings') }} - {{ mailing_list.name }}{% endblock %}
 
 {% block content %}
-<h2>{{ _('Edit List: %(name)s', name=mailing_list.name) }}</h2>
+<h2>{{ _('Edit List Settings') }}: {{ mailing_list.name }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
+
+<p>
+    <a href="{{ url_for('lists.subscribers_manage', list_id=mailing_list.id) }}" role="button">{{ _('View List Subscribers') }}</a>
+</p>
 
 {%- from "lists/macros.html" import list_form %}
 {{ list_form(form, false) }}

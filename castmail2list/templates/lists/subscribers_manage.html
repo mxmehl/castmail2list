@@ -8,6 +8,10 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
+<p>
+    <a href="{{ url_for('lists.edit', list_id=mailing_list.id) }}" role="button">{{ _('Edit List Settings') }}</a>
+</p>
+
 <h3>{{ _('Add Subscriber') }}</h3>
 <form method="POST">
     <fieldset class="grid">
