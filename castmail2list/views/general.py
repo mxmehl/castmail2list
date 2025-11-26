@@ -20,11 +20,11 @@ def index():
 
 @general.route("/subscriber/<email>")
 @login_required
-def subscriber(email):
+def subscriber(email: str):
     """Show which lists a subscriber is part of"""
     # Find all subscriptions for this email address
     email_norm = email.strip().lower()
-    subscriptions = Subscriber.query.filter_by(email=email_norm).all()
+    subscriptions: list[Subscriber] = Subscriber.query.filter_by(email=email_norm).all()
 
     if not subscriptions:
         flash(_('No subscriptions found for "%(email)s"', email=email), "warning")
