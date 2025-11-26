@@ -21,6 +21,10 @@ from ..utils import (
 
 lists = Blueprint("lists", __name__, url_prefix="/lists")
 
+# -----------------------------------------------------------------
+# Viewing mailing lists
+# -----------------------------------------------------------------
+
 
 @lists.route("/", methods=["GET"])
 @login_required
@@ -36,6 +40,11 @@ def show_deactivated():
     """Show all deactivated mailing lists"""
     deactivated_lists = MailingList.query.filter_by(deleted=True).all()
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
+
+
+# -----------------------------------------------------------------
+# Managing lists themselves
+# -----------------------------------------------------------------
 
 
 @lists.route("/add", methods=["GET", "POST"])
@@ -220,6 +229,37 @@ def edit(list_id):
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
 
+@lists.route("/<int:list_id>/deactivate", methods=["GET"])
+@login_required
+def deactivate(list_id):
+    """Deactivate a mailing list"""
+    mailing_list: MailingList = MailingList.query.filter_by(
+        id=list_id, deleted=False
+    ).first_or_404()
+    mailing_list.deactivate()  # Use the soft_delete method from the model
+    db.session.commit()
+    flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.name), "success")
+    logging.info('Mailing list "%s" deactivated', mailing_list.address)
+    return redirect(url_for("lists.show_all"))
+
+
+@lists.route("/<int:list_id>/reactivate", methods=["GET"])
+@login_required
+def reactivate(list_id):
+    """Reactivate a mailing list"""
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
+    mailing_list.reactivate()  # Use the reactivate method from the model
+    db.session.commit()
+    flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.name), "success")
+    logging.info('Mailing list "%s" reactivated', mailing_list.address)
+    return redirect(url_for("lists.show_all"))
+
+
+# -----------------------------------------------------------------
+# Managing subscribers of lists
+# -----------------------------------------------------------------
+
+
 @lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
 @login_required
 def subscribers_manage(list_id):
@@ -286,32 +326,6 @@ def subscribers_manage(list_id):
         mailing_list=mailing_list,
         form=form,
     )
-
-
-@lists.route("/<int:list_id>/deactivate", methods=["GET"])
-@login_required
-def deactivate(list_id):
-    """Deactivate a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(
-        id=list_id, deleted=False
-    ).first_or_404()
-    mailing_list.deactivate()  # Use the soft_delete method from the model
-    db.session.commit()
-    flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.name), "success")
-    logging.info('Mailing list "%s" deactivated', mailing_list.address)
-    return redirect(url_for("lists.show_all"))
-
-
-@lists.route("/<int:list_id>/reactivate", methods=["GET"])
-@login_required
-def reactivate(list_id):
-    """Reactivate a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
-    mailing_list.reactivate()  # Use the reactivate method from the model
-    db.session.commit()
-    flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.name), "success")
-    logging.info('Mailing list "%s" reactivated', mailing_list.address)
-    return redirect(url_for("lists.show_all"))
 
 
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
