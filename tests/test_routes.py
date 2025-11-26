@@ -18,7 +18,7 @@ def test_subscriber_does_not_exist(client):
 def test_subscriber_exists(client):
     """Test that the subscriber route returns a 200 status code if subscriber exists."""
     add_subscriber(email="user@example.com", list_id=1)
-    response = client.get("/subscriber/user@example.com")
+    response = client.get("/subscribers/user@example.com")
     assert response.status_code == 200
 
 

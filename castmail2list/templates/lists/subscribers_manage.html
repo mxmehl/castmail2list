@@ -8,6 +8,10 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
+<p>
+    <a href="{{ url_for('lists.edit', list_id=mailing_list.id) }}" role="button">{{ _('Edit List Settings') }}</a>
+</p>
+
 <h3>{{ _('Add Subscriber') }}</h3>
 <form method="POST">
     <fieldset class="grid">
@@ -41,7 +45,7 @@
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
-                <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                <a href="{{ url_for('subscribers.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
                 {% if list %}
                 ({{ _('List') }}{%- if list.deleted %} - <strong>{{ _('Deactivated') }}</strong>{% endif %})
                 {% endif %}
@@ -76,7 +80,7 @@
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
-                <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
+                <a href="{{ url_for('subscribers.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
             </td>
             <td><a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">
                     {{ list.name }}</a>

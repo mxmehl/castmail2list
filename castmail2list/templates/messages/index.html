@@ -23,7 +23,7 @@
         {% for m in messages | reverse %}
         <tr>
             <td><a href="{{ url_for('messages.show', message_id=m.id)}}">{{ m.subject }}</a></td>
-            <td><a href="{{ url_for('general.subscriber', email=m.from_addr) }}">{{ m.from_addr }}</a></td>
+            <td><a href="{{ url_for('subscribers.by_email', email=m.from_addr) }}">{{ m.from_addr }}</a></td>
             <td>{{ m.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
             <td>{{ m.list.name }}</td>
             <td>{{ m.status }}</td>

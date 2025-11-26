@@ -1,11 +1,10 @@
 """Flask routes for castmail2list application"""
 
-from flask import Blueprint, flash, render_template
-from flask_babel import _
+from flask import Blueprint, render_template
 from flask_login import login_required
 
 from ..config import AppConfig
-from ..models import MailingList, Subscriber, db
+from ..models import MailingList
 
 general = Blueprint("general", __name__)
 
@@ -16,28 +15,6 @@ def index():
     """Show dashboard"""
     active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     return render_template("index.html", lists=active_lists)
-
-
-@general.route("/subscriber/<email>")
-@login_required
-def subscriber(email: str):
-    """Show which lists a subscriber is part of"""
-    # Find all subscriptions for this email address
-    email_norm = email.strip().lower()
-    subscriptions: list[Subscriber] = Subscriber.query.filter_by(email=email_norm).all()
-
-    if not subscriptions:
-        flash(_('No subscriptions found for "%(email)s"', email=email), "warning")
-        return render_template("subscriber.html", email=email), 404
-
-    # Get list information for each subscription
-    subscriber_lists = []
-    for sub in subscriptions:
-        mailing_list: MailingList | None = db.session.get(MailingList, sub.list_id)
-        if mailing_list:
-            subscriber_lists.append({"list": mailing_list, "subscriber": sub})
-
-    return render_template("subscriber.html", email=email, subscriber_lists=subscriber_lists)
 
 
 @general.route("/settings", methods=["GET", "POST"])

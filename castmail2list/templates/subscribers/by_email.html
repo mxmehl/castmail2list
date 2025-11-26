@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Subscriber Overview') }} - {{ email }}{% endblock %}
+{% block title %}{{ _('Subscriber Details') }} - {{ email }}{% endblock %}
 
 {% block content %}
-<h2>{{ _('Subscriber Overview') }}</h2>
+<h2>{{ _('Subscriber Details') }}</h2>
 
 <p>{{ _('Email Address') }}: <strong>{{ email }}</strong></p>
 
 {%- include "flash.html" %} {# Show flash messages #}
+
+{%- from "macros.html" import subscriber_list_buttons %}
+{{ subscriber_list_buttons(email) }}
 
 <h3>{{ _('Subscribed to Lists') }}</h3>
 {% if subscriber_lists %}

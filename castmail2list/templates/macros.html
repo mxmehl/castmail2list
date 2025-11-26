@@ -77,3 +77,17 @@
 </form>
 
 {% endmacro %}
+
+
+{% macro subscriber_list_buttons(email) %}
+{%- if is_email_a_list(email) %}
+<p>
+    <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
+        {{ _('Edit List Settings') }}
+    </a>
+    <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
+        {{ _('View List Subscribers') }}
+    </a>
+</p>
+{%- endif %}
+{% endmacro %}

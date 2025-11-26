@@ -7,7 +7,7 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-{%- from "lists/macros.html" import list_form %}
+{%- from "macros.html" import list_form %}
 {{ list_form(form, not retry) }}
 
 {%- endblock %}
