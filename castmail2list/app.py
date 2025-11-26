@@ -33,6 +33,7 @@ from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
 from .views.messages import messages
+from .views.subscriber import subscribers
 
 SCSS_FILES = [("static/scss/main.scss", "static/css/main.scss.css")]
 
@@ -137,8 +138,9 @@ def create_app(
     # Register views and routes
     app.register_blueprint(auth)
     app.register_blueprint(general)
-    app.register_blueprint(messages)
     app.register_blueprint(lists)
+    app.register_blueprint(messages)
+    app.register_blueprint(subscribers)
 
     # Inject variables and functions into templates
     @app.context_processor
