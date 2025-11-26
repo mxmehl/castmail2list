@@ -85,10 +85,15 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     deleted: bool = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    def soft_delete(self):
+    def deactivate(self):
         """Mark the mailing list as deleted"""
         self.deleted = True
         self.deleted_at = datetime.now(timezone.utc)
+
+    def reactivate(self):
+        """Reactivate a soft-deleted mailing list"""
+        self.deleted = False
+        self.deleted_at = None
 
     @validates("address")
     def _validate_address(self, _, value):

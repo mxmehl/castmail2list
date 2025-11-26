@@ -25,9 +25,17 @@ lists = Blueprint("lists", __name__, url_prefix="/lists")
 @lists.route("/", methods=["GET"])
 @login_required
 def show_all():
-    """Show all mailing lists"""
+    """Show all active mailing lists"""
     active_lists = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
+
+
+@lists.route("/deactivated", methods=["GET"])
+@login_required
+def show_deactivated():
+    """Show all deactivated mailing lists"""
+    deactivated_lists = MailingList.query.filter_by(deleted=True).all()
+    return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
 
 
 @lists.route("/add", methods=["GET", "POST"])
@@ -53,6 +61,23 @@ def add():
             imap_user=form.imap_user.data or form.address.data,
             imap_pass=form.imap_pass.data or current_app.config["IMAP_DEFAULT_PASS"],
         )
+        # Verify that the list address is unique
+        existing_list = MailingList.query.filter_by(address=new_list.address).first()
+        if existing_list:
+            status = "deactivated" if existing_list.deleted else "active"
+            flash(
+                _(
+                    'A mailing list with the address "%(address)s" (%(status)s) already exists.',
+                    address=new_list.address,
+                    status=status,
+                ),
+                "error",
+            )
+            logging.warning(
+                'Attempt to create mailing list with address "%s" failed. It already exists in DB.',
+                new_list.address,
+            )
+            return render_template("lists/add.html", config=AppConfig, form=form, retry=True)
         # Verify that the email account works
         if not check_email_account_works(
             new_list.imap_host, int(new_list.imap_port), new_list.imap_user, new_list.imap_pass
@@ -99,6 +124,7 @@ def add():
         db.session.add(new_list)
         db.session.commit()
         flash(_('Mailing list "%(name)s" created successfully!', name=new_list.name), "success")
+        logging.info('Mailing list "%s" created', new_list.address)
 
         # Check recommended settings and flash warnings if needed
         for finding in check_recommended_list_setting(ml=new_list):
@@ -124,6 +150,28 @@ def edit(list_id):
 
     # Handle form submission
     if form.validate_on_submit():
+        # Verify that the list address is unique
+        new_address = form.address.data
+        existing_list = MailingList.query.filter_by(address=new_address).first()
+        if existing_list:
+            status = "deactivated" if existing_list.deleted else "active"
+            flash(
+                _(
+                    'A mailing list with the address "%(address)s" (%(status)s) already exists.',
+                    address=new_address,
+                    status=status,
+                ),
+                "error",
+            )
+            logging.warning(
+                "Attempt to change list %s's address to '%s' failed. It already exists in DB.",
+                mailing_list.id,
+                new_address,
+            )
+            return render_template(
+                "lists/edit.html", mailing_list=mailing_list, form=form, retry=True
+            )
+
         # Only update imap_pass if a new value is provided
         old_pass = mailing_list.imap_pass
         form.populate_obj(mailing_list)
@@ -152,6 +200,7 @@ def edit(list_id):
 
         db.session.commit()
         flash(_('List "%(name)s" updated successfully!', name=mailing_list.name), "success")
+        logging.info('Mailing list "%s" updated', mailing_list.address)
 
         # Check recommended settings and flash warnings if needed
         for finding in check_recommended_list_setting(ml=mailing_list):
@@ -174,8 +223,8 @@ def edit(list_id):
 @lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
 @login_required
 def subscribers_manage(list_id):
-    """Manage subscribers for a mailing list"""
-    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
+    """Manage subscribers of a mailing list"""
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     form = SubscriberAddForm()
 
     # Handle adding subscribers
@@ -212,6 +261,13 @@ def subscribers_manage(list_id):
     if form.submit.data and form.errors:
         flash_form_errors(form)
 
+    # Flash if list is deactivated
+    if mailing_list.deleted:
+        flash(
+            _("This mailing list is deactivated. Reactivate it to process incoming emails."),
+            "warning",
+        )
+
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
@@ -219,16 +275,29 @@ def subscribers_manage(list_id):
     )
 
 
-@lists.route("/<int:list_id>/delete", methods=["GET"])
+@lists.route("/<int:list_id>/deactivate", methods=["GET"])
 @login_required
-def delete(list_id):
-    """Delete (soft-delete) a mailing list"""
+def deactivate(list_id):
+    """Deactivate a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(
         id=list_id, deleted=False
     ).first_or_404()
-    mailing_list.soft_delete()  # Use the soft_delete method from the model
+    mailing_list.deactivate()  # Use the soft_delete method from the model
     db.session.commit()
-    flash(_('List "%(name)s" marked deleted successfully!', name=mailing_list.name), "success")
+    flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.name), "success")
+    logging.info('Mailing list "%s" deactivated', mailing_list.address)
+    return redirect(url_for("lists.show_all"))
+
+
+@lists.route("/<int:list_id>/reactivate", methods=["GET"])
+@login_required
+def reactivate(list_id):
+    """Reactivate a mailing list"""
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
+    mailing_list.reactivate()  # Use the reactivate method from the model
+    db.session.commit()
+    flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.name), "success")
+    logging.info('Mailing list "%s" reactivated', mailing_list.address)
     return redirect(url_for("lists.show_all"))
 
 
@@ -236,13 +305,14 @@ def delete(list_id):
 @login_required
 def subscriber_delete(list_id, subscriber_id):
     """Delete a subscriber from a mailing list"""
-    mailing_list = MailingList.query.filter_by(id=list_id).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     subscriber = Subscriber.query.get_or_404(subscriber_id)
     if subscriber.list_id == mailing_list.id:
         email = subscriber.email
         db.session.delete(subscriber)
         db.session.commit()
         flash(_('Successfully removed "%(email)s" from the list!', email=email), "success")
+        logging.info('Subscriber "%s" removed from mailing list %s', email, mailing_list.address)
     return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
 
@@ -250,7 +320,7 @@ def subscriber_delete(list_id, subscriber_id):
 @login_required
 def subscriber_edit(list_id, subscriber_id):
     """Edit a subscriber of a mailing list"""
-    mailing_list = MailingList.query.filter_by(id=list_id, deleted=False).first_or_404()
+    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
     if form.validate_on_submit():
@@ -281,11 +351,24 @@ def subscriber_edit(list_id, subscriber_id):
         # Commit updates
         db.session.commit()
         flash(_("Subscriber updated successfully!"), "success")
+        logging.info(
+            'Subscriber "%s" updated in mailing list %s', subscriber.email, mailing_list.address
+        )
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
     # Flash on form errors
     if form.submit.data and form.errors:
         flash_form_errors(form)
+
+    # Flash if list is deactivated
+    if mailing_list.deleted:
+        flash(
+            _(
+                "This mailing list is deactivated. The subscriber won't receive any emails "
+                "until you reactivate it."
+            ),
+            "warning",
+        )
 
     return render_template(
         "lists/subscriber_edit.html", mailing_list=mailing_list, form=form, subscriber=subscriber
