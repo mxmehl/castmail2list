@@ -4,6 +4,7 @@ import logging
 import os
 import subprocess
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, flash
@@ -13,7 +14,7 @@ from platformdirs import user_config_path
 from sqlalchemy import func
 
 from . import __version__
-from .models import MailingList, Subscriber
+from .models import MailingList, Message, Subscriber
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
@@ -434,3 +435,29 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     if file:
         config_path = config_path / file
     return str(config_path)
+
+
+def get_all_messages(only: str = "", days: int = 0) -> list[Message]:
+    """
+    Get all messages from the database. With options to filter for bounce messages and by date.
+
+    Args:
+        only (str): If "bounces", return only bounce messages; if "normal", return only normal
+            messages; if empty, return all messages
+        days (int): Only return messages from the last given number of days. If 0, return all
+
+    Returns:
+        list[Message]: A list of all requested messages, descending by received date
+    """
+    if only not in ("", "bounces", "normal"):
+        logging.critical("Invalid 'only' parameter for get_all_messages: %s", only)
+        raise ValueError(f"Invalid 'only' parameter: {only}")
+    all_messages: list[Message] = Message.query.order_by(Message.received_at.desc()).all()
+    if only == "bounces":
+        all_messages = [msg for msg in all_messages if msg.status == "bounce-msg"]
+    if only == "normal":
+        all_messages = [msg for msg in all_messages if msg.status != "bounce-msg"]
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
+    return all_messages

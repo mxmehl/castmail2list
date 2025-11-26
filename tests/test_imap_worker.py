@@ -332,10 +332,8 @@ def test_initialize_imap_polling_starts_thread(monkeypatch):
     assert started.get("started") is True
 
 
-def test_check_all_lists_handles_imap_errors(mailing_list, monkeypatch, client):
+def test_check_all_lists_handles_imap_errors(monkeypatch, client):
     """check_all_lists_for_messages should handle MailboxLoginError and other exceptions."""
-    del mailing_list
-
     # Fake MailBox that raises MailboxLoginError when login() is called
     class FakeMailBoxLoginFail:
         """Fake MailBox that raises `MailboxLoginError` on login."""
@@ -449,12 +447,9 @@ def test_validate_duplicate_from_same_instance(incoming_message_factory, mailbox
     assert stored_msg.status == "duplicate-from-same-instance"
 
 
-def test_bounce_messages_are_stored_in_bounces(
-    mailing_list, incoming_message_factory, mailbox_stub
-):
+def test_bounce_messages_are_stored_in_bounces(incoming_message_factory, mailbox_stub):
     """A bounce message should result in stored status 'bounce-msg' and moved to bounces folder."""
     # Use a simple To that parse_bounce_address recognizes (pattern +bounces--)
-    del mailing_list
     raw = (
         b"Subject: Bounce\nTo: list+bounces--recipient@example.com\n"
         b"From: sender@example.com\n\nBody"
@@ -473,10 +468,8 @@ def test_bounce_messages_are_stored_in_bounces(
     assert mailbox_stub._moves.get("bounce-store-1") == incoming.app.config["IMAP_FOLDER_BOUNCES"]
 
 
-def test_store_msg_generates_message_id_when_missing(incoming_message_factory, mailbox_stub):
+def test_store_msg_generates_message_id_when_missing(incoming_message_factory):
     """When Message-ID header is missing, a generated id should be stored in DB."""
-    # mailbox_stub fixture isn't used directly in this test
-    del mailbox_stub
     raw = b"Subject: No ID\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
     msg = MailMessage.from_bytes(raw)
     msg.uid = "noid-1"

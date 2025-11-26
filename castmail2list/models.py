@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import Mapped, validates
 
 db = SQLAlchemy()
 if TYPE_CHECKING:
@@ -157,7 +157,7 @@ class Message(Model):  # pylint: disable=too-few-public-methods
     from_addr: str = db.Column(db.String, nullable=True)
     headers: str = db.Column(db.Text, nullable=False)
     raw: str = db.Column(db.Text)  # store full RFC822 text
-    received_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    received_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     status: str = db.Column(
         db.String
     )  # "ok", "bounce-msg", "sender-not-allowed", "sender-auth-failed", "duplicate"

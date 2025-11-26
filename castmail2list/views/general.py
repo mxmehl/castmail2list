@@ -4,7 +4,7 @@ from flask import Blueprint, render_template
 from flask_login import login_required
 
 from ..config import AppConfig
-from ..models import MailingList
+from ..status import status_complete
 
 general = Blueprint("general", __name__)
 
@@ -13,8 +13,8 @@ general = Blueprint("general", __name__)
 @login_required
 def index():
     """Show dashboard"""
-    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
-    return render_template("index.html", lists=active_lists)
+    status = status_complete()
+    return render_template("index.html", status=status)
 
 
 @general.route("/settings", methods=["GET", "POST"])

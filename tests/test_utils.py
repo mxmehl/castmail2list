@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import subprocess
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask
 from pytest import MonkeyPatch
 
 from castmail2list import utils
-from castmail2list.models import MailingList, Subscriber, db
+from castmail2list.models import MailingList, Message, Subscriber, db
 from castmail2list.utils import create_bounce_address, parse_bounce_address
 
 # pylint: disable=protected-access,too-few-public-methods
@@ -331,3 +332,80 @@ def test_check_recommended_list_setting() -> None:
     ml.allowed_senders = []
     ml.sender_auth = ["pass1", "pass2"]
     assert not utils.check_recommended_list_setting(ml)
+
+
+def test_get_all_messages(client) -> None:
+    """Check that get_all_messages retrieves messages with filters correctly"""
+    del client  # ensure app and DB fixtures are active
+
+    def _days_ago(days: int) -> datetime:
+        return datetime.now() - timedelta(days=days)
+
+    bounce1: Message = Message(
+        id=1,
+        subject="Bounce 1",
+        message_id="bounce-1",
+        status="bounce-msg",
+        headers="{'foo': 'bar'}",
+        received_at=_days_ago(1),
+    )
+    normal1: Message = Message(
+        id=3,
+        subject="Normal 1",
+        message_id="normal-1",
+        status="ok",
+        headers="{'foo': 'bar'}",
+        received_at=_days_ago(2),
+    )
+    bounce2: Message = Message(
+        id=2,
+        subject="Bounce 2",
+        message_id="bounce-2",
+        status="bounce-msg",
+        headers="{'foo': 'bar'}",
+        received_at=_days_ago(8),
+    )
+    normal2: Message = Message(
+        id=4,
+        subject="Bounce 2",
+        message_id="normal-2",
+        status="ok",
+        headers="{'foo': 'bar'}",
+        received_at=_days_ago(10),
+    )
+
+    # Add bounce messages to the database
+    db.session.add_all([bounce1, bounce2, normal1, normal2])
+    db.session.commit()
+
+    # Retrieve all messages without filtering
+    all_messages = utils.get_all_messages()
+    assert len(all_messages) == 4
+    assert any(msg.message_id == "bounce-1" for msg in all_messages)
+    assert any(msg.message_id == "bounce-2" for msg in all_messages)
+    assert any(msg.message_id == "normal-1" for msg in all_messages)
+    assert any(msg.message_id == "normal-2" for msg in all_messages)
+
+    # Check descending order by received_at
+    assert (
+        all_messages[0].received_at
+        >= all_messages[1].received_at
+        >= all_messages[2].received_at
+        >= all_messages[3].received_at
+    )
+
+    # Retrieve bounce messages from the last 7 days
+    recent_bounces = utils.get_all_messages(only="bounces", days=7)
+    assert len(recent_bounces) == 1
+    assert any(msg.message_id == "bounce-1" for msg in recent_bounces)
+
+    # Retrieve normal messages from the last 7 days
+    recent_normals = utils.get_all_messages(only="normal", days=7)
+    assert len(recent_normals) == 1
+    assert any(msg.message_id == "normal-1" for msg in recent_normals)
+
+    # Retrieve all messages from the last 7 days
+    recent_all = utils.get_all_messages(days=7)
+    assert len(recent_all) == 2
+    assert recent_all[0].message_id == "bounce-1"
+    assert recent_all[1].message_id == "normal-1"

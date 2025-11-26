@@ -4,6 +4,7 @@ from flask import Blueprint, flash, render_template
 from flask_login import login_required
 
 from ..models import Message
+from ..utils import get_all_messages
 
 messages = Blueprint("messages", __name__, url_prefix="/messages")
 
@@ -11,8 +12,8 @@ messages = Blueprint("messages", __name__, url_prefix="/messages")
 @messages.route("/")
 @login_required
 def show_all() -> str:
-    """Show all messages"""
-    msgs: list[Message] = Message.query.all()  # will be reversed in template
+    """Show all messages including bounces"""
+    msgs: list[Message] = get_all_messages()
     return render_template("messages/index.html", messages=msgs)
 
 
@@ -29,8 +30,5 @@ def show(message_id: int) -> str:
 @messages.route("/bounces")
 @login_required
 def bounces() -> str:
-    """Show bounced messages"""
-    bounce_messages: list[Message] = (
-        Message.query.filter_by(status="bounce-msg").order_by(Message.received_at.desc()).all()
-    )
-    return render_template("messages/bounces.html", messages=bounce_messages)
+    """Show only bounced messages"""
+    return render_template("messages/bounces.html", messages=get_all_messages(only="bounces"))
