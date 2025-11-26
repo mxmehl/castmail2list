@@ -32,7 +32,7 @@ lists = Blueprint("lists", __name__, url_prefix="/lists")
 @login_required
 def show_all():
     """Show all active mailing lists"""
-    active_lists = MailingList.query.filter_by(deleted=False).all()
+    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
@@ -40,7 +40,7 @@ def show_all():
 @login_required
 def show_deactivated():
     """Show all deactivated mailing lists"""
-    deactivated_lists = MailingList.query.filter_by(deleted=True).all()
+    deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
 
 
@@ -421,6 +421,10 @@ def subscriber_edit(list_id, subscriber_id):
             ),
             "warning",
         )
+
+    # Flash if subscriber is itself a list
+    if is_email_a_list(subscriber.email):
+        flash(_("Note: This subscriber is itself a mailing list."), "message")
 
     return render_template(
         "lists/subscriber_edit.html", mailing_list=mailing_list, form=form, subscriber=subscriber

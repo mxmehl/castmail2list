@@ -37,11 +37,14 @@
     </thead>
     <tbody>
         {% for subscriber in mailing_list.subscribers %}
+        {%- if subscriber.subscriber_type == "list" %}{% set list = is_email_a_list(subscriber.email) %}{% endif %}
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
                 <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
-                {% if subscriber.subscriber_type == "list" %}({{ _('List') }}){% endif %}
+                {% if list %}
+                ({{ _('List') }}{%- if list.deleted %} - <strong>{{ _('Deactivated') }}</strong>{% endif %})
+                {% endif %}
             </td>
             <td>{{ subscriber.comment if subscriber.comment }}</td>
             <td>
@@ -69,17 +72,17 @@
     </thead>
     <tbody>
         {% for list, subs in subscribers_indirect.items() %}
-            {% for subscriber in subs %}
-            <tr>
-                <td>{{ subscriber.name if subscriber.name }}</td>
-                <td>
-                    <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
-                </td>
-                <td><a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">
+        {% for subscriber in subs %}
+        <tr>
+            <td>{{ subscriber.name if subscriber.name }}</td>
+            <td>
+                <a href="{{ url_for('general.subscriber', email=subscriber.email) }}">{{ subscriber.email }}</a>
+            </td>
+            <td><a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">
                     {{ list.name }}</a>
-                </td>
-            </tr>
-            {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
         {% endfor %}
     </tbody>
 </table>
