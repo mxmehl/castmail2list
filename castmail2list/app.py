@@ -61,6 +61,7 @@ def create_app(
     config_overrides: dict | None = None,
     yaml_config_path: str | None = None,
     one_off_call: bool = False,
+    debug: bool = False,
 ) -> Flask:
     """Create Flask app
 
@@ -68,6 +69,7 @@ def create_app(
         config_overrides (dict): optional dict to update app.config before DB init (e.g. for tests)
         yaml_config_path (str): optional path to YAML configuration file
         one_off_call (bool): if True, indicates this is a one-off call (e.g. for CLI commands)
+        debug (bool): if True, enable debug mode
 
     Returns:
         Flask: the Flask application
@@ -82,6 +84,10 @@ def create_app(
         appconfig = AppConfig()  # default config
 
     app.config.from_object(appconfig)
+
+    # Enable debug mode if requested
+    app.debug = debug
+    app.config["DEBUG"] = debug
 
     # apply overrides early so DB and other setup use them
     if config_overrides:
@@ -178,7 +184,7 @@ def create_app_wrapper(app_config_path: str, debug: bool, one_off: bool) -> Flas
     configure_logging(debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off)
+    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug)
 
     return app
 
@@ -215,6 +221,9 @@ def main():
         metavar="SEED_FILE",
         help="Seed the database with a seed file and exit",
     )
+    parser.add_argument(
+        "--dry", action="store_true", help="Run in dry mode (no changes to emails or DB)"
+    )
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     parser.add_argument(
         "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
@@ -227,6 +236,11 @@ def main():
         # one-off call for most CLI commands
         one_off = True
     app = create_app_wrapper(app_config_path=args.app_config, debug=args.debug, one_off=one_off)
+
+    # Insert modes into config
+    if args.dry:
+        app.config["DRY"] = True
+        logging.warning("Running in DRY mode: no changes to emails or database will be made.")
 
     # Create admin user if requested
     if args.create_admin:
