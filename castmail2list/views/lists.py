@@ -1,6 +1,7 @@
 """Lists blueprint for CastMail2List application"""
 
 import logging
+from typing import cast
 
 from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
@@ -14,6 +15,7 @@ from ..utils import (
     check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
+    get_list_subscribers,
     is_email_a_list,
     list_to_string,
     string_to_list,
@@ -321,9 +323,21 @@ def subscribers_manage(list_id):
             "warning",
         )
 
+    # Get recursive subscribers for display
+    # all_recursive_subscribers = get_list_subscribers(mailing_list)
+    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
+    subscriber_lists = [
+        is_email_a_list(s.email) for s in subscribers_direct if s.subscriber_type == "list"
+    ]
+    subscribers_indirect = {}
+    for sub_list in subscriber_lists:
+        if sub_list:
+            subscribers_indirect[sub_list] = get_list_subscribers(sub_list)
+
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
+        subscribers_indirect=subscribers_indirect,
         form=form,
     )
 
