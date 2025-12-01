@@ -121,7 +121,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             self.composed_msg["Cc"] = ", ".join(self.msg.cc)
         # Message
         self.composed_msg["Subject"] = self.msg.subject
-        self.composed_msg["Message-ID"] = self.message_id
+        self.composed_msg["Message-ID"] = f"<{self.message_id}>"
         self.composed_msg["Date"] = self.msg.date_str or formatdate(localtime=True)
         self.composed_msg["Original-Message-ID"] = self.original_mid
         # Threading and references
@@ -291,7 +291,7 @@ def send_msg_to_subscribers(
     )
 
     # Prepare message class
-    new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
+    new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1]).strip("<>")
     mail = Mail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
 
     # --- Sanity checks ---

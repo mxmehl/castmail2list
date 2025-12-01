@@ -287,8 +287,8 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
             target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
 
         # Mark message as seen and move to target folder
-        self.mailbox.flag(self.msg.uid, ["\\Seen"], True)  # type: ignore
-        self.mailbox.move(self.msg.uid, target_folder)  # type: ignore
+        self.mailbox.flag(uid_list=self.msg.uid, flag_set=["\\Seen"], value=True)  # type: ignore
+        self.mailbox.move(uid_list=self.msg.uid, destination_folder=target_folder)  # type: ignore
         logging.debug(
             "Marked message %s as seen and moved to folder '%s'", self.msg.uid, target_folder
         )
@@ -347,6 +347,13 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 # Fetch unseen messages
                 for msg in mailbox.fetch(mark_seen=False):
                     incoming_msg = IncomingMessage(app, mailbox, msg, ml)
+                    # Check if incoming message has a UID. If not, we abort the process as this
+                    # would break multiple operations
+                    if msg.uid is None:
+                        logging.error(
+                            "Incoming message has no UID, cannot process message: %s", msg.subject
+                        )
+                        continue
                     # Process incoming message. If OK, send to subscribers
                     if incoming_msg.process_incoming_msg():
                         send_msg_to_subscribers(app=app, msg=msg, ml=ml, mailbox=mailbox)
