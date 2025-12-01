@@ -3,7 +3,7 @@
 from flask import Blueprint, flash, render_template
 from flask_login import login_required
 
-from ..models import Message
+from ..models import EmailIn
 from ..utils import get_all_messages
 
 messages = Blueprint("messages", __name__, url_prefix="/messages")
@@ -13,7 +13,7 @@ messages = Blueprint("messages", __name__, url_prefix="/messages")
 @login_required
 def show_all() -> str:
     """Show all messages including bounces"""
-    msgs: list[Message] = get_all_messages()
+    msgs: list[EmailIn] = get_all_messages()
     return render_template("messages/index.html", messages=msgs)
 
 
@@ -21,7 +21,7 @@ def show_all() -> str:
 @login_required
 def show(message_id: int) -> str:
     """Show a specific message"""
-    msg: Message | None = Message.query.get(message_id)
+    msg: EmailIn | None = EmailIn.query.get(message_id)
     if not msg:
         flash("Message not found", "error")
     return render_template("messages/detail.html", message=msg)

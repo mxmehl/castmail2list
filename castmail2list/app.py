@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+from datetime import datetime
 from logging.config import dictConfig
 from pathlib import Path
 
@@ -58,6 +59,30 @@ def configure_logging(debug: bool) -> None:
             "root": {"level": "DEBUG" if debug else "INFO", "handlers": ["wsgi"]},
         }
     )
+
+
+def backup_sqlite_database(config_database_uri: str) -> None:
+    """Backup the existing database file if it's SQLite"""
+    if not config_database_uri.startswith("sqlite:///"):
+        logging.warning("Database is not SQLite, skipping backup")
+        return
+
+    # Get the absolute SQLite database file path
+    db_path = Path(config_database_uri.replace("sqlite:///", ""))
+    if not db_path.is_absolute():
+        app_path = Path(__file__).parent.resolve()
+        db_path = (app_path / db_path).resolve()
+
+    # Create backup file path with timestamp
+    date = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = f"{db_path}.backup-{date}"
+
+    # Copy database file to backup location
+    try:
+        Path(db_path).copy(backup_path)
+        logging.info("Database backed up to %s", backup_path)
+    except FileNotFoundError:
+        logging.warning("Database file not found, skipping backup")
 
 
 def create_app(
@@ -274,8 +299,11 @@ def main():
             if args.db == "check":
                 check()
             elif args.db in ("init", "upgrade"):
+                # Backup existing DB before init/upgrade
+                backup_sqlite_database(config_database_uri=app.config["DATABASE_URI"])
                 upgrade()
             elif args.db == "downgrade":
+                backup_sqlite_database(config_database_uri=app.config["DATABASE_URI"])
                 downgrade()
             else:
                 logging.error("Unknown DB command: %s", args.db)
@@ -284,6 +312,7 @@ def main():
             return
     if args.db_migrate:
         with app.app_context():
+            backup_sqlite_database(config_database_uri=app.config["DATABASE_URI"])
             migrate(message=args.db_migrate)
             print(f"Database migration with message '{args.db_migrate}' created")
         return

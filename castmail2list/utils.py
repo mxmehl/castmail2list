@@ -14,7 +14,7 @@ from platformdirs import user_config_path
 from sqlalchemy import func
 
 from . import __version__
-from .models import MailingList, Message, Subscriber
+from .models import EmailIn, MailingList, Subscriber
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
@@ -437,7 +437,7 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     return str(config_path)
 
 
-def get_all_messages(only: str = "", days: int = 0) -> list[Message]:
+def get_all_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     """
     Get all messages from the database. With options to filter for bounce messages and by date.
 
@@ -452,7 +452,7 @@ def get_all_messages(only: str = "", days: int = 0) -> list[Message]:
     if only not in ("", "bounces", "normal"):
         logging.critical("Invalid 'only' parameter for get_all_messages: %s", only)
         raise ValueError(f"Invalid 'only' parameter: {only}")
-    all_messages: list[Message] = Message.query.order_by(Message.received_at.desc()).all()
+    all_messages: list[EmailIn] = EmailIn.query.order_by(EmailIn.received_at.desc()).all()
     if only == "bounces":
         all_messages = [msg for msg in all_messages if msg.status == "bounce-msg"]
     if only == "normal":

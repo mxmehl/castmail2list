@@ -8,7 +8,7 @@ from imap_tools import MailboxLoginError, MailMessage
 import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
 from castmail2list.imap_worker import IncomingMessage, create_required_folders
-from castmail2list.models import MailingList, Message, Subscriber, db
+from castmail2list.models import EmailIn, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
@@ -217,7 +217,7 @@ def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_st
     assert res is True
 
     # Verify DB has a Message with our Message-ID
-    stored_msg = Message.query.filter_by(message_id="store-1@example.com").first()
+    stored_msg = EmailIn.query.filter_by(message_id="store-1@example.com").first()
     assert stored_msg is not None
     assert stored_msg.status == "ok"
     assert mailbox_stub._moves.get("store-1") == incoming.app.config["IMAP_FOLDER_PROCESSED"]
@@ -439,7 +439,7 @@ def test_validate_duplicate_from_same_instance(incoming_message_factory, mailbox
     res = incoming.process_incoming_msg()
     assert res is False
     assert mailbox_stub._moves.get("self-1") == incoming.app.config["IMAP_FOLDER_DENIED"]
-    stored_msg = Message.query.filter_by(
+    stored_msg = EmailIn.query.filter_by(
         status="duplicate-from-same-instance", list_id=incoming.ml.id
     ).first()
     # status stored should reflect duplicate-from-same-instance
@@ -462,7 +462,7 @@ def test_bounce_messages_are_stored_in_bounces(incoming_message_factory, mailbox
     assert res is False
 
     # Verify DB record exists and status is 'bounce-msg'
-    stored_msg = Message.query.filter_by(status="bounce-msg", list_id=incoming.ml.id).first()
+    stored_msg = EmailIn.query.filter_by(status="bounce-msg", list_id=incoming.ml.id).first()
     assert stored_msg is not None
     assert stored_msg.status == "bounce-msg"
     assert mailbox_stub._moves.get("bounce-store-1") == incoming.app.config["IMAP_FOLDER_BOUNCES"]
@@ -478,7 +478,7 @@ def test_store_msg_generates_message_id_when_missing(incoming_message_factory):
     res = incoming.process_incoming_msg()
     assert res is True
 
-    all_msgs = Message.query.filter_by(list_id=incoming.ml.id).all()
+    all_msgs = EmailIn.query.filter_by(list_id=incoming.ml.id).all()
     stored_msg = all_msgs[-1] if all_msgs else None
     assert stored_msg is not None
     assert stored_msg.message_id != ""

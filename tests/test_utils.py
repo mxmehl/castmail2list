@@ -10,7 +10,7 @@ from flask import Flask
 from pytest import MonkeyPatch
 
 from castmail2list import utils
-from castmail2list.models import MailingList, Message, Subscriber, db
+from castmail2list.models import EmailIn, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address, parse_bounce_address
 
 # pylint: disable=protected-access,too-few-public-methods
@@ -341,7 +341,7 @@ def test_get_all_messages(client) -> None:
     def _days_ago(days: int) -> datetime:
         return datetime.now() - timedelta(days=days)
 
-    bounce1: Message = Message(
+    bounce1: EmailIn = EmailIn(
         id=1,
         subject="Bounce 1",
         message_id="bounce-1",
@@ -349,7 +349,7 @@ def test_get_all_messages(client) -> None:
         headers="{'foo': 'bar'}",
         received_at=_days_ago(1),
     )
-    normal1: Message = Message(
+    normal1: EmailIn = EmailIn(
         id=3,
         subject="Normal 1",
         message_id="normal-1",
@@ -357,7 +357,7 @@ def test_get_all_messages(client) -> None:
         headers="{'foo': 'bar'}",
         received_at=_days_ago(2),
     )
-    bounce2: Message = Message(
+    bounce2: EmailIn = EmailIn(
         id=2,
         subject="Bounce 2",
         message_id="bounce-2",
@@ -365,7 +365,7 @@ def test_get_all_messages(client) -> None:
         headers="{'foo': 'bar'}",
         received_at=_days_ago(8),
     )
-    normal2: Message = Message(
+    normal2: EmailIn = EmailIn(
         id=4,
         subject="Bounce 2",
         message_id="normal-2",

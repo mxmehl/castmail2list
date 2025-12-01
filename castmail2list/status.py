@@ -1,6 +1,6 @@
 """Functions and operations to collect reports about different parts of Castmail2List"""
 
-from .models import MailingList, Message
+from .models import EmailIn, MailingList
 from .utils import get_all_messages, get_all_subscribers
 
 

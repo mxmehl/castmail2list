@@ -14,7 +14,7 @@ from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers
-from .models import MailingList, Message, Subscriber, db
+from .models import EmailIn, MailingList, Subscriber, db
 from .utils import (
     get_list_subscribers,
     get_plus_suffix,
@@ -257,7 +257,7 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
             target_folder = self.app.config["IMAP_FOLDER_DENIED"]
 
         # Store message in database
-        m = Message()
+        m = EmailIn()
         m.list_id = self.ml.id
         m.message_id = next(iter(self.msg.headers.get("message-id", ())), str(uuid.uuid4())).strip(
             "<>"

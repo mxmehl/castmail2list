@@ -78,7 +78,7 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
         "Subscriber", backref="list", lazy="joined", cascade="all, delete-orphan"
     )
     messages = db.relationship(
-        "Message", backref="list", lazy="joined", cascade="all, delete-orphan"
+        "EmailIn", backref="list", lazy="joined", cascade="all, delete-orphan"
     )
 
     # Soft-delete flag: mark list as deleted instead of removing row from DB
@@ -138,8 +138,10 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
         return value.lower() if isinstance(value, str) else value
 
 
-class Message(Model):  # pylint: disable=too-few-public-methods
-    """A message sent to a mailing list"""
+class EmailIn(Model):  # pylint: disable=too-few-public-methods
+    """An email message sent to a mailing list"""
+
+    __tablename__ = "email_in"
 
     def __init__(self, **kwargs):
         # Only set attributes that actually exist on the mapped class
