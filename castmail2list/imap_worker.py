@@ -356,6 +356,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
                             "during processing",
                             msg.uid,
                         )
+                        return
         except MailboxLoginError as e:
             logging.error(
                 "IMAP login failed for list %s (%s): %s",

@@ -162,3 +162,40 @@ class Message(Model):  # pylint: disable=too-few-public-methods
         db.String
     )  # "ok", "bounce-msg", "sender-not-allowed", "sender-auth-failed", "duplicate"
     error_info: dict = db.Column(db.JSON, default=dict)
+
+
+class Logs(Model):  # pylint: disable=too-few-public-methods
+    """Application event log"""
+
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    timestamp: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    level: str = db.Column(db.String, nullable=False)  # Severity: "info", "warning", "error"
+    event: str = db.Column(db.String, nullable=False)  # Event type: "sent-msg", "login-attempt"
+    message: str = db.Column(db.Text, nullable=False)  # Short log message
+    details: dict = db.Column(db.JSON, nullable=True)  # Optional detailed log message in JSON
+    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)  # Associated list
+
+    # Add a log_event function to create log entries
+    def log_event(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self,
+        level: str,
+        event: str,
+        message: str,
+        details: dict | None = None,
+        list_id: int | None = None,
+    ) -> None:
+        """Create a log entry in the Logs table"""
+        log_entry = Logs(
+            level=level, event=event, message=message, details=details, list_id=list_id
+        )
+        db.session.add(log_entry)
+        db.session.commit()
