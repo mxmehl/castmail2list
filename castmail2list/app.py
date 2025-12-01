@@ -10,7 +10,7 @@ from flask_babel import Babel
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
-from flask_migrate import Migrate, check, downgrade, upgrade
+from flask_migrate import Migrate, check, downgrade, migrate, upgrade
 from flask_wtf import CSRFProtect
 from sqlalchemy.exc import OperationalError
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -223,6 +223,7 @@ def main():
         choices=["check", "upgrade", "downgrade", "init"],
         help="Database commands, e.g. for migrations",
     )
+    parser.add_argument("--db-migrate", type=str, help="Run a DB migration with the given message")
     parser.add_argument(
         "--db-seed",
         type=str,
@@ -264,7 +265,7 @@ def main():
             )
             db.session.add(new_user)
             db.session.commit()
-            logging.info("Admin user '%s' created", username)
+            print(f"Admin user '{username}' created")
         return
 
     # Handle DB commands if provided
@@ -276,7 +277,16 @@ def main():
                 upgrade()
             elif args.db == "downgrade":
                 downgrade()
+            else:
+                logging.error("Unknown DB command: %s", args.db)
+                return
+            print(f"Database command '{args.db}' completed")
             return
+    if args.db_migrate:
+        with app.app_context():
+            migrate(message=args.db_migrate)
+            print(f"Database migration with message '{args.db_migrate}' created")
+        return
 
     # Seed database if requested
     if args.db_seed:
