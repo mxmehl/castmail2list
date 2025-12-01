@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash
 
 from castmail2list.app import create_app
-from castmail2list.imap_worker import IncomingMessage
+from castmail2list.imap_worker import IncomingEmail
 from castmail2list.models import MailingList, Subscriber, User, db
 
 
@@ -191,12 +191,12 @@ def fixture_incoming_message_factory(client, mailing_list, mailbox_stub):
 
     Keeps test code terse and centralizes construction details."""
 
-    def _factory(mail_msg: MailMessage) -> IncomingMessage:
+    def _factory(mail_msg: MailMessage) -> IncomingEmail:
         # Ensure a non-empty DOMAIN to avoid duplicate-from-same-instance matches in tests
         if not client.application.config.get("DOMAIN"):
             client.application.config["DOMAIN"] = "lists.example.com"
 
-        return IncomingMessage(
+        return IncomingEmail(
             app=client.application,
             mailbox=mailbox_stub,
             msg=mail_msg,

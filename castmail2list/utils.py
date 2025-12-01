@@ -4,12 +4,14 @@ import logging
 import os
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
+from imap_tools.message import MailMessage
 from platformdirs import user_config_path
 from sqlalchemy import func
 
@@ -461,3 +463,16 @@ def get_all_messages(only: str = "", days: int = 0) -> list[EmailIn]:
         cutoff_date = datetime.now() - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
     return all_messages
+
+
+def get_message_id_from_incoming(msg: MailMessage) -> str:
+    """
+    Extract the Message-ID from an incoming MailMessage object.
+
+    Args:
+        msg (MailMessage): The incoming email message
+    Returns:
+        str: The Message-ID of the email, without < > brackets; if not present, a new UUID is
+        generated
+    """
+    return next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")

@@ -5,6 +5,7 @@ import smtplib
 import tempfile
 import traceback
 from copy import deepcopy
+from datetime import datetime, timezone
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -15,11 +16,15 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import Logs, MailingList, Subscriber
-from .utils import create_bounce_address, get_list_subscribers
+from .models import EmailOut, Logs, MailingList, Subscriber, db
+from .utils import (
+    create_bounce_address,
+    get_list_subscribers,
+    get_message_id_from_incoming,
+)
 
 
-class Mail:  # pylint: disable=too-many-instance-attributes
+class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
     """Class for an email sent to multiple recipients via SMTP"""
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
@@ -270,7 +275,7 @@ def send_msg_to_subscribers(
 
     Args:
         app (Flask): Flask application instance
-        msg (MailMessage): Message to send
+        msg (MailMessage): The incoming message to forward
         ml (MailingList): Mailing list to send to
         mailbox (MailBox): IMAP mailbox instance for storing sent messages
 
@@ -292,7 +297,17 @@ def send_msg_to_subscribers(
 
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1]).strip("<>")
-    mail = Mail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
+    mail = OutgoingEmail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
+
+    # Store fundamental information about to-be-sent message in database
+    email_out = EmailOut(
+        email_in_mid=get_message_id_from_incoming(msg),
+        message_id=new_msgid,
+        list_id=ml.id,
+        recipients=[sub.email for sub in subscribers],
+        sent_at=datetime.now(timezone.utc),
+    )
+    db.session.add(email_out)
 
     # --- Sanity checks ---
     # Make sure there is content to send

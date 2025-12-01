@@ -17,6 +17,7 @@ from .mailer import send_msg_to_subscribers
 from .models import EmailIn, MailingList, Subscriber, db
 from .utils import (
     get_list_subscribers,
+    get_message_id_from_incoming,
     get_plus_suffix,
     is_expanded_address_the_mailing_list,
     parse_bounce_address,
@@ -60,7 +61,7 @@ def create_required_folders(app: Flask, mailbox: MailBox) -> None:
             logging.info("Created IMAP folder: %s", folder)
 
 
-class IncomingMessage:  # pylint: disable=too-few-public-methods
+class IncomingEmail:  # pylint: disable=too-few-public-methods
     """Class representing an incoming message and its handling"""
 
     def __init__(self, app: Flask, mailbox: MailBox, msg: MailMessage, ml: MailingList) -> None:
@@ -259,9 +260,7 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
         # Store message in database
         m = EmailIn()
         m.list_id = self.ml.id
-        m.message_id = next(iter(self.msg.headers.get("message-id", ())), str(uuid.uuid4())).strip(
-            "<>"
-        )
+        m.message_id = get_message_id_from_incoming(self.msg)
         m.subject = self.msg.subject
         m.from_addr = self.msg.from_
         m.headers = str(dict(self.msg.headers.items()))
@@ -346,7 +345,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 mailbox.folder.set(app.config["IMAP_FOLDER_INBOX"])
                 # Fetch unseen messages
                 for msg in mailbox.fetch(mark_seen=False):
-                    incoming_msg = IncomingMessage(app, mailbox, msg, ml)
+                    incoming_msg = IncomingEmail(app, mailbox, msg, ml)
                     # Check if incoming message has a UID. If not, we abort the process as this
                     # would break multiple operations
                     if msg.uid is None:

@@ -166,6 +166,28 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
     error_info: dict = db.Column(db.JSON, default=dict)
 
 
+class EmailOut(Model):  # pylint: disable=too-few-public-methods
+    """An email message sent out to subscribers"""
+
+    __tablename__ = "email_out"
+
+    def __init__(self, **kwargs):
+        # Only set attributes that actually exist on the mapped class
+        for key, value in kwargs.items():
+            if not hasattr(self.__class__, key):
+                raise TypeError(
+                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                )
+            setattr(self, key, value)
+
+    id: int = db.Column(db.Integer, primary_key=True)
+    email_in_mid: str = db.Column(db.String, db.ForeignKey("email_in.message_id"), nullable=False)
+    message_id: str = db.Column(db.String, unique=True, nullable=False)
+    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)
+    recipients: list = db.Column(db.JSON, default=list)
+    sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+
 class Logs(Model):  # pylint: disable=too-few-public-methods
     """Application event log"""
 

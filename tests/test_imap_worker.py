@@ -7,7 +7,7 @@ from imap_tools import MailboxLoginError, MailMessage
 
 import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
-from castmail2list.imap_worker import IncomingMessage, create_required_folders
+from castmail2list.imap_worker import IncomingEmail, create_required_folders
 from castmail2list.models import EmailIn, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
@@ -16,7 +16,7 @@ from .conftest import MailboxStub
 # pylint: disable=protected-access,too-few-public-methods
 
 
-def _call_detect_bounce(incoming: IncomingMessage) -> str:
+def _call_detect_bounce(incoming: IncomingEmail) -> str:
     """
     Helper to access private bounce detection for focused testing.
 
@@ -43,7 +43,7 @@ def test_detect_bounce_via_to_header(incoming_message_factory):
     )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "detect-to-1"
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     bounced = incoming._detect_bounce()
     assert isinstance(bounced, str)
@@ -57,7 +57,7 @@ def test_detect_bounce_via_flufl_scan(monkeypatch, incoming_message_factory):
     raw = b"Subject: Scan Test\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
     msg = MailMessage.from_bytes(raw)
     msg.uid = "detect-flufl-1"
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     # Monkeypatch the scan_message function used inside the imap_worker module
     def _fake_scan(_msg):
@@ -88,19 +88,19 @@ def test_sender_authentication_and_to_cleanup(mailing_list: MailingList, incomin
     raw_noauth = b"Subject: Auth Test\nTo: list@example.com\nFrom: auth@example.com\n\nBody"
     msg_noauth = MailMessage.from_bytes(raw_noauth)
     msg_noauth.uid = "auth-0"
-    incoming_noauth: IncomingMessage = incoming_message_factory(msg_noauth)
+    incoming_noauth: IncomingEmail = incoming_message_factory(msg_noauth)
 
     # Test message with incorrect password
     raw_badauth = b"Subject: Auth Test\nTo: list+false@example.com\nFrom: auth@example.com\n\nBody"
     msg_badauth = MailMessage.from_bytes(raw_badauth)
     msg_badauth.uid = "auth-1"
-    incoming_badauth: IncomingMessage = incoming_message_factory(msg_badauth)
+    incoming_badauth: IncomingEmail = incoming_message_factory(msg_badauth)
 
     # Test message with correct password suffix
     raw_ok = b"Subject: Auth Test\nTo: list+secret123@example.com\nFrom: auth@example.com\n\nBody"
     msg_ok = MailMessage.from_bytes(raw_ok)
     msg_ok.uid = "auth-2"
-    incoming_ok: IncomingMessage = incoming_message_factory(msg_ok)
+    incoming_ok: IncomingEmail = incoming_message_factory(msg_ok)
 
     # No authentication should return empty string
     passed = incoming_noauth._validate_email_sender_authentication()
@@ -125,7 +125,7 @@ def test_duplicate_detection_moves_to_duplicate(
     """Processing the same Message-ID twice should move the second copy to duplicate folder."""
     # Ensure the app DOMAIN is non-empty so the "duplicate-from-same-instance" check
     # does not trigger (an empty DOMAIN is contained in any header string).
-    incoming: IncomingMessage = incoming_message_factory(
+    incoming: IncomingEmail = incoming_message_factory(
         MailMessage.from_bytes(b"Subject: x\n\n\n")
     )
     incoming_app = incoming.app
@@ -139,14 +139,14 @@ def test_duplicate_detection_moves_to_duplicate(
     msg = MailMessage.from_bytes(raw)
     msg.uid = "dup-1"
     # First processing should store it as new (returns True)
-    incoming1: IncomingMessage = incoming_message_factory(msg)
+    incoming1: IncomingEmail = incoming_message_factory(msg)
     res1 = incoming1.process_incoming_msg()
     assert res1 is True
 
     # Second processing of the same message should be detected as duplicate
     msg2 = MailMessage.from_bytes(raw)
     msg2.uid = "dup-2"  # type: ignore[attr-defined]
-    incoming2: IncomingMessage = incoming_message_factory(msg2)
+    incoming2: IncomingEmail = incoming_message_factory(msg2)
     res2 = incoming2.process_incoming_msg()
     assert res2 is False
 
@@ -165,7 +165,7 @@ def test_broadcast_sender_not_allowed(
     msg = MailMessage.from_bytes(raw)
     msg.uid = "bad-1"
 
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
     res = incoming.process_incoming_msg()
     assert res is False
     assert mailbox_stub._moves.get("bad-1") == incoming.app.config["IMAP_FOLDER_DENIED"]
@@ -188,7 +188,7 @@ def test_group_mode_subscriber_restrictions(
     raw1 = b"Subject: Group Test\nTo: list@example.com\nFrom: intruder@example.com\n\nBody"
     msg1 = MailMessage.from_bytes(raw1)
     msg1.uid = "grp-1"
-    incoming1: IncomingMessage = incoming_message_factory(msg1)
+    incoming1: IncomingEmail = incoming_message_factory(msg1)
     res1 = incoming1.process_incoming_msg()
     assert res1 is False
     assert mailbox_stub._moves.get("grp-1") == incoming1.app.config["IMAP_FOLDER_DENIED"]
@@ -197,7 +197,7 @@ def test_group_mode_subscriber_restrictions(
     raw2 = b"Subject: Group Test\nTo: list@example.com\nFrom: member@example.com\n\nBody"
     msg2 = MailMessage.from_bytes(raw2)
     msg2.uid = "grp-2"
-    incoming2: IncomingMessage = incoming_message_factory(msg2)
+    incoming2: IncomingEmail = incoming_message_factory(msg2)
     res2 = incoming2.process_incoming_msg()
     assert res2 is True
     assert mailbox_stub._moves.get("grp-2") == incoming2.app.config["IMAP_FOLDER_PROCESSED"]
@@ -211,7 +211,7 @@ def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_st
     )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "store-1"  # type: ignore[attr-defined]
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     res = incoming.process_incoming_msg()
     assert res is True
@@ -235,7 +235,7 @@ def test_send_msg_to_subscribers_called_for_ok_message(
     msg = MailMessage.from_bytes(raw)
     msg.uid = "send-1"
 
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
     res = incoming.process_incoming_msg()
     assert res is True
 
@@ -247,7 +247,7 @@ def test_send_msg_to_subscribers_called_for_ok_message(
     def _fake_send(_self, _recipient):
         return b"OK"
 
-    monkeypatch.setattr(mailer.Mail, "send_email_to_recipient", _fake_send, raising=True)
+    monkeypatch.setattr(mailer.OutgoingEmail, "send_email_to_recipient", _fake_send, raising=True)
 
     sent_successful, _ = mailer.send_msg_to_subscribers(
         app=incoming.app, msg=msg, ml=incoming.ml, mailbox=mailbox_stub
@@ -270,7 +270,7 @@ def test_send_msg_not_called_for_bounce(bounce_samples, incoming_message_factory
 
     monkeypatch.setattr(mailer, "send_msg_to_subscribers", _spy)
 
-    incoming: IncomingMessage = incoming_message_factory(bounce_msg)
+    incoming: IncomingEmail = incoming_message_factory(bounce_msg)
     res = incoming.process_incoming_msg()
     assert res is False
     assert called.get("called") is None
@@ -412,7 +412,7 @@ def test_validate_sender_auth_when_from_missing(
     msg = MailMessage.from_bytes(raw)
     msg.uid = "auth-no-from"
 
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
     passed = incoming._validate_email_sender_authentication()
     # Current behaviour: authentication is checked by +suffix only,
     # independent of From header presence
@@ -434,7 +434,7 @@ def test_validate_duplicate_from_same_instance(incoming_message_factory, mailbox
     )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "self-1"
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     res = incoming.process_incoming_msg()
     assert res is False
@@ -456,7 +456,7 @@ def test_bounce_messages_are_stored_in_bounces(incoming_message_factory, mailbox
     )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "bounce-store-1"
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     res = incoming.process_incoming_msg()
     assert res is False
@@ -473,7 +473,7 @@ def test_store_msg_generates_message_id_when_missing(incoming_message_factory):
     raw = b"Subject: No ID\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
     msg = MailMessage.from_bytes(raw)
     msg.uid = "noid-1"
-    incoming: IncomingMessage = incoming_message_factory(msg)
+    incoming: IncomingEmail = incoming_message_factory(msg)
 
     res = incoming.process_incoming_msg()
     assert res is True
