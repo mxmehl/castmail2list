@@ -152,9 +152,8 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
                 )
             setattr(self, key, value)
 
-    id: int = db.Column(db.Integer, primary_key=True)
+    message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"))
-    message_id: str = db.Column(db.String, unique=True, nullable=False)
     subject: str = db.Column(db.String, nullable=True)
     from_addr: str = db.Column(db.String, nullable=True)
     headers: str = db.Column(db.Text, nullable=False)

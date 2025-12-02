@@ -17,7 +17,7 @@ def show_all() -> str:
     return render_template("messages/index.html", messages=msgs)
 
 
-@messages.route("/<int:message_id>")
+@messages.route("/<message_id>")
 @login_required
 def show(message_id: int) -> str:
     """Show a specific message"""

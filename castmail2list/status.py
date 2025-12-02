@@ -52,10 +52,10 @@ def status_complete() -> dict:
             },
             "bounces_last_7_days": {
                 "count": len(bounce_msg_7),
-                "ids": [msg.id for msg in bounce_msg_7],
+                "ids": [msg.message_id for msg in bounce_msg_7],
             },
             "last_5_messages": {
-                "ids": [msg.id for msg in all_msg[:5]],
+                "ids": [msg.message_id for msg in all_msg[:5]],
             },
         },
     }
