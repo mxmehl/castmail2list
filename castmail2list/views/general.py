@@ -9,8 +9,13 @@ from ..status import status_complete
 general = Blueprint("general", __name__)
 
 
-@general.route("/")
+@general.before_request
 @login_required
+def before_request() -> None:
+    """Require login for all routes"""
+
+
+@general.route("/")
 def index():
     """Show dashboard"""
     status = status_complete()
@@ -18,7 +23,6 @@ def index():
 
 
 @general.route("/settings", methods=["GET", "POST"])
-@login_required
 def settings():
     """Manage application settings"""
 

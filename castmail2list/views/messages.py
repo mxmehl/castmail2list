@@ -13,8 +13,13 @@ from ..utils import (
 messages = Blueprint("messages", __name__, url_prefix="/messages")
 
 
-@messages.route("/")
+@messages.before_request
 @login_required
+def before_request() -> None:
+    """Require login for all routes"""
+
+
+@messages.route("/")
 def show_all() -> str:
     """Show all incoming messages including bounces"""
     msgs: list[EmailIn] = get_all_incoming_messages()
@@ -22,7 +27,6 @@ def show_all() -> str:
 
 
 @messages.route("/<message_id>")
-@login_required
 def show(message_id: str) -> str:
     """Show a specific message"""
     message = get_message_id_in_db([message_id])
@@ -37,7 +41,6 @@ def show(message_id: str) -> str:
 
 
 @messages.route("/bounces")
-@login_required
 def bounces() -> str:
     """Show only bounced messages"""
     return render_template(
@@ -46,7 +49,6 @@ def bounces() -> str:
 
 
 @messages.route("/sent")
-@login_required
 def sent() -> str:
     """Show all outgoing messages"""
     return render_template("messages/sent.html", messages=get_all_outgoing_messages())

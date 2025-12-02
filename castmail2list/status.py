@@ -1,7 +1,11 @@
 """Functions and operations to collect reports about different parts of Castmail2List"""
 
-from .models import EmailIn, MailingList
-from .utils import get_all_incoming_messages, get_all_subscribers
+from .models import MailingList
+from .utils import (
+    get_all_incoming_messages,
+    get_all_outgoing_messages,
+    get_all_subscribers,
+)
 
 
 def lists_count() -> dict:
@@ -32,9 +36,12 @@ def status_complete() -> dict:
     Returns:
         dict: A dictionary containing overall status information.
     """
-    all_msg = get_all_incoming_messages()
-    normal_msg_7 = get_all_incoming_messages(only="normal", days=7)
-    bounce_msg_7 = get_all_incoming_messages(only="bounces", days=7)
+    all_msgs_in = get_all_incoming_messages()
+    msgs_in_normal_7 = get_all_incoming_messages(only="normal", days=7)
+    msgs_in_bounce_7 = get_all_incoming_messages(only="bounces", days=7)
+    all_msgs_out = get_all_outgoing_messages()
+    msgs_out_7 = get_all_outgoing_messages(days=7)
+
     status: dict = {
         "lists": {
             "count": lists_count(),
@@ -42,20 +49,29 @@ def status_complete() -> dict:
         "subscribers": {
             "count": len(get_all_subscribers()),
         },
-        "messages": {
-            "count": len(all_msg),
+        "messages_in": {
+            "count": len(all_msgs_in),
             "all_last_7_days": {
-                "count": len(normal_msg_7) + len(bounce_msg_7),
+                "count": len(msgs_in_normal_7) + len(msgs_in_bounce_7),
             },
             "normal_last_7_days": {
-                "count": len(normal_msg_7),
+                "count": len(msgs_in_normal_7),
             },
             "bounces_last_7_days": {
-                "count": len(bounce_msg_7),
-                "ids": [msg.message_id for msg in bounce_msg_7],
+                "count": len(msgs_in_bounce_7),
+                "ids": [msg.message_id for msg in msgs_in_bounce_7],
             },
             "last_5_messages": {
-                "ids": [msg.message_id for msg in all_msg[:5]],
+                "ids": [msg.message_id for msg in all_msgs_in[:5]],
+            },
+        },
+        "messages_out": {
+            "count": len(all_msgs_out),
+            "last_7_days": {
+                "count": len(msgs_out_7),
+            },
+            "last_5_messages": {
+                "ids": [msg.message_id for msg in all_msgs_out[:5]],
             },
         },
     }

@@ -23,13 +23,19 @@ from ..utils import (
 
 lists = Blueprint("lists", __name__, url_prefix="/lists")
 
+
+@lists.before_request
+@login_required
+def before_request() -> None:
+    """Require login for all routes"""
+
+
 # -----------------------------------------------------------------
 # Viewing mailing lists
 # -----------------------------------------------------------------
 
 
 @lists.route("/", methods=["GET"])
-@login_required
 def show_all():
     """Show all active mailing lists"""
     active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
@@ -37,7 +43,6 @@ def show_all():
 
 
 @lists.route("/deactivated", methods=["GET"])
-@login_required
 def show_deactivated():
     """Show all deactivated mailing lists"""
     deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
@@ -50,7 +55,6 @@ def show_deactivated():
 
 
 @lists.route("/add", methods=["GET", "POST"])
-@login_required
 def add():
     """Add a new mailing list"""
     form = MailingListForm()
@@ -151,7 +155,6 @@ def add():
 
 
 @lists.route("/<int:list_id>/edit", methods=["GET", "POST"])
-@login_required
 def edit(list_id):
     """Edit a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
@@ -237,7 +240,6 @@ def edit(list_id):
 
 
 @lists.route("/<int:list_id>/deactivate", methods=["GET"])
-@login_required
 def deactivate(list_id):
     """Deactivate a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(
@@ -251,7 +253,6 @@ def deactivate(list_id):
 
 
 @lists.route("/<int:list_id>/reactivate", methods=["GET"])
-@login_required
 def reactivate(list_id):
     """Reactivate a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
@@ -268,7 +269,6 @@ def reactivate(list_id):
 
 
 @lists.route("/<int:list_id>/subscribers", methods=["GET", "POST"])
-@login_required
 def subscribers_manage(list_id):
     """Manage subscribers of a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
@@ -348,7 +348,6 @@ def subscribers_manage(list_id):
 
 
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
-@login_required
 def subscriber_delete(list_id, subscriber_id):
     """Delete a subscriber from a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
@@ -363,7 +362,6 @@ def subscriber_delete(list_id, subscriber_id):
 
 
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
-@login_required
 def subscriber_edit(list_id, subscriber_id):
     """Edit a subscriber of a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()

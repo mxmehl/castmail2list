@@ -10,15 +10,19 @@ from ..utils import get_all_subscribers, is_email_a_list
 subscribers = Blueprint("subscribers", __name__, url_prefix="/subscribers")
 
 
-@subscribers.route("/")
+@subscribers.before_request
 @login_required
+def before_request() -> None:
+    """Require login for all routes"""
+
+
+@subscribers.route("/")
 def index():
     """Show all subscribers across all lists"""
     return render_template("subscribers/index.html", subscribers=get_all_subscribers())
 
 
 @subscribers.route("/<email>")
-@login_required
 def by_email(email: str):
     """Show which lists a subscriber is part of"""
     # Find all subscriptions for this email address
