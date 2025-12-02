@@ -146,13 +146,13 @@ class MailboxStub:  # pylint: disable=too-few-public-methods
 
         self.folder = Folder()
 
-    def flag(self, uid: str, flags: list[str], value: bool):  # mimic MailBox.flag signature
+    def flag(self, uid_list: str, flag_set: list[str], value: bool):  # mimic MailBox.flag signature
         """Record flags set on a message UID (test-only)."""
-        self._flags[uid] = (flags, value)
+        self._flags[uid_list] = (flag_set, value)
 
-    def move(self, uid: str, target_folder: str):  # mimic MailBox.move signature
+    def move(self, uid_list: str, destination_folder: str):  # mimic MailBox.move signature
         """Record a move operation (UID -> target folder) for assertions."""
-        self._moves[uid] = target_folder
+        self._moves[uid_list] = destination_folder
 
 
 @pytest.fixture(name="mailbox_stub")

@@ -105,7 +105,7 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
         app=client.application,
         ml=broadcast_list,
         msg=msg,
-        message_id="<new-msg-id@example.com>",
+        message_id="new-msg-id@example.com",
         subscribers=subscribers,
     )
 
