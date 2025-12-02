@@ -5,6 +5,9 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
+{%- set bounce = false %}
+{%- if message.status == 'bounce-msg' %}{% set bounce = true %}{% endif %}
+
 <table class="striped message">
     <tr>
         <th>{{ _('Subject') }}</th>
@@ -26,10 +29,32 @@
         <th>{{ _('Status') }}</th>
         <td>{{ message.status }}</td>
     </tr>
+    {% if bounce %}
+    <tr>
+        <th>{{ _('Bounced Recipients') }}</th>
+        <td>
+            {%- for recipient in message.error_info["bounced_recipients"].split(",") %}
+            <a href="{{ url_for('subscribers.by_email', email=recipient) }}">{{ recipient }}</a>
+            {%- if not loop.last %}, {% endif %}
+            {%- endfor %}
+        </td>
+    </tr>
+    <tr>
+        <th>{{ _('Causing Message ID') }}</th>
+        <td>
+            {%- set bounced_mid = message.error_info["bounced_mid"] %}
+            <a href="{{ url_for('messages.show', message_id=bounced_mid) }}">
+                {{ message.error_info["bounced_mid"] }}
+            </a>
+        </td>
+    </tr>
+    {% endif %}
+    {% if message.error_info %}
     <tr>
         <th>{{ _('Error Info') }}</th>
         <td>{{ message.error_info }}</td>
     </tr>
+    {% endif %}
     <tr>
         <th>{{ _('Raw') }}</th>
         <td>

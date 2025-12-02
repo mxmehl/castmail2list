@@ -482,6 +482,56 @@ def get_all_outgoing_messages(days: int = 0) -> list[EmailOut]:
     return all_messages
 
 
+def get_all_messages_id_from_raw_email(raw_email: str) -> list[str]:
+    """
+    Extract the (Original-)Message-IDs from a raw email string.
+
+    Args:
+        raw_email (str): The raw email content as a string
+    Returns:
+        list[str]: A list of Message-ID/Original-Message-ID found in the email
+    """
+    message_ids = []
+    for line in raw_email.splitlines():
+        if line.lower().startswith("message-id:") or line.lower().startswith(
+            "original-message-id:"
+        ):
+            _, msg_id = line.split(":", 1)
+            message_ids.append(msg_id.strip().strip("<>"))
+    return message_ids
+
+
+def get_message_id_in_db(message_ids: list[str], filter: str = "") -> str:
+    """
+    Check if any of the given Message-IDs exist in the database as either incoming or outgoing
+    messages. Can be filtered to only check incoming or outgoing messages.
+
+    Args:
+        message_ids (list[str]): A list of Message-IDs to check
+        filter (str): "in" to check only incoming messages, "out" for outgoing, "" for both.
+            Searches in "in" first.
+    Returns:
+        str: The matching Message-ID if found, empty string otherwise
+    """
+    if filter not in ("", "in", "out"):
+        logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", filter)
+        raise ValueError(f"Invalid 'filter' parameter: {filter}")
+
+    if filter in ("", "in"):
+        for msg_id in message_ids:
+            msg_in: EmailIn | None = EmailIn.query.filter_by(message_id=msg_id).first()
+            if msg_in:
+                return msg_in.message_id
+
+    if filter in ("", "out"):
+        for msg_id in message_ids:
+            msg_out: EmailOut | None = EmailOut.query.filter_by(message_id=msg_id).first()
+            if msg_out:
+                return msg_out.message_id
+
+    return ""
+
+
 def get_message_id_from_incoming(msg: MailMessage) -> str:
     """
     Extract the Message-ID from an incoming MailMessage object.

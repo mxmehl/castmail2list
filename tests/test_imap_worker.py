@@ -16,7 +16,7 @@ from .conftest import MailboxStub
 # pylint: disable=protected-access,too-few-public-methods
 
 
-def _call_detect_bounce(incoming: IncomingEmail) -> str:
+def _call_detect_bounce(incoming: IncomingEmail) -> tuple[str, list[str]]:
     """
     Helper to access private bounce detection for focused testing.
 
@@ -25,11 +25,15 @@ def _call_detect_bounce(incoming: IncomingEmail) -> str:
     return incoming._detect_bounce()
 
 
-def test_incoming_message_detect_bounce(bounce_samples, incoming_message_factory):
+def test_incoming_message_detect_bounce(
+    bounce_samples: dict[str, tuple[MailMessage, str, list[str]]], incoming_message_factory
+):
     """Validate bounce detection using real sample .eml files."""
-    for filename, (mail_msg, expected) in bounce_samples.items():
-        incoming = incoming_message_factory(mail_msg)
-        assert _call_detect_bounce(incoming) == expected, f"Failed for {filename}"
+    for filename, (mail_msg, expected_rec, expected_ids) in bounce_samples.items():
+        incoming: IncomingEmail = incoming_message_factory(mail_msg)
+        bounce_rec, bounce_ids = incoming._detect_bounce()
+        assert bounce_rec == expected_rec, f"Failed for {filename}"
+        assert bounce_ids == expected_ids, f"Failed for {filename}"
 
 
 def test_detect_bounce_via_to_header(incoming_message_factory):
@@ -39,22 +43,29 @@ def test_detect_bounce_via_to_header(incoming_message_factory):
     raw = (
         b"Subject: Bounce Test\nTo: "
         + create_bounce_address(list_addr, recipient).encode()
-        + b"\nFrom: sender@example.com\n\nBody"
+        + b"\nFrom: sender@example.com\nMessage-ID: mid-test2\n\nBody"
     )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "detect-to-1"
     incoming: IncomingEmail = incoming_message_factory(msg)
 
-    bounced = incoming._detect_bounce()
-    assert isinstance(bounced, str)
+    bounced_rec, bounced_mid = incoming._detect_bounce()
+    assert isinstance(bounced_rec, str)
     # parse_bounce_address returns the bounced local part in our samples
-    assert bounced == "john.doe@gmail.com"
+    assert bounced_rec == "john.doe@gmail.com"
+    # ... and the Message-ID is extracted correctly
+    assert isinstance(bounced_mid, list)
+    assert len(bounced_mid) == 1
+    assert "mid-test2" in bounced_mid
 
 
 def test_detect_bounce_via_flufl_scan(monkeypatch, incoming_message_factory):
     """_detect_bounce should use flufl.bounce.scan_message when present."""
     # Prepare a simple message without special To header
-    raw = b"Subject: Scan Test\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    raw = (
+        b"Subject: Scan Test\nTo: list@example.com\n"
+        b"From: sender@example.com\nMessage-ID: test-3\n\nBody"
+    )
     msg = MailMessage.from_bytes(raw)
     msg.uid = "detect-flufl-1"
     incoming: IncomingEmail = incoming_message_factory(msg)
@@ -65,18 +76,26 @@ def test_detect_bounce_via_flufl_scan(monkeypatch, incoming_message_factory):
 
     monkeypatch.setattr(imap_worker_mod, "scan_message", _fake_scan)
 
-    bounced = incoming._detect_bounce()
-    assert isinstance(bounced, str)
-    assert "flufl-recipient@example.com" in bounced
+    bounced_rec, bounced_mid = incoming._detect_bounce()
+    assert isinstance(bounced_rec, str)
+    assert "flufl-recipient@example.com" in bounced_rec
+    assert isinstance(bounced_mid, list)
+    assert len(bounced_mid) == 1
+    assert "test-3" in bounced_mid
 
 
 def test_incoming_message_no_bounce(incoming_message_factory):
     """Minimal non-bounce message should return empty string."""
-    raw = b"Subject: Hello\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
+    raw = (
+        b"Subject: Hello\nTo: list@example.com\n"
+        b"From: sender@example.com\nMessage-ID: test-5\n\nBody"
+    )
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "non-bounce"  # type: ignore[attr-defined]
-    incoming = incoming_message_factory(msg)
-    assert _call_detect_bounce(incoming) == ""
+    msg.uid = "non-bounce"
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    bounced_rec, bounced_mid = incoming._detect_bounce()
+    assert bounced_rec == ""
+    assert bounced_mid == []
 
 
 def test_sender_authentication_and_to_cleanup(mailing_list: MailingList, incoming_message_factory):
@@ -125,9 +144,7 @@ def test_duplicate_detection_moves_to_duplicate(
     """Processing the same Message-ID twice should move the second copy to duplicate folder."""
     # Ensure the app DOMAIN is non-empty so the "duplicate-from-same-instance" check
     # does not trigger (an empty DOMAIN is contained in any header string).
-    incoming: IncomingEmail = incoming_message_factory(
-        MailMessage.from_bytes(b"Subject: x\n\n\n")
-    )
+    incoming: IncomingEmail = incoming_message_factory(MailMessage.from_bytes(b"Subject: x\n\n\n"))
     incoming_app = incoming.app
     incoming_app.config["DOMAIN"] = "lists.example.com"
 
@@ -259,7 +276,7 @@ def test_send_msg_to_subscribers_called_for_ok_message(
 def test_send_msg_not_called_for_bounce(bounce_samples, incoming_message_factory, monkeypatch):
     """Ensure `send_msg_to_subscribers` is NOT called for bounce messages."""
     # Pick one bounce sample
-    _, (bounce_msg, _) = next(iter(bounce_samples.items()))
+    _, (bounce_msg, _, _) = next(iter(bounce_samples.items()))
 
     called = {}
 
@@ -334,6 +351,7 @@ def test_initialize_imap_polling_starts_thread(monkeypatch):
 
 def test_check_all_lists_handles_imap_errors(monkeypatch, client):
     """check_all_lists_for_messages should handle MailboxLoginError and other exceptions."""
+
     # Fake MailBox that raises MailboxLoginError when login() is called
     class FakeMailBoxLoginFail:
         """Fake MailBox that raises `MailboxLoginError` on login."""
