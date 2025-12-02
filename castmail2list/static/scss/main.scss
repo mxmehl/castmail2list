@@ -104,3 +104,14 @@ details[name="mode"] {
     content: "\f186"; // FontAwesome moon icon
   }
 }
+
+/* Tables */
+table.message {
+  table-layout: fixed;
+  width: 100%;
+
+  th {
+    width: 15%;
+    vertical-align: top;
+  }
+}

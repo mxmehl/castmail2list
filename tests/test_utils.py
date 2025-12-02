@@ -10,7 +10,7 @@ from flask import Flask
 from pytest import MonkeyPatch
 
 from castmail2list import utils
-from castmail2list.models import EmailIn, MailingList, Subscriber, db
+from castmail2list.models import EmailIn, EmailOut, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address, parse_bounce_address
 
 # pylint: disable=protected-access,too-few-public-methods
@@ -334,41 +334,37 @@ def test_check_recommended_list_setting() -> None:
     assert not utils.check_recommended_list_setting(ml)
 
 
-def test_get_all_messages(client) -> None:
-    """Check that get_all_messages retrieves messages with filters correctly"""
+def test_get_all_incoming_messages(client) -> None:
+    """Check that get_all_incoming_messages retrieves messages with filters correctly"""
     del client  # ensure app and DB fixtures are active
 
     def _days_ago(days: int) -> datetime:
         return datetime.now() - timedelta(days=days)
 
     bounce1: EmailIn = EmailIn(
-        id=1,
-        subject="Bounce 1",
         message_id="bounce-1",
+        subject="Bounce 1",
         status="bounce-msg",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(1),
     )
     normal1: EmailIn = EmailIn(
-        id=3,
-        subject="Normal 1",
         message_id="normal-1",
+        subject="Normal 1",
         status="ok",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(2),
     )
     bounce2: EmailIn = EmailIn(
-        id=2,
-        subject="Bounce 2",
         message_id="bounce-2",
+        subject="Bounce 2",
         status="bounce-msg",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(8),
     )
     normal2: EmailIn = EmailIn(
-        id=4,
-        subject="Bounce 2",
         message_id="normal-2",
+        subject="Bounce 2",
         status="ok",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(10),
@@ -379,7 +375,7 @@ def test_get_all_messages(client) -> None:
     db.session.commit()
 
     # Retrieve all messages without filtering
-    all_messages = utils.get_all_messages()
+    all_messages = utils.get_all_incoming_messages()
     assert len(all_messages) == 4
     assert any(msg.message_id == "bounce-1" for msg in all_messages)
     assert any(msg.message_id == "bounce-2" for msg in all_messages)
@@ -395,17 +391,56 @@ def test_get_all_messages(client) -> None:
     )
 
     # Retrieve bounce messages from the last 7 days
-    recent_bounces = utils.get_all_messages(only="bounces", days=7)
+    recent_bounces = utils.get_all_incoming_messages(only="bounces", days=7)
     assert len(recent_bounces) == 1
     assert any(msg.message_id == "bounce-1" for msg in recent_bounces)
 
     # Retrieve normal messages from the last 7 days
-    recent_normals = utils.get_all_messages(only="normal", days=7)
+    recent_normals = utils.get_all_incoming_messages(only="normal", days=7)
     assert len(recent_normals) == 1
     assert any(msg.message_id == "normal-1" for msg in recent_normals)
 
     # Retrieve all messages from the last 7 days
-    recent_all = utils.get_all_messages(days=7)
+    recent_all = utils.get_all_incoming_messages(days=7)
     assert len(recent_all) == 2
     assert recent_all[0].message_id == "bounce-1"
     assert recent_all[1].message_id == "normal-1"
+
+
+def test_get_all_outgoing_messages(client) -> None:
+    """Check that get_all_outgoing_messages retrieves outgoing messages correctly"""
+    del client  # ensure app and DB fixtures are active
+
+    def _days_ago(days: int) -> datetime:
+        return datetime.now() - timedelta(days=days)
+
+    sent1: EmailOut = EmailOut(
+        message_id="sent-1",
+        subject="Sent 1",
+        email_in_mid="in-1",
+        sent_at=_days_ago(1),
+    )
+    sent2: EmailOut = EmailOut(
+        message_id="sent-2",
+        subject="Sent 2",
+        email_in_mid="in-2",
+        sent_at=_days_ago(10),
+    )
+
+    # Add sent messages to the database
+    db.session.add_all([sent1, sent2])
+    db.session.commit()
+
+    # Retrieve all outgoing messages
+    outgoing_messages = utils.get_all_outgoing_messages()
+    assert len(outgoing_messages) == 2
+    assert any(msg.message_id == "sent-1" for msg in outgoing_messages)
+    assert any(msg.message_id == "sent-2" for msg in outgoing_messages)
+
+    # Check descending order by sent_at
+    assert outgoing_messages[0].sent_at >= outgoing_messages[1].sent_at
+
+    # Retrieve outgoing messages from the last 7 days
+    recent_outgoings = utils.get_all_outgoing_messages(days=7)
+    assert len(recent_outgoings) == 1
+    assert recent_outgoings[0].message_id == "sent-1"

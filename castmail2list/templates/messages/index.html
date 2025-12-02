@@ -7,9 +7,10 @@
 
 <p>
     <a href="{{ url_for('messages.bounces') }}" role="button">{{ _('View Bounce Messages') }}</a>
+    <a href="{{ url_for('messages.sent') }}" role="button" class="secondary">{{ _('View Sent Messages') }}</a>
 </p>
 
-<table>
+<table class="striped">
     <thead>
         <tr>
             <th>{{ _('Subject') }}</th>

@@ -16,7 +16,7 @@ from platformdirs import user_config_path
 from sqlalchemy import func
 
 from . import __version__
-from .models import EmailIn, MailingList, Subscriber
+from .models import EmailIn, EmailOut, MailingList, Subscriber
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
@@ -439,9 +439,10 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     return str(config_path)
 
 
-def get_all_messages(only: str = "", days: int = 0) -> list[EmailIn]:
+def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     """
-    Get all messages from the database. With options to filter for bounce messages and by date.
+    Get all incoming messages from the database. With options to filter for bounce messages and by
+    date.
 
     Args:
         only (str): If "bounces", return only bounce messages; if "normal", return only normal
@@ -462,6 +463,22 @@ def get_all_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     if days > 0:
         cutoff_date = datetime.now() - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
+    return all_messages
+
+
+def get_all_outgoing_messages(days: int = 0) -> list[EmailOut]:
+    """
+    Get all outgoing messages from the database. With option to filter by date.
+
+    Args:
+        days (int): Only return messages from the last given number of days. If 0, return all
+    Returns:
+        list[EmailOut]: A list of all requested outgoing messages, descending by sent date
+    """
+    all_messages: list[EmailOut] = EmailOut.query.order_by(EmailOut.sent_at.desc()).all()
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        all_messages = [msg for msg in all_messages if msg.sent_at >= cutoff_date]
     return all_messages
 
 

@@ -1,7 +1,7 @@
 """Functions and operations to collect reports about different parts of Castmail2List"""
 
 from .models import EmailIn, MailingList
-from .utils import get_all_messages, get_all_subscribers
+from .utils import get_all_incoming_messages, get_all_subscribers
 
 
 def lists_count() -> dict:
@@ -32,9 +32,9 @@ def status_complete() -> dict:
     Returns:
         dict: A dictionary containing overall status information.
     """
-    all_msg = get_all_messages()
-    normal_msg_7 = get_all_messages(only="normal", days=7)
-    bounce_msg_7 = get_all_messages(only="bounces", days=7)
+    all_msg = get_all_incoming_messages()
+    normal_msg_7 = get_all_incoming_messages(only="normal", days=7)
+    bounce_msg_7 = get_all_incoming_messages(only="bounces", days=7)
     status: dict = {
         "lists": {
             "count": lists_count(),

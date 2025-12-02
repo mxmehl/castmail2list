@@ -345,6 +345,8 @@ def send_msg_to_subscribers(
     )
 
     # Update EmailOut database entry, and add to session
+    email_out.subject = mail.msg.subject
+    email_out.raw = mail.composed_msg.as_string() if mail.composed_msg else ""
     email_out.sent_successful = sent_successful
     email_out.sent_failed = sent_failed
     db.session.add(email_out)

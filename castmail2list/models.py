@@ -77,8 +77,11 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     subscribers = db.relationship(
         "Subscriber", backref="list", lazy="joined", cascade="all, delete-orphan"
     )
-    messages = db.relationship(
+    emailin = db.relationship(
         "EmailIn", backref="list", lazy="joined", cascade="all, delete-orphan"
+    )
+    emailout = db.relationship(
+        "EmailOut", backref="list", lazy="joined", cascade="all, delete-orphan"
     )
 
     # Soft-delete flag: mark list as deleted instead of removing row from DB
@@ -179,11 +182,12 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
                 )
             setattr(self, key, value)
 
-    id: int = db.Column(db.Integer, primary_key=True)
+    message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
     email_in_mid: str = db.Column(db.String, db.ForeignKey("email_in.message_id"), nullable=False)
-    message_id: str = db.Column(db.String, unique=True, nullable=False)
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)
+    subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
+    raw: str = db.Column(db.Text)  # store full RFC822 text
     sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     sent_successful: list = db.Column(db.JSON, default=list)
     sent_failed: list = db.Column(db.JSON, default=list)

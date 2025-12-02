@@ -4,31 +4,35 @@
 <h2>{{ _('Message detail') }}: {{ message.subject }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
-
 <table class="striped message">
     <tr>
         <th>{{ _('Subject') }}</th>
         <td>{{ message.subject }}</td>
     </tr>
     <tr>
-        <th>{{ _('From') }}</th>
-        <td><a href="{{ url_for('subscribers.by_email', email=message.from_addr) }}">{{ message.from_addr }}</a></td>
-    </tr>
-    <tr>
-        <th>{{ _('Received At') }}</th>
-        <td>{{ message.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+        <th>{{ _('Sent At') }}</th>
+        <td>{{ message.sent_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
     </tr>
     <tr>
         <th>{{ _('List') }}</th>
         <td>{{ message.list.name }} &lt;{{message.list.address}}&gt;</td>
     </tr>
     <tr>
-        <th>{{ _('Status') }}</th>
-        <td>{{ message.status }}</td>
+        <th>{{ _('Successful Recipients') }}</th>
+        <td>
+            {%- for rec in message.sent_successful %}
+            <a href="{{ url_for('subscribers.by_email', email=rec) }}">{{ rec }}</a>
+            {{- ", " if not loop.last else "" }}
+            {%- endfor %}
+        </td>
     </tr>
     <tr>
-        <th>{{ _('Error Info') }}</th>
-        <td>{{ message.error_info }}</td>
+        <th>{{ _('Failed Recipients') }}</th>
+        <td>
+            {% for rec in message.sent_failed %}
+            <a href="{{ url_for('subscribers.by_email', email=rec) }}">{{ rec }}</a>
+            {% endfor %}
+        </td>
     </tr>
     <tr>
         <th>{{ _('Raw') }}</th>
