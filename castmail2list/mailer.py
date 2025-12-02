@@ -16,7 +16,7 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import EmailOut, Logs, MailingList, Subscriber, db
+from .models import EmailOut, MailingList, Subscriber, db
 from .utils import (
     create_bounce_address,
     get_list_subscribers,
@@ -243,30 +243,6 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         return self.composed_msg.as_bytes()
 
 
-def log_sent_event(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-    status: str,
-    inbox_uid: str | None,
-    message_id: str,
-    list_id: int,
-    recipients: list[str] | None = None,
-) -> None:
-    """Create a log entry in the database about sent messages"""
-    if recipients:
-        level = "info" if status == "success" else "error"
-        message = (
-            f"{status.upper()}: Message {message_id} sent to {len(recipients)} recipients "
-            f"of list ID {list_id} with status"
-        )
-        dblog = Logs()
-        dblog.log_event(
-            level=level,
-            event="sent-msg",
-            message=message,
-            details={"recipients": recipients, "message_id": message_id, "inbox_uid": inbox_uid},
-            list_id=list_id,
-        )
-
-
 def send_msg_to_subscribers(
     app: Flask, msg: MailMessage, ml: MailingList, mailbox: MailBox
 ) -> tuple[list[str], list[str]]:
@@ -307,7 +283,6 @@ def send_msg_to_subscribers(
         recipients=[sub.email for sub in subscribers],
         sent_at=datetime.now(timezone.utc),
     )
-    db.session.add(email_out)
 
     # --- Sanity checks ---
     # Make sure there is content to send
@@ -362,8 +337,6 @@ def send_msg_to_subscribers(
             )
 
     # Unify sent email lists and log/return results
-    sent_successful = list(set(sent_successful))
-    sent_failed = list(set(sent_failed))
     logging.info(
         "Finished sending message %s. Successful: %d, Failed: %d",
         msg.uid,
@@ -371,20 +344,10 @@ def send_msg_to_subscribers(
         len(sent_failed),
     )
 
-    # Log sent messages
-    log_sent_event(
-        status="success",
-        inbox_uid=msg.uid,
-        message_id=mail.message_id,
-        list_id=ml.id,
-        recipients=sent_successful,
-    )
-    log_sent_event(
-        status="error",
-        inbox_uid=msg.uid,
-        message_id=mail.message_id,
-        list_id=ml.id,
-        recipients=sent_failed,
-    )
+    # Update EmailOut database entry, and add to session
+    email_out.sent_successful = sent_successful
+    email_out.sent_failed = sent_failed
+    db.session.add(email_out)
+    db.session.commit()
 
     return sent_successful, sent_failed

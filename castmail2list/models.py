@@ -186,6 +186,8 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
     sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    sent_successful: list = db.Column(db.JSON, default=list)
+    sent_failed: list = db.Column(db.JSON, default=list)
 
 
 class Logs(Model):  # pylint: disable=too-few-public-methods
@@ -207,19 +209,3 @@ class Logs(Model):  # pylint: disable=too-few-public-methods
     message: str = db.Column(db.Text, nullable=False)  # Short log message
     details: dict = db.Column(db.JSON, nullable=True)  # Optional detailed log message in JSON
     list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)  # Associated list
-
-    # Add a log_event function to create log entries
-    def log_event(  # pylint: disable=too-many-arguments,too-many-positional-arguments
-        self,
-        level: str,
-        event: str,
-        message: str,
-        details: dict | None = None,
-        list_id: int | None = None,
-    ) -> None:
-        """Create a log entry in the Logs table"""
-        log_entry = Logs(
-            level=level, event=event, message=message, details=details, list_id=list_id
-        )
-        db.session.add(log_entry)
-        db.session.commit()
