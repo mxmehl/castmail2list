@@ -171,7 +171,10 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         # --- Bounced message detection ---
         bounced_recipients, bounced_mids = self._detect_bounce()
         if bounced_recipients:
-            causing_mid = get_message_id_in_db(bounced_mids, filter="out")
+            if _causing_msg := get_message_id_in_db(bounced_mids, only="out"):
+                causing_mid = _causing_msg.message_id
+            else:
+                causing_mid = "unknown"
             logging.info(
                 "Message %s is a bounce for recipients: %s", self.msg.uid, bounced_recipients
             )

@@ -4,7 +4,11 @@ from flask import Blueprint, flash, render_template
 from flask_login import login_required
 
 from ..models import EmailIn, EmailOut
-from ..utils import get_all_incoming_messages, get_all_outgoing_messages
+from ..utils import (
+    get_all_incoming_messages,
+    get_all_outgoing_messages,
+    get_message_id_in_db,
+)
 
 messages = Blueprint("messages", __name__, url_prefix="/messages")
 
@@ -19,17 +23,17 @@ def show_all() -> str:
 
 @messages.route("/<message_id>")
 @login_required
-def show(message_id: int) -> str:
+def show(message_id: str) -> str:
     """Show a specific message"""
-    # Try incoming messages first
-    msg_in: EmailIn | None = EmailIn.query.get(message_id)
-    if not msg_in:
-        # Try outgoing messages next
-        msg_out: EmailOut | None = EmailOut.query.get(message_id)
-        if msg_out:
-            return render_template("messages/detail_sent.html", message=msg_out)
-        flash("Message not found", "error")
-    return render_template("messages/detail.html", message=msg_in)
+    message = get_message_id_in_db([message_id])
+    if message:
+        msg_type = "out" if isinstance(message, EmailOut) else "in"
+        bounce = getattr(message, "status", "") == "bounce-msg"
+        return render_template(
+            "messages/detail.html", message=message, msg_type=msg_type, bounce=bounce
+        )
+    flash("Message not found", "error")
+    return render_template("messages/detail.html", message=None)
 
 
 @messages.route("/bounces")

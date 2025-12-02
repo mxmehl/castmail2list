@@ -501,35 +501,35 @@ def get_all_messages_id_from_raw_email(raw_email: str) -> list[str]:
     return message_ids
 
 
-def get_message_id_in_db(message_ids: list[str], filter: str = "") -> str:
+def get_message_id_in_db(message_ids: list[str], only: str = "") -> EmailIn | EmailOut | None:
     """
     Check if any of the given Message-IDs exist in the database as either incoming or outgoing
     messages. Can be filtered to only check incoming or outgoing messages.
 
     Args:
         message_ids (list[str]): A list of Message-IDs to check
-        filter (str): "in" to check only incoming messages, "out" for outgoing, "" for both.
+        only (str): "in" to check only incoming messages, "out" for outgoing, "" for both.
             Searches in "in" first.
     Returns:
-        str: The matching Message-ID if found, empty string otherwise
+        EmailIn | EmailOut | None: The first matching message found, or None if none found
     """
-    if filter not in ("", "in", "out"):
-        logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", filter)
-        raise ValueError(f"Invalid 'filter' parameter: {filter}")
+    if only not in ("", "in", "out"):
+        logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", only)
+        raise ValueError(f"Invalid 'filter' parameter: {only}")
 
-    if filter in ("", "in"):
+    if only in ("", "in"):
         for msg_id in message_ids:
             msg_in: EmailIn | None = EmailIn.query.filter_by(message_id=msg_id).first()
             if msg_in:
-                return msg_in.message_id
+                return msg_in
 
-    if filter in ("", "out"):
+    if only in ("", "out"):
         for msg_id in message_ids:
             msg_out: EmailOut | None = EmailOut.query.filter_by(message_id=msg_id).first()
             if msg_out:
-                return msg_out.message_id
+                return msg_out
 
-    return ""
+    return None
 
 
 def get_message_id_from_incoming(msg: MailMessage) -> str:
