@@ -71,9 +71,10 @@
     <tr>
         <th>{{ _('Failed Recipients') }}</th>
         <td>
-            {% for rec in message.sent_failed %}
+            {%- for rec in message.sent_failed %}
             <a href="{{ url_for('subscribers.by_email', email=rec) }}">{{ rec }}</a>
-            {% endfor %}
+            {{- ", " if not loop.last else "" }}
+            {%- endfor %}
         </td>
     </tr>
     {%- endif %}

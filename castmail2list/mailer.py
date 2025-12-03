@@ -239,6 +239,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
+            return b""
 
         return self.composed_msg.as_bytes()
 
