@@ -579,3 +579,29 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
     db.session.commit()
 
     return log_entry
+
+
+def get_log_entries(exact: bool = False, **kwargs) -> list[Logs]:
+    """
+    Retrieve log entries from the database based on provided filters.
+
+    Args:
+        exact (bool): If True, use exact matching; if False, use partial matching
+        **kwargs: Filter criteria for querying logs (e.g., level='error', list_id=1)
+    Returns:
+        list[Logs]: A list of log entries matching the filter criteria
+    """
+    query = Logs.query
+
+    for key, value in kwargs.items():
+        column = getattr(Logs, key, None)
+        if column is not None:
+            if exact:
+                query = query.filter(column == value)
+            else:
+                query = query.filter(column.ilike(f"%{value}%"))
+        else:
+            logging.warning("Invalid filter key for get_log_entries: %s", key)
+
+    log_entries: list[Logs] = query.order_by(Logs.timestamp.desc()).all()
+    return log_entries

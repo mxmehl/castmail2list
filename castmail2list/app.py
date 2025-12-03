@@ -33,6 +33,7 @@ from .utils import (
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
+from .views.logs import logs
 from .views.messages import messages
 from .views.subscribers import subscribers
 
@@ -164,6 +165,7 @@ def create_app(
     app.register_blueprint(auth)
     app.register_blueprint(general)
     app.register_blueprint(lists)
+    app.register_blueprint(logs)
     app.register_blueprint(messages)
     app.register_blueprint(subscribers)
 

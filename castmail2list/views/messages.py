@@ -1,6 +1,7 @@
 """Messages blueprint for CastMail2List application"""
 
 from flask import Blueprint, flash, render_template
+from flask_babel import _
 from flask_login import login_required
 
 from ..models import EmailIn, EmailOut
@@ -36,7 +37,7 @@ def show(message_id: str) -> str:
         return render_template(
             "messages/detail.html", message=message, msg_type=msg_type, bounce=bounce
         )
-    flash("Message not found", "error")
+    flash(_("Message not found"), "error")
     return render_template("messages/detail.html", message=None)
 
 

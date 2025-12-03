@@ -97,21 +97,43 @@ details[name="mode"] {
 /* Icons */
 .icon {
   font-family: "Font Awesome 7 Free";
+
   &.sun::before {
     content: "\f185"; // FontAwesome sun icon
   }
+
   &.moon::before {
     content: "\f186"; // FontAwesome moon icon
   }
 }
 
+/* Field search form */
+form.search-form {
+  &.fields {
+    select {
+      width: 40%;
+    }
+  }
+}
+
 /* Tables */
-table.message {
+table.fixed {
   table-layout: fixed;
   width: 100%;
 
-  th {
-    width: 15%;
-    vertical-align: top;
+  &.message {
+    th {
+      width: 15%;
+      vertical-align: top;
+    }
+  }
+
+  &.logs {
+    // Set column widths for logs table
+    @for $i from 1 through 6 {
+      th:nth-child(#{$i}), td:nth-child(#{$i}) {
+        width: nth(15% 10% 10% 40% 15% 10%, $i);
+      }
+    }
   }
 }
