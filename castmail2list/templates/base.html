@@ -15,11 +15,10 @@
     <div class="container">
       <nav>
         <ul>
-          <li><strong>CastMail2List</strong></li>
+          <li><strong><a href="{{ url_for('general.index') }}">CastMail2List</a></strong></li>
         </ul>
         {%- if session._user_id %}
         <ul>
-          <li><a href="{{ url_for('general.index') }}">{{ _('Home') }}</a></li>
           <li><a href="{{ url_for('messages.index') }}">{{ _('Messages') }}</a></li>
           <li><a href="{{ url_for('lists.index') }}">{{ _('Lists') }}</a></li>
           <li><a href="{{ url_for('subscribers.index') }}">{{ _('Subscribers') }}</a></li>
