@@ -116,3 +116,21 @@ class SubscriberAddForm(FlaskForm):
     email = EmailField(_("Email Address"), validators=[DataRequired(), Email()])
     comment = StringField(_("Comment"), validators=[Optional(), Length(max=100)])
     submit = SubmitField(_("Save Subscriber"))
+
+
+class UserDetailsForm(FlaskForm):
+    """Form for changing user password"""
+
+    password = PasswordField(
+        _("New Password"),
+        validators=[Optional(), Length(min=8)],
+        description=_("Enter a new password with at least 6 characters."),
+    )
+    password_retype = PasswordField(
+        _("Retype Password"),
+        validators=[Optional(), Length(min=8)],
+        description=_("Retype the new password for confirmation."),
+    )
+    api_key = StringField(_("API Key"), render_kw={"readonly": True})
+    api_key_generate = SubmitField(_("Regenerate API Key"), name="api_key_generate")
+    submit = SubmitField(_("Update Your Account"), name="submit")

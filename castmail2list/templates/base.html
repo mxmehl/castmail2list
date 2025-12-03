@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>{% block title %}CastMail2List{% endblock %}</title>
+  <title>{% block title %}CastMail2List{% endblock %} - CastMail2List</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome-all.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.scss.css') }}" />
 </head>
@@ -15,16 +15,15 @@
     <div class="container">
       <nav>
         <ul>
-          <li><strong>CastMail2List</strong></li>
+          <li><strong><a href="{{ url_for('general.index') }}">CastMail2List</a></strong></li>
         </ul>
         {%- if session._user_id %}
         <ul>
-          <li><a href="{{ url_for('general.index') }}">{{ _('Home') }}</a></li>
           <li><a href="{{ url_for('messages.index') }}">{{ _('Messages') }}</a></li>
           <li><a href="{{ url_for('lists.index') }}">{{ _('Lists') }}</a></li>
           <li><a href="{{ url_for('subscribers.index') }}">{{ _('Subscribers') }}</a></li>
           <li><a href="{{ url_for('logs.index') }}">{{ _('Logs') }}</a></li>
-          <li><a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a></li>
+          <li><a href="{{ url_for('general.account') }}">{{ _('Account') }}</a></li>
           <li>
             <span id="theme-toggle" data-theme-toggle aria-label="Change to light theme" title="Change to light theme" class="icon sun"></span>
           </li>

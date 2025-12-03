@@ -30,6 +30,7 @@ from .utils import (
     get_version_info,
     is_email_a_list,
 )
+from .views.api import api1
 from .views.auth import auth
 from .views.general import general
 from .views.lists import lists
@@ -162,6 +163,7 @@ def create_app(
         return db.session.get(User, int(user_id))
 
     # Register views and routes
+    app.register_blueprint(api1)
     app.register_blueprint(auth)
     app.register_blueprint(general)
     app.register_blueprint(lists)

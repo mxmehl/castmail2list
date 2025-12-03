@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Account Settings') }}{% endblock %}
+
+{% block content %}
+<h2>{{ _('Account Settings') }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<p>
+  <a href="{{ url_for('auth.logout') }}" role="button">{{ _('Logout') }}</a>
+</p>
+
+<p>
+  <strong>{{ _('Your Username') }}</strong>: {{ current_user.username }}<br />
+  <strong>{{ _('Your Role') }}</strong>: {{ current_user.role }}
+</p>
+
+<form method="POST">
+  {{ form.csrf_token }}
+
+  {{ form.password.label }}
+  {{ form.password(placeholder=_("Leave empty to keep password unchanged")) }}
+
+  {{ form.password_retype.label }}
+  {{ form.password_retype(placeholder=_("Leave empty to keep password unchanged")) }}
+
+  {{ form.api_key.label }}
+  <fieldset role="group">
+    {{ form.api_key(readonly=readonly) }}
+    {{ form.api_key_generate }}
+  </fieldset>
+
+  {{ form.submit }}
+</form>
+
+
+{% endblock %}

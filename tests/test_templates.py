@@ -12,7 +12,7 @@ def test_template_root(client):
     assert nav is not None
     assert "CastMail2List" in nav.text
     assert nav.find("a", {"href": "/messages/"})
-    assert nav.find("a", {"href": "/logout"})
+    assert nav.find("a", {"href": "/account"})
 
     footer = soup.find("footer")
     assert footer is not None
