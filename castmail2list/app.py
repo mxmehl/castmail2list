@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from logging.config import dictConfig
 from pathlib import Path
+from shutil import copy2
 
 from flask import Flask
 from flask_babel import Babel
@@ -81,7 +82,7 @@ def backup_sqlite_database(config_database_uri: str) -> None:
 
     # Copy database file to backup location
     try:
-        Path(db_path).copy(backup_path)
+        copy2(db_path, backup_path)
         logging.info("Database backed up to %s", backup_path)
     except FileNotFoundError:
         logging.warning("Database file not found, skipping backup")
