@@ -21,6 +21,7 @@ def index():
     stats = status_complete()
     return render_template("index.html", stats=stats)
 
+
 @general.route("/status")
 def status():
     """Provide overall status information as JSON"""

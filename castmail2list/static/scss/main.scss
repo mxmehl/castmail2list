@@ -1,6 +1,6 @@
 // Import Pico CSS framework with custom theme color
-@use "pico" with ($theme-color: "amber"
-);
+@use "pico" with ($theme-color: "amber");
+@use 'sass:list';
 
 /*********************************
  * Custom styles for CastMail2List
@@ -133,7 +133,7 @@ table.fixed {
     // Set column widths for logs table
     @for $i from 1 through 6 {
       th:nth-child(#{$i}), td:nth-child(#{$i}) {
-        width: nth(15% 10% 10% 40% 15% 10%, $i);
+        width: list.nth(15% 10% 10% 40% 15% 10%, $i);
       }
     }
   }

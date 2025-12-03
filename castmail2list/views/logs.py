@@ -27,9 +27,7 @@ def index() -> str:
     if search_field and search_text:
         column = search_field.lower()
         # Dynamic column name requires type: ignore for kwargs
-        log_entries = get_log_entries(
-            exact=False, **{column: search_text}
-        )
+        log_entries = get_log_entries(exact=False, days=0, **{column: search_text})
     else:
         # No search query, get all entries
         log_entries = get_log_entries()
