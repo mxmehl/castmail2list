@@ -1,9 +1,13 @@
 """Flask routes for castmail2list application"""
 
-from flask import Blueprint, jsonify, render_template
-from flask_login import login_required
+from flask import Blueprint, flash, jsonify, redirect, render_template, url_for
+from flask_babel import _
+from flask_login import current_user, login_required
+from werkzeug.security import generate_password_hash
 
 from ..config import AppConfig
+from ..forms import UserDetailsForm
+from ..models import db
 from ..status import status_complete
 
 general = Blueprint("general", __name__)
@@ -20,6 +24,34 @@ def index():
     """Show dashboard"""
     stats = status_complete()
     return render_template("index.html", stats=stats)
+
+
+@general.route("/account", methods=["GET", "POST"])
+def account():
+    """Show account settings page"""
+    if current_user is None:
+        flash(_("You must be logged in to access account settings."), "error")
+        return redirect(url_for("general.index"))
+
+    form = UserDetailsForm(obj=current_user)
+
+    if form.validate_on_submit():
+        if current_user.username != form.username.data:
+            flash(_("Your must not change your username."), "error")
+            return render_template("account.html", form=form, current_user=current_user)
+
+        # Update password if provided
+        if form.password.data:
+            if form.password.data != form.password_retype.data:
+                flash(_("The passwords do not match."), "error")
+                return render_template("account.html", form=form, current_user=current_user)
+            current_user.password = generate_password_hash(form.password.data)
+            flash(_("Your password has been updated."), "success")
+
+        db.session.commit()
+        return render_template("account.html", form=form, current_user=current_user, success=True)
+
+    return render_template("account.html", form=form, current_user=current_user)
 
 
 @general.route("/status")
