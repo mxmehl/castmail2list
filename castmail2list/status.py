@@ -37,13 +37,16 @@ def status_complete() -> dict:
     Returns:
         dict: A dictionary containing overall status information.
     """
-    all_msgs_in = get_all_incoming_messages()
-    msgs_in_normal_7 = get_all_incoming_messages(only="normal", days=7)
-    msgs_in_bounce_7 = get_all_incoming_messages(only="bounces", days=7)
-    all_msgs_out = get_all_outgoing_messages()
-    msgs_out_7 = get_all_outgoing_messages(days=7)
-    errors_last_7_days = get_log_entries(exact=True, days=7, level="error")
-    error_last_5 = get_log_entries(exact=True, level="error")[:5]
+    email_in_all = get_all_incoming_messages(only="normal")
+    email_in_days_7 = get_all_incoming_messages(only="normal", days=7)
+    bounce_days_7 = get_all_incoming_messages(only="bounces", days=7)
+    bounce_last_5 = get_all_incoming_messages(only="bounces")[:5]
+    email_out_all = get_all_outgoing_messages()
+    email_out_days_7 = get_all_outgoing_messages(days=7)
+    errors_days_7 = get_log_entries(exact=True, days=7, level="error")
+    errors_last_5 = get_log_entries(exact=True, level="error")[:5]
+    warnings_days_7 = get_log_entries(exact=True, days=7, level="warning")
+    warnings_last_5 = get_log_entries(exact=True, level="warning")[:5]
 
     status: dict = {
         "lists": {
@@ -52,46 +55,45 @@ def status_complete() -> dict:
         "subscribers": {
             "count": len(get_all_subscribers()),
         },
-        "messages_in": {
-            "count": len(all_msgs_in),
-            "all_last_7_days": {
-                "count": len(msgs_in_normal_7) + len(msgs_in_bounce_7),
-            },
-            "normal_last_7_days": {
-                "count": len(msgs_in_normal_7),
-            },
-            "bounces_last_7_days": {
-                "count": len(msgs_in_bounce_7),
-                "ids": [msg.message_id for msg in msgs_in_bounce_7],
-            },
-            "last_5_messages": {
-                "ids": [msg.message_id for msg in all_msgs_in[:5]],
-            },
+        "email_in": {
+            "count": len(email_in_all),
+            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_days_7],
+            "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_all[:5]],
         },
-        "messages_out": {
-            "count": len(all_msgs_out),
-            "last_7_days": {
-                "count": len(msgs_out_7),
-            },
-            "last_5_messages": {
-                "ids": [msg.message_id for msg in all_msgs_out[:5]],
-            },
+        "bounces": {
+            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_days_7],
+            "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_last_5],
+        },
+        "email_out": {
+            "count": len(email_out_all),
+            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_out_days_7],
+            "last_5": [
+                {"mid": msg.message_id, "subject": msg.subject} for msg in email_out_all[:5]
+            ],
         },
         "errors": {
-            "last_7_days": {
-                "count": len(errors_last_7_days),
-            },
-            "last_5": {
-                "entries": [
-                    {
-                        "id": log.id,
-                        "timestamp": log.timestamp.isoformat(),
-                        "event": log.event,
-                        "message": log.message,
-                    }
-                    for log in error_last_5
-                ],
-            },
+            "days_7": [log.id for log in errors_days_7],
+            "last_5": [
+                {
+                    "id": log.id,
+                    "timestamp": log.timestamp,
+                    "event": log.event,
+                    "message": log.message,
+                }
+                for log in errors_last_5
+            ],
+        },
+        "warnings": {
+            "days_7": [log.id for log in warnings_days_7],
+            "last_5": [
+                {
+                    "id": log.id,
+                    "timestamp": log.timestamp,
+                    "event": log.event,
+                    "message": log.message,
+                }
+                for log in warnings_last_5
+            ],
         },
     }
     return status

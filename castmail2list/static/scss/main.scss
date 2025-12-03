@@ -129,11 +129,50 @@ table.fixed {
   }
 
   &.logs {
+
     // Set column widths for logs table
     @for $i from 1 through 6 {
       th:nth-child(#{$i}), td:nth-child(#{$i}) {
         width: nth(15% 10% 10% 40% 15% 10%, $i);
       }
     }
+  }
+}
+
+/* Dashboard */
+.dashboard {
+  column-gap: 1rem; // horizontal spacing
+
+  .card {
+    display: inline-block; // important for columns
+    width: 100%; // fill column width
+    margin-bottom: 1rem; // vertical spacing
+    break-inside: avoid; // avoid splitting a card across columns
+
+    padding: 1rem;
+    box-sizing: border-box;
+
+    // Right-align links in card footer
+    p.view-all {
+      text-align: right;
+      margin-bottom: 0;
+    }
+
+    // Make p elements denser
+    p:has(+ p:not(.view-all)) {
+      margin-bottom: 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    column-count: 3;
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    column-count: 2;
+  }
+
+  @media (max-width: 639px) {
+    column-count: 1;
   }
 }
