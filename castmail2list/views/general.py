@@ -2,7 +2,7 @@
 
 from secrets import token_urlsafe
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
@@ -64,13 +64,6 @@ def account():
         return render_template("account.html", form=form, current_user=current_user, success=True)
 
     return render_template("account.html", form=form, current_user=current_user)
-
-
-@general.route("/status")
-def status():
-    """Provide overall status information as JSON"""
-    stats = status_complete()
-    return jsonify(stats)
 
 
 @general.route("/settings", methods=["GET", "POST"])
