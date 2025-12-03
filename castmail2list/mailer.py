@@ -19,6 +19,7 @@ from imap_tools.message import MailMessage
 from .models import EmailOut, MailingList, Subscriber, db
 from .utils import (
     create_bounce_address,
+    create_log_entry,
     get_list_subscribers,
     get_message_id_from_incoming,
 )
@@ -58,6 +59,36 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         self.choose_container_type()
         self.prepare_common_headers()
         self.add_body_parts()
+
+    def __deepcopy__(self, memo):
+        """
+        Custom deepcopy to avoid detaching SQLAlchemy objects from session.
+
+        Only deep copies msg and composed_msg to prevent cross-contamination between
+        recipients. All other attributes are either shallow-copied (immutable) or kept
+        as references (SQLAlchemy objects that must stay attached to the session).
+        """
+        # Create a new instance without calling __init__
+        cls = self.__class__
+        new_obj = cls.__new__(cls)
+
+        # Define which attributes should NOT be deep copied
+        no_deepcopy = {"ml", "subscribers"}  # SQLAlchemy objects - keep as references
+        deepcopy_these = {"msg", "composed_msg"}  # Must be independent per recipient
+
+        # Copy all attributes
+        for key, value in self.__dict__.items():
+            if key in deepcopy_these:
+                # Deep copy to avoid cross-contamination
+                setattr(new_obj, key, deepcopy(value, memo))
+            elif key in no_deepcopy:
+                # Keep reference (don't copy SQLAlchemy objects)
+                setattr(new_obj, key, value)
+            else:
+                # Shallow copy (immutable types like str, int are safe)
+                setattr(new_obj, key, value)
+
+        return new_obj
 
     def choose_container_type(self) -> None:
         """Choose the correct container type for the email based on its content"""
@@ -239,6 +270,13 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
+            create_log_entry(
+                level="error",
+                event="email_out",
+                message=f"Failed to send email to {recipient}: {e}",
+                details={"recipient": recipient, "message_id": self.message_id},
+                list_id=self.ml.id,
+            )
             return b""
 
         return self.composed_msg.as_bytes()
@@ -324,7 +362,7 @@ def send_msg_to_subscribers(
                         )
             else:
                 sent_failed.append(subscriber.email)
-                logging.info(
+                logging.warning(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
                     subscriber.email,
                 )

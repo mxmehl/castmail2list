@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Flask, flash
@@ -16,7 +16,7 @@ from platformdirs import user_config_path
 from sqlalchemy import func
 
 from . import __version__
-from .models import EmailIn, EmailOut, MailingList, Subscriber
+from .models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
@@ -543,3 +543,39 @@ def get_message_id_from_incoming(msg: MailMessage) -> str:
         generated
     """
     return next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
+
+
+def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    level: str,
+    event: str,
+    message: str,
+    details: dict | None = None,
+    list_id: int | None = None,
+) -> Logs:
+    """
+    Create and persist a log entry in the database.
+
+    Args:
+        level (str): Log level (e.g., 'info', 'warning', 'error')
+        event (str): Event type (e.g., 'email_sent', 'bounce_received')
+        message (str): Log message text
+        details (dict | None): Optional JSON-serializable details dictionary
+        list_id (int | None): Optional mailing list ID this log relates to
+
+    Returns:
+        Logs: The created and persisted log entry
+    """
+
+    log_entry = Logs(
+        level=level.lower(),
+        event=event.lower(),
+        message=message,
+        details=details or {},
+        list_id=list_id,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+    db.session.add(log_entry)
+    db.session.commit()
+
+    return log_entry
