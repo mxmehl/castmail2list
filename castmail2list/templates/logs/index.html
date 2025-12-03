@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Logs Entries') }}{% endblock %}
+{% block content %}
+<h2>{{ _('Logs Entries') }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<form method="GET" action="{{ url_for('logs.index') }}" class="search-form fields">
+  <fieldset role="group">
+    <select name="fields" aria-label="Searched fields" required>
+      <option selected disabled value="">
+        Select the field to search
+      </option>
+      <option>Date</option>
+      <option>Level</option>
+      <option>Event</option>
+      <option>Message</option>
+      <option>List</option>
+    </select>
+    <input type="text" name="text" placeholder="{{ _('Search term') }}" autocomplete="email" value="{{ search_text }}" />
+    <input type="submit" value="Search" />
+  </fieldset>
+</form>
+
+<table class="striped fixed logs">
+  <thead>
+    <tr>
+      <th>{{ _('Date') }}</th>
+      <th>{{ _('Level') }}</th>
+      <th>{{ _('Event') }}</th>
+      <th>{{ _('Message') }}</th>
+      <th>{{ _('List') }}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for l in logs %}
+    <tr>
+      <td>{{ l.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+      <td>{{ l.level|upper }}</td>
+      <td>{{ l.event }}</td>
+      <td>{{ l.message }}</td>
+      <td>{% if l.list_id %}{{ lists[l.list_id].name }}{% else %}N/A{% endif %}</td>
+      <td><a href="{{ url_for('logs.detail', log_id=l.id) }}"><i class="fa-solid fa-circle-info"></i></a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

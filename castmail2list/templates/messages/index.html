@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Recent Messages') }}{% endblock %}
+{% block title %}{{ _('Incoming Messages') }}{% endblock %}
 {% block content %}
-<h2>{{ _('Recent Messages') }}</h2>
+<h2>{{ _('Incoming Messages') }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
 <p>
-    <a href="{{ url_for('messages.bounces') }}" role="button">{{ _('View Bounce Messages') }}</a>
+    <a href="{{ url_for('messages.sent') }}" role="button">{{ _('View Sent Messages') }}</a>
+    <a href="{{ url_for('messages.bounces') }}" role="button" class="secondary">{{ _('View Bounce Messages') }}</a>
 </p>
 
-<table>
+<table class="striped">
     <thead>
         <tr>
             <th>{{ _('Subject') }}</th>
@@ -20,9 +21,9 @@
         </tr>
     </thead>
     <tbody>
-        {% for m in messages | reverse %}
+        {% for m in messages %}
         <tr>
-            <td><a href="{{ url_for('messages.show', message_id=m.id)}}">{{ m.subject }}</a></td>
+            <td><a href="{{ url_for('messages.show', message_id=m.message_id)}}">{{ m.subject }}</a></td>
             <td><a href="{{ url_for('subscribers.by_email', email=m.from_addr) }}">{{ m.from_addr }}</a></td>
             <td>{{ m.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
             <td>{{ m.list.name }}</td>

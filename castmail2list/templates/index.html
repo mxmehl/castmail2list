@@ -7,4 +7,120 @@
 
 <p>{{ _('Welcome to CastMail2List! Use the navigation above to manage your mailing lists and their subscribers.') }}</p>
 
+<h2>{{ _('Status') }}</h2>
+
+<div class="dashboard">
+  <article class="card" id="email_in">
+    <div>
+      <h3>{{ _('Incoming Emails') }}</h3>
+      <p>{{ _('Total') }}: {{ stats.email_in.count }}</p>
+      <p>{{ _('Last 7 days') }}: {{ stats.email_in.days_7 | length }}</p>
+      <ul>
+        {%- for msg in stats.email_in.last_5 %}
+        <li>
+          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('messages.index') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="email_out">
+    <div>
+      <h3>{{ _('Outgoing Emails') }}</h3>
+      <p>{{ _('Total') }}: {{ stats.email_out.count }}</p>
+      <p>{{ _('Last 7 days') }}: {{ stats.email_out.days_7 | length }}</p>
+      <ul>
+        {%- for msg in stats.email_out.last_5 %}
+        <li>
+          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('messages.sent') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="errors">
+    <div>
+      <h3>{{ _('Errors') }}</h3>
+      <p>{{ _('Last 7 days') }}: {{ stats.errors.days_7|length }}</p>
+      <ul>
+        {%- for error in stats.errors.last_5 %}
+        <li>
+          <a href="{{ url_for('logs.detail', log_id=error.id) }}">
+            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }} ({{ error.event }})
+          </a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('logs.index') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="warnings">
+    <div>
+      <h3>{{ _('Warnings') }}</h3>
+      <p>{{ _('Last 7 days') }}: {{ stats.warnings.days_7|length }}</p>
+      <ul>
+        {%- for warning in stats.warnings.last_5 %}
+        <li>
+          <a href="{{ url_for('logs.detail', log_id=error.id) }}">
+            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }} ({{ warning.event }})
+          </a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('logs.index') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="bounces">
+    <div>
+      <h3>{{ _('Bounces') }}</h3>
+      <p>{{ _('Last 7 days') }}: {{ stats.bounces.days_7 | length }}</p>
+      <ul>
+        {%- for msg in stats.bounces.last_5 %}
+        <li>
+          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('messages.bounces') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="lists">
+    <div>
+      <h3>{{ _('Mailing Lists') }}</h3>
+      <p>{{ _('Total') }}: {{ stats.lists.count.total }}</p>
+      <p>{{ _('Active') }}: {{ stats.lists.count.active }}</p>
+      <p>{{ _('Deactivated') }}: {{ stats.lists.count.deactivated }}</p>
+      <p class="view-all">
+        <em><a href="{{ url_for('lists.index') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
+  <article class="card" id="subscribers">
+    <div>
+      <h3>{{ _('Subscribers') }}</h3>
+      <p>{{ _('Total') }}: {{ stats.subscribers.count }}</p>
+      <p class="view-all">
+        <em><a href="{{ url_for('subscribers.index') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+</div>
 {% endblock %}

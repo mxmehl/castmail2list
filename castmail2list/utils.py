@@ -4,16 +4,19 @@ import logging
 import os
 import subprocess
 import sys
+import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
+from imap_tools.message import MailMessage
 from platformdirs import user_config_path
 from sqlalchemy import func
 
 from . import __version__
-from .models import MailingList, Subscriber
+from .models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
@@ -434,3 +437,175 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     if file:
         config_path = config_path / file
     return str(config_path)
+
+
+def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
+    """
+    Get all incoming messages from the database. With options to filter for bounce messages and by
+    date.
+
+    Args:
+        only (str): If "bounces", return only bounce messages; if "normal", return only normal
+            messages; if empty, return all messages
+        days (int): Only return messages from the last given number of days. If 0, return all
+
+    Returns:
+        list[Message]: A list of all requested messages, descending by received date
+    """
+    if only not in ("", "bounces", "normal"):
+        logging.critical("Invalid 'only' parameter for get_all_messages: %s", only)
+        raise ValueError(f"Invalid 'only' parameter: {only}")
+    all_messages: list[EmailIn] = EmailIn.query.order_by(EmailIn.received_at.desc()).all()
+    if only == "bounces":
+        all_messages = [msg for msg in all_messages if msg.status == "bounce-msg"]
+    if only == "normal":
+        all_messages = [msg for msg in all_messages if msg.status != "bounce-msg"]
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
+    return all_messages
+
+
+def get_all_outgoing_messages(days: int = 0) -> list[EmailOut]:
+    """
+    Get all outgoing messages from the database. With option to filter by date.
+
+    Args:
+        days (int): Only return messages from the last given number of days. If 0, return all
+    Returns:
+        list[EmailOut]: A list of all requested outgoing messages, descending by sent date
+    """
+    all_messages: list[EmailOut] = EmailOut.query.order_by(EmailOut.sent_at.desc()).all()
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        all_messages = [msg for msg in all_messages if msg.sent_at >= cutoff_date]
+    return all_messages
+
+
+def get_all_messages_id_from_raw_email(raw_email: str) -> list[str]:
+    """
+    Extract the (Original-)Message-IDs from a raw email string.
+
+    Args:
+        raw_email (str): The raw email content as a string
+    Returns:
+        list[str]: A list of Message-ID/Original-Message-ID found in the email
+    """
+    message_ids = []
+    for line in raw_email.splitlines():
+        if line.lower().startswith("message-id:") or line.lower().startswith(
+            "original-message-id:"
+        ):
+            _, msg_id = line.split(":", 1)
+            message_ids.append(msg_id.strip().strip("<>"))
+    return message_ids
+
+
+def get_message_id_in_db(message_ids: list[str], only: str = "") -> EmailIn | EmailOut | None:
+    """
+    Check if any of the given Message-IDs exist in the database as either incoming or outgoing
+    messages. Can be filtered to only check incoming or outgoing messages.
+
+    Args:
+        message_ids (list[str]): A list of Message-IDs to check
+        only (str): "in" to check only incoming messages, "out" for outgoing, "" for both.
+            Searches in "in" first.
+    Returns:
+        EmailIn | EmailOut | None: The first matching message found, or None if none found
+    """
+    if only not in ("", "in", "out"):
+        logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", only)
+        raise ValueError(f"Invalid 'filter' parameter: {only}")
+
+    if only in ("", "in"):
+        for msg_id in message_ids:
+            msg_in: EmailIn | None = EmailIn.query.filter_by(message_id=msg_id).first()
+            if msg_in:
+                return msg_in
+
+    if only in ("", "out"):
+        for msg_id in message_ids:
+            msg_out: EmailOut | None = EmailOut.query.filter_by(message_id=msg_id).first()
+            if msg_out:
+                return msg_out
+
+    return None
+
+
+def get_message_id_from_incoming(msg: MailMessage) -> str:
+    """
+    Extract the Message-ID from an incoming MailMessage object.
+
+    Args:
+        msg (MailMessage): The incoming email message
+    Returns:
+        str: The Message-ID of the email, without < > brackets; if not present, a new UUID is
+        generated
+    """
+    return next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
+
+
+def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    level: str,
+    event: str,
+    message: str,
+    details: dict | None = None,
+    list_id: int | None = None,
+) -> Logs:
+    """
+    Create and persist a log entry in the database.
+
+    Args:
+        level (str): Log level (e.g., 'info', 'warning', 'error')
+        event (str): Event type (e.g., 'email_sent', 'bounce_received')
+        message (str): Log message text
+        details (dict | None): Optional JSON-serializable details dictionary
+        list_id (int | None): Optional mailing list ID this log relates to
+
+    Returns:
+        Logs: The created and persisted log entry
+    """
+
+    log_entry = Logs(
+        level=level.lower(),
+        event=event.lower(),
+        message=message,
+        details=details or {},
+        list_id=list_id,
+        timestamp=datetime.now(timezone.utc),
+    )
+
+    db.session.add(log_entry)
+    db.session.commit()
+
+    return log_entry
+
+
+def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
+    """
+    Retrieve log entries from the database based on provided filters.
+
+    Args:
+        exact (bool): If True, use exact matching; if False, use partial matching
+        days (int): Only return log entries from the last given number of days. If 0, return all
+        **kwargs: Filter criteria for querying logs (e.g., level='error', list_id=1)
+    Returns:
+        list[Logs]: A list of log entries matching the filter criteria
+    """
+    query = Logs.query
+
+    for key, value in kwargs.items():
+        column = getattr(Logs, key, None)
+        if column is not None:
+            if exact:
+                query = query.filter(column == value)
+            else:
+                query = query.filter(column.ilike(f"%{value}%"))
+        else:
+            logging.warning("Invalid filter key for get_log_entries: %s", key)
+
+    log_entries: list[Logs] = query.order_by(Logs.timestamp.desc()).all()
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        log_entries = [log for log in log_entries if log.timestamp >= cutoff_date]
+    return log_entries

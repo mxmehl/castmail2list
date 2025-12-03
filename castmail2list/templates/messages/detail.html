@@ -5,11 +5,17 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<table>
+<table class="striped fixed message">
     <tr>
         <th>{{ _('Subject') }}</th>
         <td>{{ message.subject }}</td>
     </tr>
+    <tr>
+        <th>{{ _('List') }}</th>
+        <td>{{ message.list.name }} &lt;{{message.list.address}}&gt;</td>
+    </tr>
+    {#- INCOMING MESSAGES SPECIFICS #}
+    {%- if msg_type == "in" %}
     <tr>
         <th>{{ _('From') }}</th>
         <td><a href="{{ url_for('subscribers.by_email', email=message.from_addr) }}">{{ message.from_addr }}</a></td>
@@ -19,20 +25,65 @@
         <td>{{ message.received_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
     </tr>
     <tr>
-        <th>{{ _('List') }}</th>
-        <td>{{ message.list.name }} &lt;{{message.list.address}}&gt;</td>
-    </tr>
-    <tr>
         <th>{{ _('Status') }}</th>
         <td>{{ message.status }}</td>
     </tr>
+    {%- if bounce %}
+    <tr>
+        <th>{{ _('Bounced Recipients') }}</th>
+        <td>
+            {%- for recipient in message.error_info["bounced_recipients"].split(",") %}
+            <a href="{{ url_for('subscribers.by_email', email=recipient) }}">{{ recipient }}</a>
+            {%- if not loop.last %}, {% endif %}
+            {%- endfor %}
+        </td>
+    </tr>
+    <tr>
+        <th>{{ _('Causing Message ID') }}</th>
+        <td>
+            {%- set bounced_mid = message.error_info["bounced_mid"] %}
+            <a href="{{ url_for('messages.show', message_id=bounced_mid) }}">
+                {{ message.error_info["bounced_mid"] }}
+            </a>
+        </td>
+    </tr>
+    {%- endif %}
     <tr>
         <th>{{ _('Error Info') }}</th>
         <td>{{ message.error_info }}</td>
     </tr>
+    {%- endif %}
+    {#- SENT MESSAGES SPECIFICS #}
+    {%- if msg_type == "out" %}
+    <tr>
+        <th>{{ _('Sent At') }}</th>
+        <td>{{ message.sent_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('Successful Recipients') }}</th>
+        <td>
+            {%- for rec in message.sent_successful %}
+            <a href="{{ url_for('subscribers.by_email', email=rec) }}">{{ rec }}</a>
+            {{- ", " if not loop.last else "" }}
+            {%- endfor %}
+        </td>
+    </tr>
+    <tr>
+        <th>{{ _('Failed Recipients') }}</th>
+        <td>
+            {%- for rec in message.sent_failed %}
+            <a href="{{ url_for('subscribers.by_email', email=rec) }}">{{ rec }}</a>
+            {{- ", " if not loop.last else "" }}
+            {%- endfor %}
+        </td>
+    </tr>
+    {%- endif %}
+    {#- RAW MESSAGE #}
     <tr>
         <th>{{ _('Raw') }}</th>
-        <td><pre>{{ message.raw }}</pre></td>
+        <td>
+            <pre>{{ message.raw }}</pre>
+        </td>
     </tr>
 </table>
 {% endblock %}

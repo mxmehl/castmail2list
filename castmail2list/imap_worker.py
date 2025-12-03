@@ -14,9 +14,12 @@ from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers
-from .models import MailingList, Message, Subscriber, db
+from .models import EmailIn, MailingList, Subscriber, db
 from .utils import (
+    get_all_messages_id_from_raw_email,
     get_list_subscribers,
+    get_message_id_from_incoming,
+    get_message_id_in_db,
     get_plus_suffix,
     is_expanded_address_the_mailing_list,
     parse_bounce_address,
@@ -60,7 +63,7 @@ def create_required_folders(app: Flask, mailbox: MailBox) -> None:
             logging.info("Created IMAP folder: %s", folder)
 
 
-class IncomingMessage:  # pylint: disable=too-few-public-methods
+class IncomingEmail:  # pylint: disable=too-few-public-methods
     """Class representing an incoming message and its handling"""
 
     def __init__(self, app: Flask, mailbox: MailBox, msg: MailMessage, ml: MailingList) -> None:
@@ -69,24 +72,26 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
         self.msg: MailMessage = msg
         self.ml: MailingList = ml
 
-    def _detect_bounce(self) -> str:
+    def _detect_bounce(self) -> tuple[str, list[str]]:
         """Detect whether the message is a bounce message. This is detected by two methods:
         1. If the To address contains "+bounces--"
         2. If the message is detected as a bounce by flufl.bounce
 
         Returns:
-            str: Original recipient email address(es) if bounce detected, else empty string
-
+            tuple: A Tuple containing
+                - (str) Original recipient email address(es) if bounce detected, else empty string
+                - (list) The possible Message IDs that caused the bounce, else empty list
         """
+        bounced_recipient: str = ""
         # Check To addresses for bounce marker
         for to in self.msg.to:
-            if bounced_recipient := parse_bounce_address(to):
+            if recipient := parse_bounce_address(to):
                 logging.debug(
                     "Bounce detected by parse_bounce_address() for message %s, recipient: %s",
                     self.msg.uid,
-                    bounced_recipient,
+                    recipient,
                 )
-                return bounced_recipient
+                bounced_recipient = recipient
 
         # Use flufl.bounce to scan message
         bounced_recipients_flufl: set[bytes] = scan_message(self.msg.obj)  # type: ignore
@@ -96,9 +101,13 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
                 self.msg.uid,
                 bounced_recipients_flufl,
             )
-            return ", ".join(addr.decode("utf-8") for addr in bounced_recipients_flufl)
+            bounced_recipient = ", ".join(addr.decode("utf-8") for addr in bounced_recipients_flufl)
 
-        return ""
+        if bounced_recipient:
+            # Return the Message-ID of the original message that bounced, if available
+            return bounced_recipient, get_all_messages_id_from_raw_email(str(self.msg.obj))
+
+        return "", []
 
     def _validate_email_sender_authentication(self) -> str:
         """
@@ -144,7 +153,7 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
                 to.email = new_to
         self.msg.to_values = tuple(to_value_addresses)
 
-    def _validate_email_all_checks(self) -> tuple[str, dict[str, str]]:
+    def _validate_email_all_checks(self) -> tuple[str, dict[str, str | list]]:
         """
         Check a new single IMAP message from the Inbox:
             * Bounce detection
@@ -157,15 +166,20 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
         """
         logging.debug("Processing message: %s", self.msg.subject)
         status = "ok"
-        error_info: dict[str, str] = {}
+        error_info: dict[str, str | list] = {}
 
         # --- Bounced message detection ---
-        if bounced_recipients := self._detect_bounce():
+        bounced_recipients, bounced_mids = self._detect_bounce()
+        if bounced_recipients:
+            if _causing_msg := get_message_id_in_db(bounced_mids, only="out"):
+                causing_mid = _causing_msg.message_id
+            else:
+                causing_mid = "unknown"
             logging.info(
                 "Message %s is a bounce for recipients: %s", self.msg.uid, bounced_recipients
             )
             status = "bounce-msg"
-            error_info = {"bounced_recipients": bounced_recipients}
+            error_info = {"bounced_recipients": bounced_recipients, "bounced_mid": causing_mid}
             return status, error_info
 
         # --- Sender not allowed checks ---
@@ -257,11 +271,9 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
             target_folder = self.app.config["IMAP_FOLDER_DENIED"]
 
         # Store message in database
-        m = Message()
+        m = EmailIn()
         m.list_id = self.ml.id
-        m.message_id = next(iter(self.msg.headers.get("message-id", ())), str(uuid.uuid4())).strip(
-            "<>"
-        )
+        m.message_id = get_message_id_from_incoming(self.msg)
         m.subject = self.msg.subject
         m.from_addr = self.msg.from_
         m.headers = str(dict(self.msg.headers.items()))
@@ -287,8 +299,8 @@ class IncomingMessage:  # pylint: disable=too-few-public-methods
             target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
 
         # Mark message as seen and move to target folder
-        self.mailbox.flag(self.msg.uid, ["\\Seen"], True)  # type: ignore
-        self.mailbox.move(self.msg.uid, target_folder)  # type: ignore
+        self.mailbox.flag(uid_list=self.msg.uid, flag_set=["\\Seen"], value=True)  # type: ignore
+        self.mailbox.move(uid_list=self.msg.uid, destination_folder=target_folder)  # type: ignore
         logging.debug(
             "Marked message %s as seen and moved to folder '%s'", self.msg.uid, target_folder
         )
@@ -346,7 +358,14 @@ def check_all_lists_for_messages(app: Flask) -> None:
                 mailbox.folder.set(app.config["IMAP_FOLDER_INBOX"])
                 # Fetch unseen messages
                 for msg in mailbox.fetch(mark_seen=False):
-                    incoming_msg = IncomingMessage(app, mailbox, msg, ml)
+                    incoming_msg = IncomingEmail(app, mailbox, msg, ml)
+                    # Check if incoming message has a UID. If not, we abort the process as this
+                    # would break multiple operations
+                    if msg.uid is None:
+                        logging.error(
+                            "Incoming message has no UID, cannot process message: %s", msg.subject
+                        )
+                        continue
                     # Process incoming message. If OK, send to subscribers
                     if incoming_msg.process_incoming_msg():
                         send_msg_to_subscribers(app=app, msg=msg, ml=ml, mailbox=mailbox)
@@ -356,6 +375,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
                             "during processing",
                             msg.uid,
                         )
+                        return
         except MailboxLoginError as e:
             logging.error(
                 "IMAP login failed for list %s (%s): %s",

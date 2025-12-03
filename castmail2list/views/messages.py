@@ -1,36 +1,55 @@
 """Messages blueprint for CastMail2List application"""
 
 from flask import Blueprint, flash, render_template
+from flask_babel import _
 from flask_login import login_required
 
-from ..models import Message
+from ..models import EmailIn, EmailOut
+from ..utils import (
+    get_all_incoming_messages,
+    get_all_outgoing_messages,
+    get_message_id_in_db,
+)
 
 messages = Blueprint("messages", __name__, url_prefix="/messages")
 
 
-@messages.route("/")
+@messages.before_request
 @login_required
-def show_all() -> str:
-    """Show all messages"""
-    msgs: list[Message] = Message.query.all()  # will be reversed in template
+def before_request() -> None:
+    """Require login for all routes"""
+
+
+@messages.route("/")
+def index() -> str:
+    """Show all normal incoming messages"""
+    msgs: list[EmailIn] = get_all_incoming_messages(only="normal")
     return render_template("messages/index.html", messages=msgs)
 
 
-@messages.route("/<int:message_id>")
-@login_required
-def show(message_id: int) -> str:
+@messages.route("/<message_id>")
+def show(message_id: str) -> str:
     """Show a specific message"""
-    msg: Message | None = Message.query.get(message_id)
-    if not msg:
-        flash("Message not found", "error")
-    return render_template("messages/detail.html", message=msg)
+    message = get_message_id_in_db([message_id])
+    if message:
+        msg_type = "out" if isinstance(message, EmailOut) else "in"
+        bounce = getattr(message, "status", "") == "bounce-msg"
+        return render_template(
+            "messages/detail.html", message=message, msg_type=msg_type, bounce=bounce
+        )
+    flash(_("Message not found"), "error")
+    return render_template("messages/detail.html", message=None)
 
 
 @messages.route("/bounces")
-@login_required
 def bounces() -> str:
-    """Show bounced messages"""
-    bounce_messages: list[Message] = (
-        Message.query.filter_by(status="bounce-msg").order_by(Message.received_at.desc()).all()
+    """Show only bounced messages"""
+    return render_template(
+        "messages/bounces.html", messages=get_all_incoming_messages(only="bounces")
     )
-    return render_template("messages/bounces.html", messages=bounce_messages)
+
+
+@messages.route("/sent")
+def sent() -> str:
+    """Show all outgoing messages"""
+    return render_template("messages/sent.html", messages=get_all_outgoing_messages())

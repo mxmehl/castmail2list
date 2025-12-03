@@ -20,9 +20,10 @@
         {%- if session._user_id %}
         <ul>
           <li><a href="{{ url_for('general.index') }}">{{ _('Home') }}</a></li>
-          <li><a href="{{ url_for('messages.show_all') }}">{{ _('Messages') }}</a></li>
-          <li><a href="{{ url_for('lists.show_all') }}">{{ _('Lists') }}</a></li>
+          <li><a href="{{ url_for('messages.index') }}">{{ _('Messages') }}</a></li>
+          <li><a href="{{ url_for('lists.index') }}">{{ _('Lists') }}</a></li>
           <li><a href="{{ url_for('subscribers.index') }}">{{ _('Subscribers') }}</a></li>
+          <li><a href="{{ url_for('logs.index') }}">{{ _('Logs') }}</a></li>
           <li><a href="{{ url_for('auth.logout') }}">{{ _('Logout') }}</a></li>
           <li>
             <span id="theme-toggle" data-theme-toggle aria-label="Change to light theme" title="Change to light theme" class="icon sun"></span>

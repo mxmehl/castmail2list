@@ -5,6 +5,7 @@ import smtplib
 import tempfile
 import traceback
 from copy import deepcopy
+from datetime import datetime, timezone
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -15,11 +16,16 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import MailingList, Subscriber
-from .utils import create_bounce_address, get_list_subscribers
+from .models import EmailOut, MailingList, Subscriber, db
+from .utils import (
+    create_bounce_address,
+    create_log_entry,
+    get_list_subscribers,
+    get_message_id_from_incoming,
+)
 
 
-class Mail:  # pylint: disable=too-many-instance-attributes
+class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
     """Class for an email sent to multiple recipients via SMTP"""
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
@@ -53,6 +59,36 @@ class Mail:  # pylint: disable=too-many-instance-attributes
         self.choose_container_type()
         self.prepare_common_headers()
         self.add_body_parts()
+
+    def __deepcopy__(self, memo):
+        """
+        Custom deepcopy to avoid detaching SQLAlchemy objects from session.
+
+        Only deep copies msg and composed_msg to prevent cross-contamination between
+        recipients. All other attributes are either shallow-copied (immutable) or kept
+        as references (SQLAlchemy objects that must stay attached to the session).
+        """
+        # Create a new instance without calling __init__
+        cls = self.__class__
+        new_obj = cls.__new__(cls)
+
+        # Define which attributes should NOT be deep copied
+        no_deepcopy = {"ml", "subscribers"}  # SQLAlchemy objects - keep as references
+        deepcopy_these = {"msg", "composed_msg"}  # Must be independent per recipient
+
+        # Copy all attributes
+        for key, value in self.__dict__.items():
+            if key in deepcopy_these:
+                # Deep copy to avoid cross-contamination
+                setattr(new_obj, key, deepcopy(value, memo))
+            elif key in no_deepcopy:
+                # Keep reference (don't copy SQLAlchemy objects)
+                setattr(new_obj, key, value)
+            else:
+                # Shallow copy (immutable types like str, int are safe)
+                setattr(new_obj, key, value)
+
+        return new_obj
 
     def choose_container_type(self) -> None:
         """Choose the correct container type for the email based on its content"""
@@ -121,7 +157,7 @@ class Mail:  # pylint: disable=too-many-instance-attributes
             self.composed_msg["Cc"] = ", ".join(self.msg.cc)
         # Message
         self.composed_msg["Subject"] = self.msg.subject
-        self.composed_msg["Message-ID"] = self.message_id
+        self.composed_msg["Message-ID"] = f"<{self.message_id}>"
         self.composed_msg["Date"] = self.msg.date_str or formatdate(localtime=True)
         self.composed_msg["Original-Message-ID"] = self.original_mid
         # Threading and references
@@ -234,6 +270,14 @@ class Mail:  # pylint: disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
+            create_log_entry(
+                level="error",
+                event="email_out",
+                message=f"Failed to send email to {recipient}: {e}",
+                details={"recipient": recipient, "message_id": self.message_id},
+                list_id=self.ml.id,
+            )
+            return b""
 
         return self.composed_msg.as_bytes()
 
@@ -246,7 +290,7 @@ def send_msg_to_subscribers(
 
     Args:
         app (Flask): Flask application instance
-        msg (MailMessage): Message to send
+        msg (MailMessage): The incoming message to forward
         ml (MailingList): Mailing list to send to
         mailbox (MailBox): IMAP mailbox instance for storing sent messages
 
@@ -267,8 +311,17 @@ def send_msg_to_subscribers(
     )
 
     # Prepare message class
-    new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1])
-    mail = Mail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
+    new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1]).strip("<>")
+    mail = OutgoingEmail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
+
+    # Store fundamental information about to-be-sent message in database
+    email_out = EmailOut(
+        email_in_mid=get_message_id_from_incoming(msg),
+        message_id=new_msgid,
+        list_id=ml.id,
+        recipients=[sub.email for sub in subscribers],
+        sent_at=datetime.now(timezone.utc),
+    )
 
     # --- Sanity checks ---
     # Make sure there is content to send
@@ -309,7 +362,7 @@ def send_msg_to_subscribers(
                         )
             else:
                 sent_failed.append(subscriber.email)
-                logging.info(
+                logging.warning(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
                     subscriber.email,
                 )
@@ -323,12 +376,19 @@ def send_msg_to_subscribers(
             )
 
     # Unify sent email lists and log/return results
-    sent_successful = list(set(sent_successful))
-    sent_failed = list(set(sent_failed))
     logging.info(
         "Finished sending message %s. Successful: %d, Failed: %d",
         msg.uid,
         len(sent_successful),
         len(sent_failed),
     )
+
+    # Update EmailOut database entry, and add to session
+    email_out.subject = mail.msg.subject
+    email_out.raw = mail.composed_msg.as_string() if mail.composed_msg else ""
+    email_out.sent_successful = sent_successful
+    email_out.sent_failed = sent_failed
+    db.session.add(email_out)
+    db.session.commit()
+
     return sent_successful, sent_failed

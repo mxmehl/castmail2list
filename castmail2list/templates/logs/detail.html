@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Log detail') }}: {{ log.subject }}{% endblock %}
+{% block content %}
+<h2>{{ _('Log detail') }}: {{ log.subject }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<table class="striped fixed message">
+    <tr>
+        <th>{{ _('Date') }}</th>
+        <td>{{ log.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('Level') }}</th>
+        <td>{{ log.level|upper }}</td>
+    </tr>
+    <tr>
+        <th>{{ _('Event') }}</th>
+        <td>{{ log.event }}</td>
+    </tr>
+    <tr>
+        <td>{{ _('Message') }}</td>
+        <td>{{ log.message }}</td>
+    </tr>
+    {%- if log.list_id %}
+    {%- set list = lists[log.list_id] %}
+    <tr>
+        <th>{{ _('List') }}</th>
+        <td>{{ list.name }} &lt;{{ list.address }}&gt;</td>
+    </tr>
+    {%- endif %}
+    {%- if log.details %}
+    {% for item, content in log.details.items() %}
+    <tr>
+        <th>{{ item|capitalize }}</th>
+        <td>{{ content }}</td>
+    </tr>
+    {% endfor %}
+    {%- endif%}
+</table>
+{% endblock %}

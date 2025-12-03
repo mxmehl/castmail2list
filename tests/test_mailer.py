@@ -14,7 +14,7 @@ import pytest
 from imap_tools import MailMessage
 from pytest import MonkeyPatch
 
-from castmail2list.mailer import Mail, send_msg_to_subscribers
+from castmail2list.mailer import OutgoingEmail, send_msg_to_subscribers
 from castmail2list.models import MailingList, Subscriber, db
 
 # pylint: disable=protected-access,too-many-arguments,too-many-positional-arguments
@@ -101,11 +101,11 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
     msg = create_test_message()
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com", name="Sub One")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
-        message_id="<new-msg-id@example.com>",
+        message_id="new-msg-id@example.com",
         subscribers=subscribers,
     )
 
@@ -135,7 +135,7 @@ def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingLis
     msg = create_test_message(to_addrs=("broadcast-from@example.com",))
     subscribers = [Subscriber(list_id=broadcast_list_with_from.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list_with_from,
         msg=msg,
@@ -157,7 +157,7 @@ def test_broadcast_removes_list_from_to_cc(client, broadcast_list: MailingList):
     )
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -181,7 +181,7 @@ def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mo
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -205,7 +205,7 @@ def test_broadcast_no_avoid_duplicates(client, broadcast_list_no_avoid_dup: Mail
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list_no_avoid_dup,
         msg=msg,
@@ -231,7 +231,7 @@ def test_broadcast_recipient_appended_to_to(
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -263,7 +263,7 @@ def test_group_basic_headers(client, group_list: MailingList):
     # Sender is NOT in subscriber list, so Reply-To will include sender
     subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com", name="Sub One")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -295,7 +295,7 @@ def test_group_from_with_no_name(client, group_list):
 
     subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -316,7 +316,7 @@ def test_group_reply_to_when_sender_not_subscriber(client, group_list):
     # Subscriber list does NOT include external@example.com
     subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -338,7 +338,7 @@ def test_group_reply_to_when_sender_is_subscriber(client, group_list):
     # Subscriber list includes the sender
     subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -360,7 +360,7 @@ def test_group_no_from_values_error(client, group_list: MailingList, caplog):
 
     subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
 
-    Mail(
+    OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -382,7 +382,7 @@ def test_group_to_header_preserved(
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
@@ -421,7 +421,7 @@ def test_threading_headers(client, broadcast_list: MailingList):
 
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -445,7 +445,7 @@ def test_cc_header_preserved(client, broadcast_list: MailingList):
 
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -467,7 +467,7 @@ def test_x_recipient_header(
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -489,7 +489,7 @@ def test_envelope_from_is_bounce_address(client, broadcast_list: MailingList, sm
     db.session.add(subscriber)
     db.session.commit()
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -534,7 +534,7 @@ def test_multipart_alternative_text_and_html(client, broadcast_list: MailingList
 
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -553,7 +553,7 @@ def test_simple_text_message(client, broadcast_list: MailingList):
 
     subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
-    mail = Mail(
+    mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
@@ -680,7 +680,7 @@ def test_unknown_mode_logs_error(client, caplog, monkeypatch):
     msg = create_test_message()
     subscribers = [Subscriber(list_id=ml.id, email="sub1@example.com")]
 
-    Mail(
+    OutgoingEmail(
         app=client.application,
         ml=ml,
         msg=msg,

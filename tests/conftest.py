@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash
 
 from castmail2list.app import create_app
-from castmail2list.imap_worker import IncomingMessage
+from castmail2list.imap_worker import IncomingEmail
 from castmail2list.models import MailingList, Subscriber, User, db
 
 
@@ -146,13 +146,13 @@ class MailboxStub:  # pylint: disable=too-few-public-methods
 
         self.folder = Folder()
 
-    def flag(self, uid: str, flags: list[str], value: bool):  # mimic MailBox.flag signature
+    def flag(self, uid_list: str, flag_set: list[str], value: bool):  # mimic MailBox.flag signature
         """Record flags set on a message UID (test-only)."""
-        self._flags[uid] = (flags, value)
+        self._flags[uid_list] = (flag_set, value)
 
-    def move(self, uid: str, target_folder: str):  # mimic MailBox.move signature
+    def move(self, uid_list: str, destination_folder: str):  # mimic MailBox.move signature
         """Record a move operation (UID -> target folder) for assertions."""
-        self._moves[uid] = target_folder
+        self._moves[uid_list] = destination_folder
 
 
 @pytest.fixture(name="mailbox_stub")
@@ -162,25 +162,37 @@ def fixture_mailbox_stub() -> MailboxStub:
 
 
 @pytest.fixture(name="bounce_samples")
-def fixture_bounce_samples():
+def fixture_bounce_samples() -> dict[str, tuple[MailMessage, str, list[str]]]:
     """
     Load real bounce .eml samples into MailMessage objects.
 
     Returns:
-        dict[str, tuple[MailMessage, str]]: mapping filename -> (MailMessage, expected_recipient)
+        dict: mapping filename -> (MailMessage, expected_recipient, [expected_bounced_ids])
     """
     samples_dir = Path(__file__).parent / "bounces"
-    expected_map = {
-        "mailbox-full.eml": "recipient-mailbox-is-full@docomo.ne.jp",
-        "exceeds-size.eml": "this-message-is-too-big-for-the-host@k.vodafone.ne.jp",
+    expected_map: dict[str, tuple[str, list]] = {
+        "mailbox-full.eml": (
+            "recipient-mailbox-is-full@docomo.ne.jp",
+            [
+                "200903042128.n24LSDot026083@mx.example.jp",
+                "18726744-DE21-43A8-92B6-91B47AE35DC7@example.jp",
+            ],
+        ),
+        "exceeds-size.eml": (
+            "this-message-is-too-big-for-the-host@k.vodafone.ne.jp",
+            [
+                "200904280052.n3S0qj83022773@mx6.example.jp",
+                "2B17AB23-5EA9-4E5F-B6C0-6A1BC2ECF522@example.jp",
+            ],
+        ),
     }
-    result: dict[str, tuple[MailMessage, str]] = {}
+    result: dict[str, tuple[MailMessage, str, list[str]]] = {}
     for path in samples_dir.glob("*.eml"):
         with path.open("rb") as fh:
             msg = MailMessage.from_bytes(fh.read())
             # Ensure a uid attribute exists (normally added by imap_tools when fetching)
             msg.uid = path.name  # type: ignore[attr-defined]
-            result[path.name] = (msg, expected_map.get(path.name, ""))
+            result[path.name] = (msg,) + expected_map.get(path.name, ("", []))
     return result
 
 
@@ -191,12 +203,12 @@ def fixture_incoming_message_factory(client, mailing_list, mailbox_stub):
 
     Keeps test code terse and centralizes construction details."""
 
-    def _factory(mail_msg: MailMessage) -> IncomingMessage:
+    def _factory(mail_msg: MailMessage) -> IncomingEmail:
         # Ensure a non-empty DOMAIN to avoid duplicate-from-same-instance matches in tests
         if not client.application.config.get("DOMAIN"):
             client.application.config["DOMAIN"] = "lists.example.com"
 
-        return IncomingMessage(
+        return IncomingEmail(
             app=client.application,
             mailbox=mailbox_stub,
             msg=mail_msg,
