@@ -21,8 +21,8 @@ def before_request() -> None:
 
 @messages.route("/")
 def show_all() -> str:
-    """Show all incoming messages including bounces"""
-    msgs: list[EmailIn] = get_all_incoming_messages()
+    """Show all normal incoming messages"""
+    msgs: list[EmailIn] = get_all_incoming_messages(only="normal")
     return render_template("messages/index.html", messages=msgs)
 
 
