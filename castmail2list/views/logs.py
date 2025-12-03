@@ -17,7 +17,7 @@ def before_request() -> None:
 
 
 @logs.route("/")
-def show_all() -> str:
+def index() -> str:
     """Show all logs entries with optional search filters"""
     # Get search parameters from query string
     search_field = request.args.get("fields", "").strip()

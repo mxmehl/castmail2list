@@ -36,14 +36,14 @@ def before_request() -> None:
 
 
 @lists.route("/", methods=["GET"])
-def show_all():
+def index():
     """Show all active mailing lists"""
     active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
 @lists.route("/deactivated", methods=["GET"])
-def show_deactivated():
+def deactivated():
     """Show all deactivated mailing lists"""
     deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
@@ -145,7 +145,7 @@ def add():
         for finding in check_recommended_list_setting(ml=new_list):
             flash(finding[0], finding[1])
 
-        return redirect(url_for("lists.show_all"))
+        return redirect(url_for("lists.index"))
 
     # Flash on form errors
     if form.submit.data and form.errors:
@@ -218,7 +218,7 @@ def edit(list_id):
         for finding in check_recommended_list_setting(ml=mailing_list):
             flash(finding[0], finding[1])
 
-        return redirect(url_for("lists.show_all"))
+        return redirect(url_for("lists.index"))
 
     # Flash on form errors
     if form.submit.data and form.errors:
@@ -249,7 +249,7 @@ def deactivate(list_id):
     db.session.commit()
     flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.name), "success")
     logging.info('Mailing list "%s" deactivated', mailing_list.address)
-    return redirect(url_for("lists.show_all"))
+    return redirect(url_for("lists.index"))
 
 
 @lists.route("/<int:list_id>/reactivate", methods=["GET"])
@@ -260,7 +260,7 @@ def reactivate(list_id):
     db.session.commit()
     flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.name), "success")
     logging.info('Mailing list "%s" reactivated', mailing_list.address)
-    return redirect(url_for("lists.show_all"))
+    return redirect(url_for("lists.index"))
 
 
 # -----------------------------------------------------------------

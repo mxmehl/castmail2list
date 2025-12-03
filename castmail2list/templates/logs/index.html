@@ -5,7 +5,7 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
-<form method="GET" action="{{ url_for('logs.show_all') }}" class="search-form fields">
+<form method="GET" action="{{ url_for('logs.index') }}" class="search-form fields">
   <fieldset role="group">
     <select name="fields" aria-label="Searched fields" required>
       <option selected disabled value="">
