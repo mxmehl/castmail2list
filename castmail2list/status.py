@@ -5,6 +5,7 @@ from .utils import (
     get_all_incoming_messages,
     get_all_outgoing_messages,
     get_all_subscribers,
+    get_log_entries,
 )
 
 
@@ -41,6 +42,8 @@ def status_complete() -> dict:
     msgs_in_bounce_7 = get_all_incoming_messages(only="bounces", days=7)
     all_msgs_out = get_all_outgoing_messages()
     msgs_out_7 = get_all_outgoing_messages(days=7)
+    errors_last_7_days = get_log_entries(exact=True, days=7, level="error")
+    error_last_5 = get_log_entries(exact=True, level="error")[:5]
 
     status: dict = {
         "lists": {
@@ -72,6 +75,22 @@ def status_complete() -> dict:
             },
             "last_5_messages": {
                 "ids": [msg.message_id for msg in all_msgs_out[:5]],
+            },
+        },
+        "errors": {
+            "last_7_days": {
+                "count": len(errors_last_7_days),
+            },
+            "last_5": {
+                "entries": [
+                    {
+                        "id": log.id,
+                        "timestamp": log.timestamp.isoformat(),
+                        "event": log.event,
+                        "message": log.message,
+                    }
+                    for log in error_last_5
+                ],
             },
         },
     }

@@ -581,12 +581,13 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
     return log_entry
 
 
-def get_log_entries(exact: bool = False, **kwargs) -> list[Logs]:
+def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
     """
     Retrieve log entries from the database based on provided filters.
 
     Args:
         exact (bool): If True, use exact matching; if False, use partial matching
+        days (int): Only return log entries from the last given number of days. If 0, return all
         **kwargs: Filter criteria for querying logs (e.g., level='error', list_id=1)
     Returns:
         list[Logs]: A list of log entries matching the filter criteria
@@ -604,4 +605,7 @@ def get_log_entries(exact: bool = False, **kwargs) -> list[Logs]:
             logging.warning("Invalid filter key for get_log_entries: %s", key)
 
     log_entries: list[Logs] = query.order_by(Logs.timestamp.desc()).all()
+    if days > 0:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        log_entries = [log for log in log_entries if log.timestamp >= cutoff_date]
     return log_entries

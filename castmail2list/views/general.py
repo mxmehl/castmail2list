@@ -1,6 +1,6 @@
 """Flask routes for castmail2list application"""
 
-from flask import Blueprint, render_template
+from flask import Blueprint, jsonify, render_template
 from flask_login import login_required
 
 from ..config import AppConfig
@@ -18,8 +18,14 @@ def before_request() -> None:
 @general.route("/")
 def index():
     """Show dashboard"""
-    status = status_complete()
-    return render_template("index.html", status=status)
+    stats = status_complete()
+    return render_template("index.html", stats=stats)
+
+@general.route("/status")
+def status():
+    """Provide overall status information as JSON"""
+    stats = status_complete()
+    return jsonify(stats)
 
 
 @general.route("/settings", methods=["GET", "POST"])
