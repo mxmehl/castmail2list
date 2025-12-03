@@ -1,5 +1,7 @@
 """Flask routes for castmail2list application"""
 
+from secrets import token_urlsafe
+
 from flask import Blueprint, flash, jsonify, redirect, render_template, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
@@ -36,9 +38,19 @@ def account():
     form = UserDetailsForm(obj=current_user)
 
     if form.validate_on_submit():
+        # Prevent username changes
         if current_user.username != form.username.data:
             flash(_("Your must not change your username."), "error")
             return render_template("account.html", form=form, current_user=current_user)
+
+        # Regenerate API key if requested
+        if form.api_key_generate.data:
+            new_api_key = token_urlsafe(32)
+            current_user.api_key = new_api_key
+            db.session.commit()
+            db.session.refresh(current_user)
+            flash(_("A new API key has been generated."), "success")
+            return redirect(url_for("general.account"))
 
         # Update password if provided
         if form.password.data:

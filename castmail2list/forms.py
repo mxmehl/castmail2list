@@ -122,7 +122,6 @@ class UserDetailsForm(FlaskForm):
     """Form for changing user password"""
 
     username = StringField(_("Username"), render_kw={"readonly": True})
-
     password = PasswordField(
         _("New Password"),
         validators=[Optional(), Length(min=8)],
@@ -133,4 +132,6 @@ class UserDetailsForm(FlaskForm):
         validators=[Optional(), Length(min=8)],
         description=_("Retype the new password for confirmation."),
     )
-    submit = SubmitField(_("Update Your Account"))
+    api_key = StringField(_("API Key"), render_kw={"readonly": True})
+    api_key_generate = SubmitField(_("Regenerate API Key"), name="api_key_generate")
+    submit = SubmitField(_("Update Your Account"), name="submit")

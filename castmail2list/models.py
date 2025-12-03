@@ -38,6 +38,7 @@ class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
+    api_key: str = db.Column(db.String, nullable=True)
     role = db.Column(db.String, default="admin")
 
 

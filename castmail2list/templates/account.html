@@ -15,13 +15,19 @@
   {{ form.csrf_token }}
 
   {{ form.username.label }}
-  {{ form.username(disabled=disabled) }}
+  {{ form.username(readonly=readonly) }}
 
   {{ form.password.label }}
-  {{ form.password }}
+  {{ form.password(placeholder=_("Leave empty to keep password unchanged")) }}
 
   {{ form.password_retype.label }}
-  {{ form.password_retype }}
+  {{ form.password_retype(placeholder=_("Leave empty to keep password unchanged")) }}
+
+  {{ form.api_key.label }}
+  <fieldset role="group">
+    {{ form.api_key(readonly=readonly) }}
+    {{ form.api_key_generate }}
+  </fieldset>
 
   {{ form.submit }}
 </form>
