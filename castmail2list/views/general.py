@@ -38,11 +38,6 @@ def account():
     form = UserDetailsForm(obj=current_user)
 
     if form.validate_on_submit():
-        # Prevent username changes
-        if current_user.username != form.username.data:
-            flash(_("Your must not change your username."), "error")
-            return render_template("account.html", form=form, current_user=current_user)
-
         # Regenerate API key if requested
         if form.api_key_generate.data:
             new_api_key = token_urlsafe(32)

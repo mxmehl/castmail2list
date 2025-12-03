@@ -121,7 +121,6 @@ class SubscriberAddForm(FlaskForm):
 class UserDetailsForm(FlaskForm):
     """Form for changing user password"""
 
-    username = StringField(_("Username"), render_kw={"readonly": True})
     password = PasswordField(
         _("New Password"),
         validators=[Optional(), Length(min=8)],
