@@ -8,6 +8,7 @@ from werkzeug.security import check_password_hash
 
 from ..forms import LoginForm
 from ..models import User
+from ..utils import create_log_entry
 
 auth = Blueprint("auth", __name__)
 
@@ -27,10 +28,22 @@ def login():
             logging.warning(
                 "Failed login attempt for user %s from IP %s", username, request.remote_addr
             )
+            create_log_entry(
+                level="warning",
+                event="user",
+                message=f"Failed login attempt for {username}",
+                details={"ip": request.remote_addr},
+            )
             return redirect(url_for("auth.login"))
 
         login_user(user, remember=True)
         logging.info("User %s logged in successfully from IP %s", username, request.remote_addr)
+        create_log_entry(
+            level="info",
+            event="user",
+            message=f"Successful login by {username}",
+            details={"ip": request.remote_addr},
+        )
         return redirect(request.args.get("next") or url_for("general.index"))
 
     return render_template("login.html", form=form)

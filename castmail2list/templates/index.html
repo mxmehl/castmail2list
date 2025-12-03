@@ -54,8 +54,9 @@
         {%- for error in stats.errors.last_5 %}
         <li>
           <a href="{{ url_for('logs.detail', log_id=error.id) }}">
-            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }} ({{ error.event }})
+            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") -}}
           </a>
+          ({{ error.event }})
         </li>
         {%- endfor %}
       </ul>
@@ -72,9 +73,10 @@
       <ul>
         {%- for warning in stats.warnings.last_5 %}
         <li>
-          <a href="{{ url_for('logs.detail', log_id=error.id) }}">
-            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") }} ({{ warning.event }})
+          <a href="{{ url_for('logs.detail', log_id=warning.id) }}">
+            {{ warning.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") -}}
           </a>
+          ({{ warning.event }})
         </li>
         {%- endfor %}
       </ul>
