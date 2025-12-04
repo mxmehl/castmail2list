@@ -17,7 +17,27 @@ from wtforms import (
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
 
 
-class LoginForm(FlaskForm):
+class CM2LBaseForm(FlaskForm):
+    """Base form class for CastMail2List forms"""
+
+    class Meta:  # pylint: disable=too-few-public-methods
+        """Customize form field binding to add stripping filter"""
+
+        def bind_field(self, form, unbound_field, options):
+            """Add custom filter to strip whitespace from string fields"""
+            filters = unbound_field.kwargs.get("filters", [])
+            filters.append(my_strip_filter)
+            return unbound_field.bind(form=form, filters=filters, **options)
+
+
+def my_strip_filter(value: str | int):
+    """Custom filter to strip leading/trailing whitespace from string fields"""
+    if value is not None and hasattr(value, "strip"):
+        return value.strip()
+    return value
+
+
+class LoginForm(CM2LBaseForm):
     """
     LoginForm is a form class used for user authentication.
 
@@ -52,7 +72,7 @@ def email_with_opt_display_name(form, field):
         field.data = original
 
 
-class MailingListForm(FlaskForm):
+class MailingListForm(CM2LBaseForm):
     """Form for creating and editing mailing lists"""
 
     # Basics
@@ -109,7 +129,7 @@ class MailingListForm(FlaskForm):
     submit = SubmitField(_("Save List"))
 
 
-class SubscriberAddForm(FlaskForm):
+class SubscriberAddForm(CM2LBaseForm):
     """Form for adding new subscribers"""
 
     name = StringField(_("Name"), validators=[Optional(), Length(max=100)])
@@ -118,7 +138,7 @@ class SubscriberAddForm(FlaskForm):
     submit = SubmitField(_("Save Subscriber"))
 
 
-class UserDetailsForm(FlaskForm):
+class UserDetailsForm(CM2LBaseForm):
     """Form for changing user password"""
 
     password = PasswordField(
