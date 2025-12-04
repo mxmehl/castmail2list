@@ -164,8 +164,8 @@ def edit(list_id):
     if form.validate_on_submit():
         # Verify that the list address is unique
         new_address = form.address.data
-        existing_list = MailingList.query.filter_by(address=new_address).first()
-        if existing_list:
+        existing_list: MailingList | None = MailingList.query.filter_by(address=new_address).first()
+        if existing_list is not None and existing_list.id != mailing_list.id:
             status = _("deactivated") if existing_list.deleted else _("active")
             flash(
                 _(
