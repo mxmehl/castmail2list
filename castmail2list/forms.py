@@ -91,7 +91,7 @@ class MailingListForm(CM2LBaseForm):
         ],
         default="broadcast",
     )
-    from_addr = StringField(
+    from_addr_override = StringField(
         _("From Address"),
         validators=[Optional(), email_with_opt_display_name],
         description=_(

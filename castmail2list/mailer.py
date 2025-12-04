@@ -112,7 +112,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         # --- Prepare From and Reply-To headers based on list mode ---
         if self.ml.mode == "broadcast":
             # From: Use the list's From address if set, otherwise the list address itself
-            self.from_header = self.ml.from_addr or self.ml.address
+            self.from_header = self.ml.from_addr_override or self.ml.address
             # Reply-To: No Reply-To, sender is the expected recipient of replies
             self.reply_to = ""
             # Remove list address from To and CC headers to avoid confusion

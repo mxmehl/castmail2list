@@ -59,7 +59,7 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String, nullable=False)
     address: str = db.Column(db.String, unique=True, nullable=False)  # Ensure it's not null
-    from_addr: str = db.Column(db.String)
+    from_addr_override: str = db.Column(db.String)
     avoid_duplicates: bool = db.Column(db.Boolean, default=True)
 
     # Mode settings
