@@ -25,10 +25,10 @@ def api_auth_required(f):
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             api_key = auth_header[7:]  # Remove "Bearer " prefix
-            user = User.query.filter_by(api_key=api_key).first()
-            if user:
-                # API key is valid, proceed with request
-                return f(*args, **kwargs)
+            if api_key:  # Ensure api_key is not empty/None
+                user = User.query.filter_by(api_key=api_key).first()
+                if user:  # API key is valid, proceed with request
+                    return f(*args, **kwargs)
 
         # No valid authentication found
         abort(401, description="Authentication required")
