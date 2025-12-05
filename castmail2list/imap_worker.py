@@ -111,9 +111,13 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
 
     def _validate_email_sender_authentication(self) -> str:
         """
-        Validate sender authentication for a broadcast mailing list, if a sender authentication
-        password is configured. The password is expected to be provided as a +suffix in the To
-        address.
+        Validate sender authentication for a mailing list, if a sender authentication password is
+        configured. The password is expected to be provided as a +suffix in the To address.
+
+        Notes:
+        * the password is case-sensitive.
+        * the +suffix is not removed from the To address here; that is done separately after
+        successful authentication.
 
         Returns:
             str: The successful To address if authentication passed, else empty string
