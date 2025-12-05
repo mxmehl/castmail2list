@@ -14,7 +14,7 @@ from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers
-from .models import EmailIn, MailingList, Subscriber, db
+from .models import EmailIn, MailingList, db
 from .utils import (
     get_all_messages_id_from_raw_email,
     get_list_subscribers,
@@ -153,12 +153,15 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
                 to.email = new_to
         self.msg.to_values = tuple(to_value_addresses)
 
-    def _validate_email_all_checks(self) -> tuple[str, dict[str, str | list]]:
+    def _validate_email_all_checks(  # pylint: disable=too-many-branches, too-many-return-statements
+        self,
+    ) -> tuple[str, dict[str, str | list]]:
         """
         Check a new single IMAP message from the Inbox:
+            * Empty from address
             * Bounce detection
-            * Allowed sender (broadcast mode)
-            * Sender authentication (broadcast mode)
+            * Allowed sender (both modes: required in broadcast, bypass in group)
+            * Sender authentication (both modes: required in broadcast, bypass in group)
             * Subscriber check (group mode)
 
         Returns:
@@ -167,6 +170,12 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         logging.debug("Processing message: %s", self.msg.subject)
         status = "ok"
         error_info: dict[str, str | list] = {}
+
+        # --- Empty From header ---
+        if not self.msg.from_values or not self.msg.from_values.email:
+            logging.error("Message %s has empty From address, skipping", self.msg.uid)
+            status = "no-from-header"
+            return status, error_info
 
         # --- Bounced message detection ---
         bounced_recipients, bounced_mids = self._detect_bounce()
@@ -182,48 +191,97 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             error_info = {"bounced_recipients": bounced_recipients, "bounced_mid": causing_mid}
             return status, error_info
 
-        # --- Sender not allowed checks ---
-        # In broadcast mode, ensure the original sender of the message is in the allowed senders
-        # list
-        if self.ml.mode == "broadcast" and self.ml.allowed_senders:
+        # --- Sender not allowed checks (broadcast mode) ---
+        # In broadcast mode, sender must either be in allowed_senders OR provide valid sender_auth
+        # If neither is configured, any sender is allowed
+        if self.ml.mode == "broadcast" and (self.ml.allowed_senders or self.ml.sender_auth):
+            sender_allowed = False
+
+            # Check if sender is in allowed_senders list
             if (
-                not self.msg.from_values
-                or self.msg.from_values.email not in self.ml.allowed_senders
+                self.ml.allowed_senders
+                and self.msg.from_values.email.lower() in self.ml.allowed_senders
             ):
+                sender_allowed = True
+                logging.debug(
+                    "Sender <%s> is in allowed senders for list <%s>",
+                    self.msg.from_values.email,
+                    self.ml.address,
+                )
+
+            # Check if sender provided valid authentication password
+            elif self.ml.sender_auth and (
+                passed_to_address := self._validate_email_sender_authentication()
+            ):
+                sender_allowed = True
+                # Remove the +password suffix from the To address so subscribers don't see it
+                self._remove_password_in_to_address(
+                    old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
+                )
+                logging.debug(
+                    "Sender <%s> provided valid authentication password for list <%s>",
+                    self.msg.from_values.email,
+                    self.ml.address,
+                )
+
+            # Reject if sender is not allowed by either method
+            if not sender_allowed:
                 logging.warning(
-                    "Sender <%s> not in allowed senders for list <%s>, skipping message %s",
-                    self.msg.from_values.email if self.msg.from_values else "unknown",
+                    "Sender <%s> not authorized for broadcast list <%s>, skipping message %s",
+                    self.msg.from_values.email,
                     self.ml.address,
                     self.msg.uid,
                 )
                 status = "sender-not-allowed"
                 return status, error_info
 
-        # In broadcast mode, check sender authentication if configured
-        # The password is provided via a +password suffix in the To address of the mailing list
-        if self.ml.mode == "broadcast" and self.ml.sender_auth:
-            if passed_to_address := self._validate_email_sender_authentication():
+        # --- Sender not allowed (group mode) ---
+        # In group mode, ensure the original sender is one of the subscribers if configured
+        subscriber_emails: list[str] = [sub.email for sub in get_list_subscribers(self.ml)]
+        if self.ml.mode == "group" and self.ml.only_subscribers_send and subscriber_emails:
+            sender_allowed = False
+            # Sender is a subscriber
+            if self.msg.from_values.email.lower() in subscriber_emails:
+                sender_allowed = True
+                logging.debug(
+                    "Sender <%s> is a subscriber of list <%s>",
+                    self.msg.from_values.email,
+                    self.ml.address,
+                )
+
+            # Allow sender if in Allowed Senders
+            elif (
+                self.ml.allowed_senders
+                and self.msg.from_values.email.lower() in self.ml.allowed_senders
+            ):
+                sender_allowed = True
+                logging.debug(
+                    "Sender <%s> is not a subscriber, but in allowed senders for list <%s>",
+                    self.msg.from_values.email,
+                    self.ml.address,
+                )
+
+            # Bypass check if sender provided valid sender authentication password
+            elif self.ml.sender_auth and (
+                passed_to_address := self._validate_email_sender_authentication()
+            ):
+                sender_allowed = True
                 # Remove the +password suffix from the To address so subscribers don't see it
                 self._remove_password_in_to_address(
                     old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
                 )
-            else:
-                logging.warning(
-                    "Sender failed authentication for list <%s>, skipping message %s",
+                logging.debug(
+                    "Sender <%s> is not a subscriber but provided valid authentication password "
+                    "for list <%s>",
+                    self.msg.from_values.email,
                     self.ml.address,
-                    self.msg.uid,
                 )
-                status = "sender-auth-failed"
-                return status, error_info
 
-        # In group mode, ensure the original sender is one of the subscribers
-        subscribers: list[Subscriber] = get_list_subscribers(self.ml)
-        if self.ml.mode == "group" and self.ml.only_subscribers_send and subscribers:
-            subscriber_emails = [sub.email for sub in subscribers]
-            if not self.msg.from_values or self.msg.from_values.email not in subscriber_emails:
-                logging.error(
-                    "Sender %s not a subscriber of list %s, skipping message %s",
-                    self.msg.from_values.email if self.msg.from_values else "unknown",
+            if not sender_allowed:
+                logging.warning(
+                    "Sender %s not a subscriber of list %s and did not authenticate otherwise, "
+                    "skipping message %s",
+                    self.msg.from_values.email,
                     self.ml.name,
                     self.msg.uid,
                 )

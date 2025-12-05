@@ -110,7 +110,9 @@ class MailingListForm(CM2LBaseForm):
         _("Allowed Senders"),
         validators=[Optional()],
         description=_(
-            "Enter email addresses that are always allowed to send emails to the list. "
+            "Email addresses that are always allowed to send emails to the list. In Broadcast "
+            "mode, only they are allowed to send to the list. In Group mode, they can also send to "
+            "the list if 'Only allow subscribers to send' is enabled. "
             "Separated by commas."
         ),
     )
@@ -119,7 +121,9 @@ class MailingListForm(CM2LBaseForm):
         validators=[Optional()],
         description=_(
             "Comma-separated list of passwords that senders can provide to send emails to this "
-            "list. By this, they bypass all other checks. This can be passed via "
+            "list. When this is set in Broadcast mode, one of these passwords must be provided to "
+            "send to the list. In Group mode, these passwords allow to send to the list even if "
+            "'Only allow subscribers to send' is enabled. This can be passed via "
             "'listaddress+password1@example.com'. Leave empty to disable sender authentication."
         ),
     )
