@@ -59,14 +59,19 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String, nullable=False)
     address: str = db.Column(db.String, unique=True, nullable=False)  # Ensure it's not null
-    from_addr: str = db.Column(db.String)
-    avoid_duplicates: bool = db.Column(db.Boolean, default=True)
 
-    # Mode settings
+    # List settings: mode, restrictions, duplicate handling
     mode: str = db.Column(db.String, nullable=False)  # "broadcast" or "group"
     only_subscribers_send: bool = db.Column(db.Boolean, default=False)
     allowed_senders: list = db.Column(db.JSON, default=list)
     sender_auth: list = db.Column(db.JSON, default=list)
+    avoid_duplicates: bool = db.Column(db.Boolean, default=True)
+
+    # From address settings
+    from_addr_mode_default: str = db.Column(db.String, default="via")  # "list", "via", "custom"
+    from_addr_custom_default: str = db.Column(db.String)
+    from_addr_mode_outside: str = db.Column(db.String, default="via")  # "list", "via", "custom"
+    from_addr_custom_outside: str = db.Column(db.String)
 
     # IMAP settings for fetching emails
     imap_host: str = db.Column(db.String, nullable=False)

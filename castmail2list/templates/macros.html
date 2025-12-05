@@ -1,6 +1,6 @@
 {% macro list_form(form, isnew) %}
 
-<form method="POST">
+<form class="list-settings" method="POST">
   {{ form.csrf_token }}
 
   {{ form.name.label }}
@@ -21,7 +21,7 @@
   <details name="mode" open="open">
     <summary>{{ _('Mode Settings') }}</summary>
 
-    <fieldset id="select-mode">
+    <fieldset class="list-no-bullets" id="mode-select">
       {{ form.mode.label }}
       {{ form.mode }}
     </fieldset>
@@ -32,10 +32,6 @@
     </fieldset>
 
     <fieldset class="mode-broadcast">
-      {{ form.from_addr.label }}
-      {{ form.from_addr(placeholder=("John Doe <john.doe@example.com>")) }}
-      <small>{{ (form.from_addr.description) }}</small>
-
       {{ form.allowed_senders.label }}
       {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
       <small>{{ (form.allowed_senders.description) }}</small>
@@ -48,7 +44,39 @@
 
   <hr />
 
-  <details>
+  <details name="from" open="open">
+    <summary>{{ _('From Address Settings') }}</summary>
+
+    {# FROM: DEFAULT #}
+    <fieldset class="list-no-bullets" id="from-default-select">
+      {{ form.from_addr_mode_default.label }}
+      {{ form.from_addr_mode_default }}
+
+      <div class="from-default-custom">
+        {{ form.from_addr_custom_default.label }}
+        {{ form.from_addr_custom_default(placeholder=("John Doe <john.doe@example.com>")) }}
+          <small>{{ (form.from_addr_custom_default.description) }}</small>
+      </div>
+      {{ form.from_addr_mode_default.description }}
+    </fieldset>
+
+    {# FROM: OUTSIDE #}
+    <fieldset class="list-no-bullets" id="from-outside-select">
+      {{ form.from_addr_mode_outside.label }}
+      {{ form.from_addr_mode_outside }}
+    </fieldset>
+
+    <fieldset class="from-outside-custom">
+      {{ form.from_addr_custom_outside.label }}
+      {{ form.from_addr_custom_outside(placeholder=("John Doe <john.doe@example.com>")) }}
+        <small>{{ (form.from_addr_custom_outside.description) }}</small>
+    </fieldset>
+    <small>{{ form.from_addr_mode_outside.description }}</small>
+  </details>
+
+  <hr />
+
+  <details name="imap">
     <summary>{{ _('IMAP Settings') }}</summary>
     {{ form.imap_host.label }}
     {{ form.imap_host(placeholder=config.IMAP_DEFAULT_HOST) }}
@@ -82,12 +110,12 @@
 {% macro subscriber_list_buttons(email) %}
 {%- if is_email_a_list(email) %}
 <p>
-    <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
-        {{ _('Edit List Settings') }}
-    </a>
-    <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
-        {{ _('View List Subscribers') }}
-    </a>
+  <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
+    {{ _('Edit List Settings') }}
+  </a>
+  <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
+    {{ _('View List Subscribers') }}
+  </a>
 </p>
 {%- endif %}
 {% endmacro %}

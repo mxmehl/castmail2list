@@ -14,7 +14,7 @@
       "imap_port": 993,
       "imap_user": "general@example.com",
       "imap_pass": "supersecret",
-      "from_addr": "no-reply@example.com",
+      "from_addr_custom_default": "no-reply@example.com",
       "allowed_senders": [
         "admin@example.com"
       ],
@@ -38,7 +38,7 @@
       "imap_port": 993,
       "imap_user": "general@example.com",
       "imap_pass": "supersecret",
-      "from_addr": "",
+      "from_addr_custom_default": "",
       "allowed_senders": [],
       "only_subscribers_send": true,
       "subscribers": [

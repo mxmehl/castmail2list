@@ -2,6 +2,7 @@
 
 from email.utils import parseaddr
 
+from flask import current_app
 from flask_babel import lazy_gettext as _  # Using lazy_gettext for form field labels
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -91,33 +92,76 @@ class MailingListForm(CM2LBaseForm):
         ],
         default="broadcast",
     )
-    from_addr = StringField(
-        _("From Address"),
-        validators=[Optional(), email_with_opt_display_name],
-        description=_(
-            "Optional 'From' address for emails sent by the list. If left empty, the list address "
-            "will be used. Only relevant in Broadcast mode."
-        ),
-    )
     allowed_senders = StringField(
         _("Allowed Senders"),
         validators=[Optional()],
         description=_(
-            "Enter email addresses that are allowed to send emails to the list. "
-            "Separated by commas. Only relevant in Broadcast mode."
+            "Enter email addresses that are always allowed to send emails to the list. "
+            "Separated by commas."
         ),
-    )
-    only_subscribers_send = BooleanField(
-        _("Only allow subscribers to send messages to the list. Only relevant in Group mode."),
-        default=False,
     )
     sender_auth = StringField(
         _("Sender Authentication Passwords"),
         validators=[Optional()],
         description=_(
-            "Comma-separated list of passwords that senders must provide to send emails "
-            "to this list. This can be passed via 'listaddress+password1@example.com'. "
-            "Leave empty to disable sender authentication."
+            "Comma-separated list of passwords that senders can provide to send emails to this "
+            "list. By this, they bypass all other checks. This can be passed via "
+            "'listaddress+password1@example.com'. Leave empty to disable sender authentication."
+        ),
+    )
+    only_subscribers_send = BooleanField(
+        _(
+            "Only allow subscribers to send messages to the list, unless they are specifically "
+            "allowed by email address or password."
+        ),
+        default=False,
+    )
+
+    # From Address Settings
+    from_addr_mode_default = RadioField(
+        _("Default From Address Mode"),
+        choices=[
+            (
+                "via",
+                _(
+                    "Sender name and list address (Sender Name via List Name &lt;list@address&gt;)"
+                ),
+            ),
+            ("list", _("List address (List Name &lt;list@address&gt;)")),
+            ("custom", _("Custom fixed From address for all emails sent to and by the list")),
+        ],
+        default="via",
+    )
+    from_addr_custom_default = StringField(
+        _("Custom From Address (Default)"),
+        validators=[Optional(), email_with_opt_display_name],
+        description=_("Fixed 'From' address for all emails sent to and by the list."),
+    )
+    from_addr_mode_outside = RadioField(
+        _("From Address Mode for Senders Outside the Organization"),
+        choices=[
+            ("default", _("Use the default mode defined above")),
+            (
+                "via",
+                _(
+                    "Sender name and list address (Sender Name via List Name &lt;list@address&gt;)"
+                ),
+            ),
+            ("list", _("List address (List Name &lt;list@address&gt;)")),
+            ("custom", _("Custom fixed From address for all emails sent to and by the list")),
+        ],
+        default="default",
+        description=_(
+            "Defines how the 'From' address is set for emails sent to the list from outside the "
+            "organization."
+        ),
+    )
+    from_addr_custom_outside = StringField(
+        _("Custom From Address (Outside Senders)"),
+        validators=[Optional(), email_with_opt_display_name],
+        description=_(
+            "Fixed 'From' address for all emails sent to and by the list for senders outside the "
+            "organization."
         ),
     )
 

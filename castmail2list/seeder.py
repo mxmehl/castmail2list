@@ -66,7 +66,7 @@ def seed_database(app: Flask, seed_file: str) -> None:
                 imap_port=lst_cfg.get("imap_port"),
                 imap_user=lst_cfg.get("imap_user"),
                 imap_pass=lst_cfg.get("imap_pass"),
-                from_addr=lst_cfg.get("from_addr"),
+                from_addr_custom_default=lst_cfg.get("from_addr_custom_default"),
                 allowed_senders=lst_cfg.get("allowed_senders"),
                 only_subscribers_send=lst_cfg.get("only_subscribers_send", True),
             )

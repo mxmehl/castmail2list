@@ -31,7 +31,7 @@ where they behave the same.
 ## Broadcast mode (ml.mode == "broadcast")
 
 - From header:
-  - `From` is the list's configured `from_addr` if set, otherwise the list address.
+  - `From` is the list's configured `from_addr_custom_default` if set, otherwise the list address.
   - The message appears to come from the list (or the list's From address).
 - Reply-To:
   - No `Reply-To` header is set by CastMail2List in broadcast mode (empty). Replies
@@ -98,7 +98,7 @@ where they behave the same.
 
 Header / Behavior | broadcast | group
 :---|:---:|:---:
-From | `ml.from_addr` or `ml.address` | `"Sender Name via List Name <list@address>"`
+From | `ml.from_addr_custom_default` or `ml.address` | `"Sender Name via List Name <list@address>"`
 Reply-To | none | `ml.address` or `"sender, ml.address"` if sender not subscriber
 X-MailFrom | (not set) | original sender email
 To header mutation | recipient appended per-recipient | original To preserved

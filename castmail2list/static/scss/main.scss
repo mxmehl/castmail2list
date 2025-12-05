@@ -36,16 +36,6 @@
   }
 }
 
-// Small display fixes
-ul#mode {
-  list-style-type: none;
-  padding-left: 0;
-
-  li {
-    list-style: none;
-  }
-}
-
 // Buttons
 // Red button variant
 a[role="button"], button {
@@ -79,18 +69,43 @@ span#theme-toggle::before {
 }
 
 /* Forms */
-// Only show fields that relate to the selected ML mode
-details[name="mode"] {
-  .mode-group, .mode-broadcast {
+// Only show fields that relate to the selected list mode and from address mode
+form.list-settings {
+
+  // Hide all mode and from address specific fields by default
+  .mode-group, .mode-broadcast, .from-default-custom, .from-outside-custom {
     display: none;
   }
 
-  &:has(#select-mode #mode-0:checked) .mode-broadcast {
+  // Show fields based on selected list mode
+  &:has(#mode-select #mode-0:checked) .mode-broadcast {
     display: block;
   }
 
-  &:has(#select-mode #mode-1:checked) .mode-group {
+  &:has(#mode-select #mode-1:checked) .mode-group {
     display: block;
+  }
+
+  // Show fields based on selected from address mode - default
+  &:has(#from-default-select #from_addr_mode_default-2:checked) .from-default-custom {
+    display: block;
+  }
+
+  // Show fields based on selected from address mode - outside
+  &:has(#from-outside-select #from_addr_mode_outside-3:checked) .from-outside-custom {
+    display: block;
+  }
+}
+
+// Radio and checkbox lists without bullets
+fieldset.list-no-bullets {
+  ul {
+    list-style-type: none;
+    padding-left: 0;
+
+    li {
+      list-style: none;
+    }
   }
 }
 

@@ -131,7 +131,7 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
 
 
 def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingList):
-    """Test broadcast mode with custom from_addr"""
+    """Test broadcast mode with custom from_addr_custom_default"""
     msg = create_test_message(to_addrs=("broadcast-from@example.com",))
     subscribers = [Subscriber(list_id=broadcast_list_with_from.id, email="sub1@example.com")]
 
@@ -143,7 +143,7 @@ def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingLis
         subscribers=subscribers,
     )
 
-    # From should be the custom from_addr
+    # From should be the custom from_addr_custom_default
     assert mail.from_header == "custom@example.com"
     assert mail.composed_msg["From"] == "custom@example.com"
     assert mail.composed_msg["Sender"] == "broadcast-from@example.com"
