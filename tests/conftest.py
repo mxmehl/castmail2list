@@ -267,12 +267,12 @@ def fixture_broadcast_list(client) -> MailingList:
 
 @pytest.fixture(name="broadcast_list_with_from")
 def fixture_broadcast_list_with_from(client) -> MailingList:
-    """Create a broadcast mode mailing list with custom from_addr_override"""
+    """Create a broadcast mode mailing list with custom from_addr_custom_default"""
     del client
     ml = MailingList(
         name="Broadcast From List",
         address="broadcast-from@example.com",
-        from_addr_override="custom@example.com",
+        from_addr_custom_default="custom@example.com",
         mode="broadcast",
         avoid_duplicates=True,
         imap_host="mail.example.com",

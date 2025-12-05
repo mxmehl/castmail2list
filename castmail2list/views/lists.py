@@ -65,7 +65,7 @@ def add():
             mode=form.mode.data,
             name=form.name.data,
             address=form.address.data.lower(),
-            from_addr=form.from_addr_override.data or "",
+            from_addr_custom_default=form.from_addr_custom_default.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
             allowed_senders=string_to_list(form.allowed_senders.data),
