@@ -1,6 +1,6 @@
 {% macro list_form(form, isnew) %}
 
-<form method="POST">
+<form class="list-settings" method="POST">
   {{ form.csrf_token }}
 
   {{ form.name.label }}
@@ -13,38 +13,48 @@
   {{ form.address }}
   {%- endif %}
 
-  <fieldset>
-    {{ form.avoid_duplicates(role="switch") }}
-    {{ form.avoid_duplicates.label }}
+  <h3>{{ _('Mode Settings') }}</h3>
+
+  <fieldset class="list-no-bullets" id="mode-select">
+    {{ form.mode.label }}
+    {{ form.mode }}
   </fieldset>
 
-  <details name="mode" open="open">
-    <summary>{{ _('Mode Settings') }}</summary>
-
-    <fieldset id="select-mode">
-      {{ form.mode.label }}
-      {{ form.mode }}
-    </fieldset>
-
-    <fieldset class="mode-group">
-      {{ form.only_subscribers_send(role="switch") }}
-      {{ form.only_subscribers_send.label }}
-    </fieldset>
-
-    <fieldset class="mode-broadcast">
-      {{ form.from_addr.label }}
-      {{ form.from_addr(placeholder=("John Doe <john.doe@example.com>")) }}
+  <fieldset class="mode-broadcast">
+    {{ form.from_addr.label }}
+    {{ form.from_addr(placeholder=("John Doe <john.doe@example.com>")) }}
       <small>{{ (form.from_addr.description) }}</small>
+  </fieldset>
 
-      {{ form.allowed_senders.label }}
-      {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
-      <small>{{ (form.allowed_senders.description) }}</small>
+  <h3>{{ _('Sender Restrictions') }}</h3>
 
-      {{ form.sender_auth.label }}
-      {{ form.sender_auth(placeholder=("password1,password2")) }}
-      <small>{{ (form.sender_auth.description) }}</small>
-    </fieldset>
-  </details>
+  <fieldset class="mode-group">
+    <label>
+      {{ form.only_subscribers_send(role="switch") }}
+      {{ form.only_subscribers_send.label.text }}
+      <small>{{ form.only_subscribers_send.description }}</small>
+    </label>
+  </fieldset>
+
+  <fieldset class="auth">
+    {{ form.allowed_senders.label }}
+    {{ form.allowed_senders(placeholder=("user@example.com,another@example.com")) }}
+    <small>{{ (form.allowed_senders.description) }}</small>
+
+    {{ form.sender_auth.label }}
+    {{ form.sender_auth(placeholder=("password1,password2")) }}
+    <small>{{ (form.sender_auth.description) }}</small>
+  </fieldset>
+
+  <h3>{{ _('Additional Settings') }}</h3>
+
+  <fieldset>
+    <label>
+      {{ form.avoid_duplicates(role="switch") }}
+      {{ form.avoid_duplicates.label.text }}
+      <small>{{ form.avoid_duplicates.description }}</small>
+    </label>
+  </fieldset>
 
   <hr />
 
@@ -82,12 +92,12 @@
 {% macro subscriber_list_buttons(email) %}
 {%- if is_email_a_list(email) %}
 <p>
-    <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
-        {{ _('Edit List Settings') }}
-    </a>
-    <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
-        {{ _('View List Subscribers') }}
-    </a>
+  <a href="{{ url_for('lists.edit', list_id=is_email_a_list(email).id) }}" role="button" class="">
+    {{ _('Edit List Settings') }}
+  </a>
+  <a href="{{ url_for('lists.subscribers_manage', list_id=is_email_a_list(email).id) }}" role="button" class="secondary">
+    {{ _('View List Subscribers') }}
+  </a>
 </p>
 {%- endif %}
 {% endmacro %}

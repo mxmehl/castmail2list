@@ -36,16 +36,6 @@
   }
 }
 
-// Small display fixes
-ul#mode {
-  list-style-type: none;
-  padding-left: 0;
-
-  li {
-    list-style: none;
-  }
-}
-
 // Buttons
 // Red button variant
 a[role="button"], button {
@@ -80,18 +70,33 @@ span#theme-toggle::before {
 
 /* Forms */
 // Only show fields that relate to the selected ML mode
-details[name="mode"] {
+form.list-settings {
   .mode-group, .mode-broadcast {
     display: none;
   }
 
-  &:has(#select-mode #mode-0:checked) .mode-broadcast {
+  &:has(#mode-select #mode-0:checked) .mode-broadcast {
     display: block;
   }
 
-  &:has(#select-mode #mode-1:checked) .mode-group {
+  &:has(#mode-select #mode-1:checked) .mode-group {
     display: block;
   }
+}
+
+// Remove bullets points, e.g. for radio button lists
+fieldset.list-no-bullets ul {
+  list-style-type: none;
+  padding-left: 0;
+
+  li {
+    list-style: none;
+  }
+}
+
+// Make description text for switch inputs align properly
+input[role="switch"]+small {
+  margin-top: 0;
 }
 
 /* Icons */
