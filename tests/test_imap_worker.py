@@ -188,6 +188,79 @@ def test_broadcast_sender_not_allowed(
     assert mailbox_stub._moves.get("bad-1") == incoming.app.config["IMAP_FOLDER_DENIED"]
 
 
+def test_broadcast_allowed_senders_case_insensitive(
+    mailing_list: MailingList, incoming_message_factory
+):
+    """Broadcast mode allowed_senders should work case-insensitively."""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = ["admin@example.com"]
+
+    # Sender with different casing should be allowed
+    raw = b"Subject: Case Test\nTo: list@example.com\nFrom: ADMIN@Example.COM\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "case-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_broadcast_sender_auth_as_alternative(mailing_list: MailingList, incoming_message_factory):
+    """Broadcast mode should allow sender_auth as alternative to allowed_senders."""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = ["admin@example.com"]
+    mailing_list.sender_auth = ["secret123"]
+
+    # Sender not in allowed_senders but with valid password should be allowed
+    raw = b"Subject: Auth Alt\nTo: list+secret123@example.com\nFrom: user@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "auth-alt-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_broadcast_only_sender_auth(
+    mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
+):
+    """Broadcast mode with only sender_auth should allow password holders."""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = []
+    mailing_list.sender_auth = ["password1", "password2"]
+
+    # Valid password should be allowed
+    raw1 = b"Subject: Auth Only\nTo: list+password1@example.com\nFrom: anyone@example.com\n\nBody"
+    msg1 = MailMessage.from_bytes(raw1)
+    msg1.uid = "auth-only-1"
+    incoming1: IncomingEmail = incoming_message_factory(msg1)
+    assert incoming1.process_incoming_msg() is True
+
+    # No password should be rejected
+    raw2 = b"Subject: No Auth\nTo: list@example.com\nFrom: anyone@example.com\n\nBody"
+    msg2 = MailMessage.from_bytes(raw2)
+    msg2.uid = "auth-only-2"
+    incoming2: IncomingEmail = incoming_message_factory(msg2)
+    assert incoming2.process_incoming_msg() is False
+    assert mailbox_stub._moves.get("auth-only-2") == incoming2.app.config["IMAP_FOLDER_DENIED"]
+
+
+def test_broadcast_no_restrictions(mailing_list: MailingList, incoming_message_factory):
+    """Broadcast mode with neither allowed_senders nor sender_auth should allow anyone."""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = []
+    mailing_list.sender_auth = []
+
+    # Anyone should be allowed
+    raw = b"Subject: Open\nTo: list@example.com\nFrom: anyone@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "open-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
 def test_group_mode_subscriber_restrictions(
     mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
 ):
@@ -218,6 +291,160 @@ def test_group_mode_subscriber_restrictions(
     res2 = incoming2.process_incoming_msg()
     assert res2 is True
     assert mailbox_stub._moves.get("grp-2") == incoming2.app.config["IMAP_FOLDER_PROCESSED"]
+
+
+def test_group_mode_subscriber_case_insensitive(
+    mailing_list: MailingList, incoming_message_factory
+):
+    """Group mode subscriber check should work case-insensitively."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    sub = Subscriber(list_id=mailing_list.id, email="alice@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Subscriber with different casing should be allowed
+    raw = b"Subject: Case Test\nTo: list@example.com\nFrom: ALICE@Example.COM\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-case-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_group_mode_allowed_senders_bypass(mailing_list: MailingList, incoming_message_factory):
+    """Group mode allowed_senders should bypass subscriber check."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    mailing_list.allowed_senders = ["moderator@example.com"]
+    sub = Subscriber(list_id=mailing_list.id, email="alice@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Moderator not in subscribers but in allowed_senders should be allowed
+    raw = b"Subject: Mod Post\nTo: list@example.com\nFrom: moderator@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-mod-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_group_mode_sender_auth_bypass(mailing_list: MailingList, incoming_message_factory):
+    """Group mode sender_auth should bypass subscriber check."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    mailing_list.sender_auth = ["guest123"]
+    sub = Subscriber(list_id=mailing_list.id, email="alice@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Non-subscriber with valid password should be allowed
+    raw = b"Subject: Guest\nTo: list+guest123@example.com\nFrom: guest@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-guest-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_group_mode_sender_auth_bypass_case_in_password(
+    mailing_list: MailingList, incoming_message_factory
+):
+    """Group mode sender_auth should be case-sensitive in password."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    mailing_list.sender_auth = ["guest123"]
+    sub = Subscriber(list_id=mailing_list.id, email="alice@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Non-subscriber with valid password should be allowed
+    raw = b"Subject: Guest\nTo: list+GUEST123@example.com\nFrom: guest@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-guest-2"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is False
+
+
+def test_group_mode_sender_auth_bypass_case_in_address(
+    mailing_list: MailingList, incoming_message_factory
+):
+    """Group mode sender_auth should be case-insensitive in list address."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    mailing_list.sender_auth = ["guest123"]
+    sub = Subscriber(list_id=mailing_list.id, email="alice@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Non-subscriber with valid password should be allowed
+    raw = b"Subject: Guest\nTo: LiSt+guest123@EXAMPLE.com\nFrom: guest@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-guest-3"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_group_mode_open(mailing_list: MailingList, incoming_message_factory):
+    """Group mode with only_subscribers_send=False should allow anyone."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = False
+
+    # Anyone should be allowed
+    raw = b"Subject: Open Group\nTo: list@example.com\nFrom: anyone@example.com\n\nBody"
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "grp-open-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    res = incoming.process_incoming_msg()
+    assert res is True
+
+
+def test_group_mode_all_authorization_methods(
+    mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
+):
+    """Group mode should check allowed_senders, sender_auth, then subscriber in order."""
+    mailing_list.mode = "group"
+    mailing_list.only_subscribers_send = True
+    mailing_list.allowed_senders = ["mod@example.com"]
+    mailing_list.sender_auth = ["pass123"]
+    sub = Subscriber(list_id=mailing_list.id, email="member@example.com")
+    db.session.add(sub)
+    db.session.commit()
+
+    # Test 1: allowed_senders bypass
+    raw1 = b"Subject: Mod\nTo: list@example.com\nFrom: mod@example.com\n\nBody"
+    msg1 = MailMessage.from_bytes(raw1)
+    msg1.uid = "grp-all-1"
+    assert incoming_message_factory(msg1).process_incoming_msg() is True
+
+    # Test 2: sender_auth bypass
+    raw2 = b"Subject: Auth\nTo: list+pass123@example.com\nFrom: guest@example.com\n\nBody"
+    msg2 = MailMessage.from_bytes(raw2)
+    msg2.uid = "grp-all-2"
+    assert incoming_message_factory(msg2).process_incoming_msg() is True
+
+    # Test 3: subscriber
+    raw3 = b"Subject: Member\nTo: list@example.com\nFrom: member@example.com\n\nBody"
+    msg3 = MailMessage.from_bytes(raw3)
+    msg3.uid = "grp-all-3"
+    assert incoming_message_factory(msg3).process_incoming_msg() is True
+
+    # Test 4: none of the above
+    raw4 = b"Subject: Intruder\nTo: list@example.com\nFrom: intruder@example.com\n\nBody"
+    msg4 = MailMessage.from_bytes(raw4)
+    msg4.uid = "grp-all-4"
+    incoming4 = incoming_message_factory(msg4)
+    assert incoming4.process_incoming_msg() is False
+    assert mailbox_stub._moves.get("grp-all-4") == incoming4.app.config["IMAP_FOLDER_DENIED"]
 
 
 def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_stub: MailboxStub):

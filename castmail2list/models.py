@@ -24,7 +24,15 @@ class AlembicVersion(Model):  # pylint: disable=too-few-public-methods
 
 
 class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
-    """A user of the CastMail2List application"""
+    """A user of the CastMail2List application
+
+    Attributes:
+        id (int): Primary key of the user.
+        username (str): Unique username for login.
+        password (str): Hashed password for authentication.
+        api_key (str): Optional API key for programmatic access.
+        role (str): Role of the user, e.g., "admin".
+    """
 
     def __init__(self, **kwargs):
         # Only set attributes that actually exist on the mapped class
@@ -43,7 +51,28 @@ class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
 
 
 class MailingList(Model):  # pylint: disable=too-few-public-methods
-    """A mailing list"""
+    """A mailing list
+
+    Attributes:
+        id (int): Primary key of the mailing list.
+        name (str): Name of the mailing list.
+        address (str): Email address of the mailing list.
+        from_addr (str): Default From address for outgoing emails.
+        avoid_duplicates (bool): Whether to avoid sending duplicate emails.
+        mode (str): Mode of the mailing list, either "broadcast" or "group".
+        only_subscribers_send (bool): Whether only subscribers can send emails to the list.
+        allowed_senders (list): List of email addresses allowed to send to the list.
+        sender_auth (list): List of authentication passwords for senders.
+        imap_host (str): IMAP server host for fetching emails.
+        imap_port (int): IMAP server port.
+        imap_user (str): IMAP username.
+        imap_pass (str): IMAP password.
+        subscribers (relationship): Relationship to Subscriber model.
+        emailin (relationship): Relationship to EmailIn model.
+        emailout (relationship): Relationship to EmailOut model.
+        deleted (bool): Soft-delete flag for the mailing list.
+        deleted_at (datetime): Timestamp of when the list was soft-deleted.
+    """
 
     __tablename__ = "list"
 
@@ -115,7 +144,16 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
 
 
 class Subscriber(Model):  # pylint: disable=too-few-public-methods
-    """A subscriber to a mailing list"""
+    """A subscriber to a mailing list
+
+    Attributes:
+        id (int): Primary key of the subscriber.
+        list_id (int): Foreign key to the associated mailing list.
+        name (str): Name of the subscriber.
+        email (str): Email address of the subscriber.
+        comment (str): Optional comment about the subscriber.
+        subscriber_type (str): Type of subscriber, either "normal" or "list".
+    """
 
     def __init__(self, **kwargs):
         # Only set attributes that actually exist on the mapped class
@@ -143,7 +181,19 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
 
 
 class EmailIn(Model):  # pylint: disable=too-few-public-methods
-    """An email message sent to a mailing list"""
+    """An email message sent to a mailing list
+
+    Attributes:
+        message_id (str): Unique message ID of the email.
+        list_id (int): Foreign key to the associated mailing list.
+        subject (str): Subject of the email.
+        from_addr (str): From address of the email.
+        headers (str): Raw email headers as provided by imap_tools.
+        raw (str): Full RFC822 text of the email.
+        received_at (datetime): Timestamp when the email was received.
+        status (str): Processing status of the email.
+        error_info (dict): Optional error information if processing failed.
+    """
 
     __tablename__ = "email_in"
 
@@ -170,7 +220,19 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
 
 
 class EmailOut(Model):  # pylint: disable=too-few-public-methods
-    """An email message sent out to subscribers"""
+    """An email message sent out to subscribers
+
+    Attributes:
+        message_id (str): Unique message ID of the outgoing email.
+        email_in_mid (str): Foreign key to the associated incoming email message.
+        list_id (int): Foreign key to the associated mailing list.
+        subject (str): Subject of the outgoing email.
+        recipients (list): List of recipient email addresses.
+        raw (str): Full RFC822 text of the outgoing email.
+        sent_at (datetime): Timestamp when the email was sent.
+        sent_successful (list): List of email addresses the email was successfully sent to.
+        sent_failed (list): List of email addresses the email failed to send to.
+    """
 
     __tablename__ = "email_out"
 
@@ -195,7 +257,17 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
 
 
 class Logs(Model):  # pylint: disable=too-few-public-methods
-    """Application event log"""
+    """Application event log
+
+    Attributes:
+        id (int): Primary key of the log entry.
+        timestamp (datetime): Timestamp of the log entry.
+        level (str): Severity level of the log entry, e.g., "info", "warning", "error".
+        event (str): Type of event being logged, e.g., "sent-msg", "login-attempt".
+        message (str): Short log message.
+        details (dict): Optional detailed log message in JSON format.
+        list_id (int): Foreign key to the associated mailing list, if applicable.
+    """
 
     def __init__(self, **kwargs):
         # Only set attributes that actually exist on the mapped class

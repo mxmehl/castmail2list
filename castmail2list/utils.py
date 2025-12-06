@@ -101,8 +101,16 @@ def list_to_string(listobj: list[str]) -> str:
     return ""
 
 
-def string_to_list(input_str: str) -> list[str]:
-    """Normalize a string of strings into a list"""
+def string_to_list(input_str: str, lower: bool = False) -> list[str]:
+    """
+    Normalize a string of strings into a list.
+
+    Args:
+        input_str (str): Input string with comma or newline separated values
+        lower (bool): Whether to convert all strings to lowercase
+    Returns:
+        list[str]: List of normalized strings
+    """
     # Accepts either comma or newline separated, returns list of strings
     if not input_str:
         return []
@@ -110,6 +118,9 @@ def string_to_list(input_str: str) -> list[str]:
     strings = [
         string.strip() for string in input_str.replace("\n", ",").split(",") if string.strip()
     ]
+    # Optionally convert to lowercase
+    if lower:
+        strings = [s.lower() for s in strings]
     return strings
 
 

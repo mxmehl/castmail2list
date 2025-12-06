@@ -68,7 +68,7 @@ def add():
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
-            allowed_senders=string_to_list(form.allowed_senders.data),
+            allowed_senders=string_to_list(form.allowed_senders.data, lower=True),
             sender_auth=string_to_list(form.sender_auth.data),
             # IMAP settings with defaults
             imap_host=form.imap_host.data or current_app.config["IMAP_DEFAULT_HOST"],
@@ -207,7 +207,7 @@ def edit(list_id):
             return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
         # Convert comma-separated fields to list object for storage in DB
-        mailing_list.allowed_senders = string_to_list(form.allowed_senders.data)
+        mailing_list.allowed_senders = string_to_list(form.allowed_senders.data, lower=True)
         mailing_list.sender_auth = string_to_list(form.sender_auth.data)
 
         db.session.commit()

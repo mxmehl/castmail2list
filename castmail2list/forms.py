@@ -78,10 +78,7 @@ class MailingListForm(CM2LBaseForm):
     # Basics
     name = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=100)])
     address = EmailField(_("List Email Address"), validators=[DataRequired(), Email()])
-    avoid_duplicates = BooleanField(
-        _("Avoid duplicate copies of messages for subscribers"),
-        default=True,
-    )
+
     # Modes
     mode = RadioField(
         _("Mode of the Mailing List"),
@@ -99,26 +96,45 @@ class MailingListForm(CM2LBaseForm):
             "will be used. Only relevant in Broadcast mode."
         ),
     )
+
+    # Sender Restrictions
+    only_subscribers_send = BooleanField(
+        _("Only allow subscribers to send messages to this group list"),
+        description=_(
+            "This may be overridden by sender authentication and allowed senders. "
+            "Only relevant in Group mode."
+        ),
+        default=False,
+    )
     allowed_senders = StringField(
         _("Allowed Senders"),
         validators=[Optional()],
         description=_(
-            "Enter email addresses that are allowed to send emails to the list. "
-            "Separated by commas. Only relevant in Broadcast mode."
+            "Email addresses that are always allowed to send emails to the list. In Broadcast "
+            "mode, only they are allowed to send to the list. In Group mode, they can also send to "
+            "the list if 'Only allow subscribers to send' is enabled. "
+            "Separated by commas."
         ),
-    )
-    only_subscribers_send = BooleanField(
-        _("Only allow subscribers to send messages to the list. Only relevant in Group mode."),
-        default=False,
     )
     sender_auth = StringField(
         _("Sender Authentication Passwords"),
         validators=[Optional()],
         description=_(
-            "Comma-separated list of passwords that senders must provide to send emails "
-            "to this list. This can be passed via 'listaddress+password1@example.com'. "
-            "Leave empty to disable sender authentication."
+            "Comma-separated list of passwords that senders can provide to send emails to this "
+            "list. When this is set in Broadcast mode, one of these passwords must be provided to "
+            "send to the list. In Group mode, these passwords allow to send to the list even if "
+            "'Only allow subscribers to send' is enabled. This can be passed via "
+            "'listaddress+password1@example.com'. Leave empty to disable sender authentication."
         ),
+    )
+
+    # Additional Settings
+    avoid_duplicates = BooleanField(
+        _("Avoid duplicate copies of messages for subscribers"),
+        description=_(
+            "If enabled, subscribers will not receive a copy of a message they sent themselves."
+        ),
+        default=True,
     )
 
     # IMAP Settings
