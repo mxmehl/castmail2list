@@ -318,29 +318,37 @@ def subscribers_manage(list_id):
     )
 
 
-@lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
-def subscriber_delete(list_id, subscriber_id):
+@lists.route("/<int:list_id>/subscribers/<subscriber_email>/delete", methods=["GET"])
+def subscriber_delete(list_id: int, subscriber_email: str):
     """Delete a subscriber from a mailing list"""
     # Use service layer to delete subscriber
-    deleted_email, error = delete_subscriber_from_list(list_id, subscriber_id)
+    _deleted_email, error = delete_subscriber_from_list(list_id, subscriber_email)
     if error:
         flash(_(error), "error")
     else:
-        flash(_('Successfully removed "%(email)s" from the list!', email=deleted_email), "success")
+        flash(
+            _('Successfully removed "%(email)s" from the list!', email=subscriber_email), "success"
+        )
     return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
 
-@lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/edit", methods=["GET", "POST"])
-def subscriber_edit(list_id, subscriber_id):
+@lists.route("/<int:list_id>/subscribers/<subscriber_email>/edit", methods=["GET", "POST"])
+def subscriber_edit(list_id: int, subscriber_email: str):
     """Edit a subscriber of a mailing list"""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
-    subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
+    subscriber: Subscriber = Subscriber.query.filter_by(
+        list_id=list_id, email=subscriber_email
+    ).first_or_404()
     form = SubscriberAddForm(obj=subscriber)
 
     if form.validate_on_submit():
         # Use service layer to update subscriber
-        subscriber_email, error = update_subscriber_in_list(
-            list_id, subscriber_id, form.name.data, form.email.data, form.comment.data
+        subscriber_email_edit, error = update_subscriber_in_list(
+            list_id=list_id,
+            subscriber_id=subscriber.id,
+            name=form.name.data,
+            email=form.email.data,
+            comment=form.comment.data,
         )
         if error:
             flash(_(error), "warning")
@@ -350,7 +358,10 @@ def subscriber_edit(list_id, subscriber_id):
                 form=form,
                 subscriber=subscriber,
             )
-        flash(_('Subscriber "%(email)s" updated successfully!', email=subscriber_email), "success")
+        flash(
+            _('Subscriber "%(email)s" updated successfully!', email=subscriber_email_edit),
+            "success",
+        )
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
     # Flash on form errors

@@ -175,13 +175,13 @@ def update_subscriber_in_list(
         return None, f"Database error: {str(e)}"
 
 
-def delete_subscriber_from_list(list_id: int, subscriber_id: int) -> tuple[str | None, str]:
+def delete_subscriber_from_list(list_id: int, subscriber_email: str) -> tuple[str | None, str]:
     """
     Delete a subscriber from a mailing list.
 
     Args:
         list_id (int): The ID of the mailing list
-        subscriber_id (int): The ID of the subscriber to delete
+        subscriber_email (str): The email of the subscriber to delete
 
     Returns:
         tuple: A tuple of (email, error_message).
@@ -194,22 +194,26 @@ def delete_subscriber_from_list(list_id: int, subscriber_id: int) -> tuple[str |
         return None, f"Mailing list with ID {list_id} not found"
 
     # Verify subscriber exists and belongs to this list
-    subscriber: Subscriber | None = Subscriber.query.get(subscriber_id)
+    subscriber: Subscriber | None = Subscriber.query.filter_by(
+        list_id=list_id, email=subscriber_email
+    ).first()
     if not subscriber:
-        return None, f"Subscriber with ID {subscriber_id} not found"
+        return None, f"Subscriber with email {subscriber_email} not found"
     if subscriber.list_id != list_id:
-        return None, f"Subscriber {subscriber_id} does not belong to list {list_id}"
+        return None, f"Subscriber {subscriber_email} does not belong to list {list_id}"
 
     try:
         db.session.delete(subscriber)
         db.session.commit()
         logging.info(
-            'Subscriber "%s" removed from mailing list %s', subscriber.email, mailing_list.address
+            'Subscriber "%s" removed from mailing list %s', subscriber_email, mailing_list.address
         )
-        return subscriber.email, ""
+        return subscriber_email, ""
     except Exception as e:  # pylint: disable=broad-exception-caught
         db.session.rollback()
-        logging.error("Failed to delete subscriber %s from list %s: %s", subscriber_id, list_id, e)
+        logging.error(
+            "Failed to delete subscriber %s from list %s: %s", subscriber_email, list_id, e
+        )
         return None, f"Database error: {str(e)}"
 
 
@@ -239,3 +243,33 @@ def get_subscriber_by_id(list_id: int, subscriber_id: int) -> tuple[Subscriber |
         return None, f"Subscriber {subscriber_id} does not belong to list {list_id}"
 
     return subscriber, None
+
+
+def get_subscriber_by_email(list_id: int, subscriber_email: str) -> tuple[Subscriber | None, str]:
+    """
+    Get a single subscriber by list ID and subscriber email.
+
+    Args:
+        list_id (int): The ID of the mailing list
+        subscriber_email (str): The email of the subscriber
+
+    Returns:
+        tuple: A tuple of (subscriber, error_message).
+            - On success: (Subscriber object, "")
+            - On failure: (None, error message string)
+    """
+    # Verify list exists
+    mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
+    if not mailing_list:
+        return None, f"Mailing list with ID {list_id} not found"
+
+    # Verify subscriber exists and belongs to this list
+    subscriber: Subscriber | None = Subscriber.query.filter_by(
+        list_id=list_id, email=subscriber_email
+    ).first()
+    if not subscriber:
+        return None, f"Subscriber with email {subscriber_email} not found on list {list_id}"
+    if subscriber.list_id != list_id:
+        return None, f"Subscriber {subscriber_email} does not belong to list {list_id}"
+
+    return subscriber, ""
