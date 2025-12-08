@@ -285,11 +285,11 @@ def subscribers_manage(list_id):
         comment = form.comment.data
 
         # Use service layer to add subscriber
-        added_email, error = add_subscriber_to_list(list_id, name, email, comment)
-        if added_email is None:
-            flash(error, "warning")
+        error = add_subscriber_to_list(list_id, email=email, name=name, comment=comment)
+        if error:
+            flash(error, "error")
         else:
-            flash(_('Successfully added "%(email)s" to the list!', email=added_email), "success")
+            flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
 
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
@@ -305,7 +305,7 @@ def subscribers_manage(list_id):
         )
 
     # Get subscribers using service layer
-    _list_data, subscribers_data = get_subscribers_with_details(list_id)
+    subscribers_data = get_subscribers_with_details(list_id)
     if subscribers_data is None:
         flash(_("Mailing list not found"), "error")
         return redirect(url_for("lists.index"))
@@ -322,7 +322,7 @@ def subscribers_manage(list_id):
 def subscriber_delete(list_id: int, subscriber_email: str):
     """Delete a subscriber from a mailing list"""
     # Use service layer to delete subscriber
-    _deleted_email, error = delete_subscriber_from_list(list_id, subscriber_email)
+    error = delete_subscriber_from_list(list_id, subscriber_email)
     if error:
         flash(_(error), "error")
     else:
@@ -343,7 +343,7 @@ def subscriber_edit(list_id: int, subscriber_email: str):
 
     if form.validate_on_submit():
         # Use service layer to update subscriber
-        subscriber_email_edit, error = update_subscriber_in_list(
+        error = update_subscriber_in_list(
             list_id=list_id,
             subscriber_id=subscriber.id,
             name=form.name.data,
@@ -359,7 +359,7 @@ def subscriber_edit(list_id: int, subscriber_email: str):
                 subscriber=subscriber,
             )
         flash(
-            _('Subscriber "%(email)s" updated successfully!', email=subscriber_email_edit),
+            _('Subscriber "%(email)s" updated successfully!', email=subscriber.email),
             "success",
         )
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
