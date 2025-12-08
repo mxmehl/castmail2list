@@ -1,7 +1,6 @@
 """Lists blueprint for CastMail2List application"""
 
 import logging
-from typing import cast
 
 from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
@@ -10,12 +9,17 @@ from flask_login import login_required
 from ..config import AppConfig
 from ..forms import MailingListForm, SubscriberAddForm
 from ..models import MailingList, Subscriber, db
+from ..services import (
+    add_subscriber_to_list,
+    delete_subscriber_from_list,
+    get_subscribers_with_details,
+    update_subscriber_in_list,
+)
 from ..utils import (
     check_email_account_works,
     check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
-    get_list_subscribers,
     is_email_a_list,
     list_to_string,
     string_to_list,
@@ -277,43 +281,15 @@ def subscribers_manage(list_id):
     # Handle adding subscribers
     if form.submit.data and form.validate_on_submit():
         name = form.name.data
-        email = form.email.data.strip().lower()  # normalize before lookup/insert
+        email = form.email.data
         comment = form.comment.data
 
-        # Check if subscriber already exists, identified by email and list_id
-        existing_subscriber = Subscriber.query.filter_by(
-            list_id=mailing_list.id, email=email
-        ).first()
-        if existing_subscriber:
-            flash(
-                _('Email "%(email)s" is already subscribed to this list.', email=email),
-                "warning",
-            )
-            logging.info(
-                'Attempt to add existing subscriber "%s" to mailing list %s',
-                email,
-                mailing_list.address,
-            )
-            return redirect(url_for("lists.subscribers_manage", list_id=list_id))
-
-        # Check if subscriber is an existing list. If so, set type and re-use name
-        if existing_list := is_email_a_list(email):
-            name = existing_list.name
-            subscriber_type = "list"
+        # Use service layer to add subscriber
+        added_email, error = add_subscriber_to_list(list_id, name, email, comment)
+        if added_email is None:
+            flash(error, "warning")
         else:
-            subscriber_type = "normal"
-
-        # Add new subscriber
-        new_subscriber = Subscriber(
-            list_id=mailing_list.id,
-            name=name,
-            email=email,
-            comment=comment,
-            subscriber_type=subscriber_type,
-        )
-        db.session.add(new_subscriber)
-        db.session.commit()
-        flash(_('Successfully added "%(email)s" to the list!', email=email), "success")
+            flash(_('Successfully added "%(email)s" to the list!', email=added_email), "success")
 
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
@@ -328,21 +304,16 @@ def subscribers_manage(list_id):
             "warning",
         )
 
-    # Get recursive subscribers for display
-    # all_recursive_subscribers = get_list_subscribers(mailing_list)
-    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
-    subscriber_lists = [
-        is_email_a_list(s.email) for s in subscribers_direct if s.subscriber_type == "list"
-    ]
-    subscribers_indirect = {}
-    for sub_list in subscriber_lists:
-        if sub_list:
-            subscribers_indirect[sub_list] = get_list_subscribers(sub_list)
+    # Get subscribers using service layer
+    _list_data, subscribers_data = get_subscribers_with_details(list_id)
+    if subscribers_data is None:
+        flash(_("Mailing list not found"), "error")
+        return redirect(url_for("lists.index"))
 
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
-        subscribers_indirect=subscribers_indirect,
+        subscribers_indirect=subscribers_data["indirect"],
         form=form,
     )
 
@@ -350,14 +321,12 @@ def subscribers_manage(list_id):
 @lists.route("/<int:list_id>/subscribers/<int:subscriber_id>/delete", methods=["GET"])
 def subscriber_delete(list_id, subscriber_id):
     """Delete a subscriber from a mailing list"""
-    mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
-    subscriber = Subscriber.query.get_or_404(subscriber_id)
-    if subscriber.list_id == mailing_list.id:
-        email = subscriber.email
-        db.session.delete(subscriber)
-        db.session.commit()
-        flash(_('Successfully removed "%(email)s" from the list!', email=email), "success")
-        logging.info('Subscriber "%s" removed from mailing list %s', email, mailing_list.address)
+    # Use service layer to delete subscriber
+    deleted_email, error = delete_subscriber_from_list(list_id, subscriber_id)
+    if error:
+        flash(_(error), "error")
+    else:
+        flash(_('Successfully removed "%(email)s" from the list!', email=deleted_email), "success")
     return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
 
@@ -367,48 +336,21 @@ def subscriber_edit(list_id, subscriber_id):
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     subscriber: Subscriber = Subscriber.query.get_or_404(subscriber_id)
     form = SubscriberAddForm(obj=subscriber)
+
     if form.validate_on_submit():
-
-        # Check if subscriber with new email already exists in this list
-        existing_subscriber = Subscriber.query.filter_by(
-            list_id=mailing_list.id, email=form.email.data
-        ).first()
-        # Avoid false positive when the email is unchanged (same subscriber)
-        if existing_subscriber and existing_subscriber.id != subscriber.id:
-            flash(
-                _(
-                    'Email "%(email)s" is already subscribed to this list.',
-                    email=form.email.data,
-                ),
-                "warning",
-            )
-            return redirect(
-                url_for(
-                    "lists.subscriber_edit",
-                    mailing_list=mailing_list,
-                    form=form,
-                    subscriber=subscriber,
-                )
-            )
-
-        # Update subscriber fields from form
-        subscriber.name = form.name.data
-        subscriber.email = form.email.data
-        subscriber.comment = form.comment.data
-
-        # Check if subscriber is an existing list. If so, set type and re-use name
-        if existing_list := is_email_a_list(form.email.data):
-            subscriber.name = existing_list.name
-            subscriber.subscriber_type = "list"
-        else:
-            subscriber.subscriber_type = "normal"
-
-        # Commit updates
-        db.session.commit()
-        flash(_("Subscriber updated successfully!"), "success")
-        logging.info(
-            'Subscriber "%s" updated in mailing list %s', subscriber.email, mailing_list.address
+        # Use service layer to update subscriber
+        subscriber_email, error = update_subscriber_in_list(
+            list_id, subscriber_id, form.name.data, form.email.data, form.comment.data
         )
+        if error:
+            flash(_(error), "warning")
+            return render_template(
+                "lists/subscriber_edit.html",
+                mailing_list=mailing_list,
+                form=form,
+                subscriber=subscriber,
+            )
+        flash(_('Subscriber "%(email)s" updated successfully!', email=subscriber_email), "success")
         return redirect(url_for("lists.subscribers_manage", list_id=list_id))
 
     # Flash on form errors
