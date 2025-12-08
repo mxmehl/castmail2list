@@ -3,15 +3,15 @@
 <form class="list-settings" method="POST">
   {{ form.csrf_token }}
 
-  {{ form.name.label }}
-  {{ form.name }}
+  {{ form.id.label }}
+  <fieldset role="group">
+    {{ form.id }}
 
-  {{ form.address.label }}
-  {%- if isnew %}
-  {{ form.address(value="@" + config.IMAP_DEFAULT_USER_DOMAIN) }}
-  {%- else %}
-  {{ form.address }}
-  {%- endif %}
+    {{ form.domain(disabled="disabled", value="@" + config.DOMAIN) }}
+  </fieldset>
+
+  {{ form.display.label }}
+  {{ form.display }}
 
   <h3>{{ _('Mode Settings') }}</h3>
 

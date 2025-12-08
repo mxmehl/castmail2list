@@ -54,8 +54,8 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     """A mailing list
 
     Attributes:
-        id (int): Primary key of the mailing list.
-        name (str): Name of the mailing list.
+        id (str): Primary key of the mailing list.
+        display (str): Display name of the mailing list.
         address (str): Email address of the mailing list.
         from_addr (str): Default From address for outgoing emails.
         avoid_duplicates (bool): Whether to avoid sending duplicate emails.
@@ -85,8 +85,8 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
                 )
             setattr(self, key, value)
 
-    id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String, nullable=False)
+    id: str = db.Column(db.String, primary_key=True)
+    display: str = db.Column(db.String, nullable=True)
     address: str = db.Column(db.String, unique=True, nullable=False)  # Ensure it's not null
     from_addr: str = db.Column(db.String)
     avoid_duplicates: bool = db.Column(db.Boolean, default=True)
@@ -148,7 +148,7 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
 
     Attributes:
         id (int): Primary key of the subscriber.
-        list_id (int): Foreign key to the associated mailing list.
+        list_id (str): Foreign key to the associated mailing list.
         name (str): Name of the subscriber.
         email (str): Email address of the subscriber.
         comment (str): Optional comment about the subscriber.
@@ -165,7 +165,7 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     id = db.Column(db.Integer, primary_key=True)
-    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=False)
+    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=False)
     name: str = db.Column(db.String, nullable=True)
     email: str = db.Column(db.String, nullable=False)
     comment: str = db.Column(db.String, nullable=True)
@@ -185,7 +185,7 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
 
     Attributes:
         message_id (str): Unique message ID of the email.
-        list_id (int): Foreign key to the associated mailing list.
+        list_id (str): Foreign key to the associated mailing list.
         subject (str): Subject of the email.
         from_addr (str): From address of the email.
         headers (str): Raw email headers as provided by imap_tools.
@@ -207,7 +207,7 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
-    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"))
+    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=False)
     subject: str = db.Column(db.String, nullable=True)
     from_addr: str = db.Column(db.String, nullable=True)
     headers: str = db.Column(db.Text, nullable=False)
@@ -225,7 +225,7 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
     Attributes:
         message_id (str): Unique message ID of the outgoing email.
         email_in_mid (str): Foreign key to the associated incoming email message.
-        list_id (int): Foreign key to the associated mailing list.
+        list_id (str): Foreign key to the associated mailing list.
         subject (str): Subject of the outgoing email.
         recipients (list): List of recipient email addresses.
         raw (str): Full RFC822 text of the outgoing email.
@@ -247,7 +247,7 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
     email_in_mid: str = db.Column(db.String, db.ForeignKey("email_in.message_id"), nullable=False)
-    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)
+    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=True)
     subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
     raw: str = db.Column(db.Text)  # store full RFC822 text
@@ -266,7 +266,7 @@ class Logs(Model):  # pylint: disable=too-few-public-methods
         event (str): Type of event being logged, e.g., "sent-msg", "login-attempt".
         message (str): Short log message.
         details (dict): Optional detailed log message in JSON format.
-        list_id (int): Foreign key to the associated mailing list, if applicable.
+        list_id (str): Foreign key to the associated mailing list, if applicable.
     """
 
     def __init__(self, **kwargs):
@@ -284,4 +284,4 @@ class Logs(Model):  # pylint: disable=too-few-public-methods
     event: str = db.Column(db.String, nullable=False)  # Event type: "sent-msg", "login-attempt"
     message: str = db.Column(db.Text, nullable=False)  # Short log message
     details: dict = db.Column(db.JSON, nullable=True)  # Optional detailed log message in JSON
-    list_id: int = db.Column(db.Integer, db.ForeignKey("list.id"), nullable=True)  # Associated list
+    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=True)  # Associated list

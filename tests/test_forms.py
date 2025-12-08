@@ -25,8 +25,8 @@ def test_mailing_list_form_strips_whitespace(client):
     with current_app.test_request_context():
         form = MailingListForm(
             data={
-                "name": "  My List  ",
-                "address": "  list@example.com  ",
+                "id": "  test-list  ",
+                "display": "  My List  ",
                 "mode": "broadcast",
                 "from_addr": "  sender@example.com  ",
                 "allowed_senders": "  user1@test.com, user2@test.com  ",
@@ -34,8 +34,8 @@ def test_mailing_list_form_strips_whitespace(client):
                 "imap_user": "  listuser  ",
             }
         )
-        assert form.name.data == "My List"
-        assert form.address.data == "list@example.com"
+        assert form.id.data == "test-list"
+        assert form.display.data == "My List"
         assert form.from_addr.data == "sender@example.com"
         assert form.allowed_senders.data == "user1@test.com, user2@test.com"
         assert form.imap_host.data == "imap.example.com"

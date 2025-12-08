@@ -126,7 +126,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
                 return
             self.from_header = (
                 f"{self.msg.from_values.name or self.msg.from_values.email} "
-                f"via {self.ml.name} <{self.ml.address}>"
+                f"via {self.ml.display} <{self.ml.address}>"
             )
             # Set Reply-To:
             # * Set to list address to avoid replies going to all subscribers
@@ -138,7 +138,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             # Add X-MailFrom with original sender address
             self.x_mailfrom_header = self.msg.from_values.email
         else:
-            logging.error("Unknown list mode %s for list %s", self.ml.mode, self.ml.name)
+            logging.error("Unknown list mode %s for list %s", self.ml.mode, self.ml.display)
             return
 
         # App

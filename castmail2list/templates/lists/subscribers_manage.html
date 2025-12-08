@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Subscribers') }} - {{ mailing_list.name }}{% endblock %}
+{% block title %}{{ _('Subscribers') }} - {{ mailing_list.display }}{% endblock %}
 
 {% block content %}
 
-<h2>{{ _('Subscribers for "%(name)s"', name=mailing_list.name) }}</h2>
+<h2>{{ _('Subscribers for "%(name)s"', name=mailing_list.display) }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 
@@ -83,7 +83,7 @@
                 <a href="{{ url_for('subscribers.by_email', email=subscriber.email) }}">{{ subscriber.email }}</a>
             </td>
             <td><a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">
-                    {{ list.name }}</a>
+                    {{ list.display }}</a>
             </td>
         </tr>
         {% endfor %}

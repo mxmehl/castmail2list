@@ -62,7 +62,8 @@ def fixture_client():
         user = User(username="testuser", password=generate_password_hash("password"), role="user")
         db.session.add(user)
         ml = MailingList(
-            name="Test List",
+            id="test",
+            display="Test List",
             address="list@example.com",
             mode="broadcast",
             imap_host="ml.local",
@@ -233,8 +234,9 @@ def fixture_mailing_list(client) -> MailingList:  # depends on authenticated cli
     ml = MailingList.query.filter_by(address="list@example.com").first()
     if ml is None:
         ml = MailingList(
-            name="Test List",
-            address="list@example.com",
+            id="test",
+            display="Test List",
+            address="test@example.com",
             mode="broadcast",
             imap_host="ml.local",
             imap_port=993,
@@ -251,7 +253,8 @@ def fixture_broadcast_list(client) -> MailingList:
     """Create a broadcast mode mailing list"""
     del client  # ensure app context is available
     ml = MailingList(
-        name="Broadcast List",
+        id="broadcast",
+        display="Broadcast List",
         address="broadcast@example.com",
         mode="broadcast",
         avoid_duplicates=True,
@@ -270,7 +273,8 @@ def fixture_broadcast_list_with_from(client) -> MailingList:
     """Create a broadcast mode mailing list with custom from_addr"""
     del client
     ml = MailingList(
-        name="Broadcast From List",
+        id="broadcast-from",
+        display="Broadcast From List",
         address="broadcast-from@example.com",
         from_addr="custom@example.com",
         mode="broadcast",
@@ -290,7 +294,8 @@ def fixture_broadcast_list_no_avoid_dup(client) -> MailingList:
     """Create a broadcast mode mailing list without avoid_duplicates"""
     del client
     ml = MailingList(
-        name="Broadcast No Dup",
+        id="broadcast-nodup",
+        display="Broadcast No Dup",
         address="broadcast-nodup@example.com",
         mode="broadcast",
         avoid_duplicates=False,
@@ -309,7 +314,8 @@ def fixture_group_list(client) -> MailingList:
     """Create a group mode mailing list"""
     del client
     ml = MailingList(
-        name="Group List",
+        id="group",
+        display="Group List",
         address="group@example.com",
         mode="group",
         avoid_duplicates=True,

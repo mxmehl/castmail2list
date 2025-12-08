@@ -79,7 +79,7 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
 
     # Check if subscriber is an existing list. If so, set type and re-use name
     if existing_list := is_email_a_list(email):
-        name = existing_list.name
+        name = existing_list.display
         subscriber_type = "list"
     else:
         subscriber_type = "normal"
@@ -105,13 +105,13 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
 
 
 def update_subscriber_in_list(
-    list_id: int, subscriber_id: int, name: str, email: str, comment: str | None = None
+    list_id: str, subscriber_id: int, name: str, email: str, comment: str | None = None
 ) -> str:
     """
     Update an existing subscriber in a mailing list.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_id (int): The ID of the subscriber to update
         name (str): New name for the subscriber
         email (str): New email address for the subscriber
@@ -145,7 +145,7 @@ def update_subscriber_in_list(
 
     # Check if subscriber is an existing list. If so, set type and re-use name
     if existing_list := is_email_a_list(email):
-        name = existing_list.name
+        name = existing_list.display
         subscriber_type = "list"
     else:
         subscriber_type = "normal"
@@ -166,12 +166,12 @@ def update_subscriber_in_list(
         return _("Database error: ") + str(e)
 
 
-def delete_subscriber_from_list(list_id: int, subscriber_email: str) -> str:
+def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
     """
     Delete a subscriber from a mailing list.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_email (str): The email of the subscriber to delete
 
     Returns:

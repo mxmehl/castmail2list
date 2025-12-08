@@ -194,7 +194,7 @@ def test_is_email_a_list_and_get_list_subscribers(client):
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
-        name="T",
+        id="T",
         address="t@example.COM",
         deleted=False,
         mode="broadcast",
@@ -227,8 +227,8 @@ def test_get_list_subscribers_no_subs(client):
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
-        name="EmptyList",
-        address="t@example.com",
+        id="t2",
+        address="t2@example.com",
         deleted=False,
         mode="broadcast",
         imap_host="imap.example",
@@ -248,7 +248,7 @@ def test_get_list_subscribers_deduplicates(client):
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
-        name="List 1",
+        id="l1",
         address="l1@example.com",
         mode="broadcast",
         imap_host="imap.example",
@@ -257,7 +257,7 @@ def test_get_list_subscribers_deduplicates(client):
         imap_pass="p",
     )
     ml2: MailingList = MailingList(
-        name="List 2",
+        id="l2",
         address="l2@example.com",
         mode="broadcast",
         imap_host="imap.example",
@@ -312,7 +312,7 @@ def test_check_recommended_list_setting() -> None:
     settings."""
 
     ml = MailingList(
-        name="RecList",
+        id="rec",
         address="rec@example.com",
         mode="broadcast",
         imap_host="imap.example",
@@ -347,6 +347,7 @@ def test_get_all_incoming_messages(client) -> None:
         status="bounce-msg",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(1),
+        list_id="list1",
     )
     normal1: EmailIn = EmailIn(
         message_id="normal-1",
@@ -354,6 +355,7 @@ def test_get_all_incoming_messages(client) -> None:
         status="ok",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(2),
+        list_id="list1",
     )
     bounce2: EmailIn = EmailIn(
         message_id="bounce-2",
@@ -361,6 +363,7 @@ def test_get_all_incoming_messages(client) -> None:
         status="bounce-msg",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(8),
+        list_id="list1",
     )
     normal2: EmailIn = EmailIn(
         message_id="normal-2",
@@ -368,6 +371,7 @@ def test_get_all_incoming_messages(client) -> None:
         status="ok",
         headers="{'foo': 'bar'}",
         received_at=_days_ago(10),
+        list_id="list1",
     )
 
     # Add bounce messages to the database

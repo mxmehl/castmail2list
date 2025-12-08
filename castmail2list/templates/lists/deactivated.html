@@ -20,7 +20,7 @@
     <tbody>
     {% for list in lists %}
     <tr>
-        <td>{{ list.name }}</td>
+        <td>{{ list.display }}</td>
         <td>{{ list.address }}</td>
         <td>
             {%- if list.mode == "broadcast" %}
@@ -33,7 +33,7 @@
         </td>
         <td>
             <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}" role="button" class="secondary">{{ _('Subscribers') }}</a>
-            <a href="{{ url_for('lists.reactivate', list_id=list.id) }}" role="button" class="" onclick="return confirm('{{ _('Are you sure you want to reactivate the list') }} {{ list.name }} <{{ list.address }}>?')">{{ _('Reactivate') }}</a>
+            <a href="{{ url_for('lists.reactivate', list_id=list.id) }}" role="button" class="" onclick="return confirm('{{ _('Are you sure you want to reactivate the list') }} {{ list.display }} <{{ list.address }}>?')">{{ _('Reactivate') }}</a>
         </td>
     </tr>
     {% endfor %}
