@@ -28,7 +28,7 @@
             <td>
                 {% if lists %}
                     {% for list in lists %}
-                        <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">{{ list.name }}</a>
+                        <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">{{ list.display }}</a>
                         {% if list.deleted %} ({{ _('Deactivated') }}){% endif %}
                         {% if not loop.last %}, {% endif %}
                     {% endfor %}

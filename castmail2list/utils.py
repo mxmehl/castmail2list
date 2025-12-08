@@ -561,7 +561,7 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
     event: str,
     message: str,
     details: dict | None = None,
-    list_id: int | None = None,
+    list_id: str | None = None,
 ) -> Logs:
     """
     Create and persist a log entry in the database.
@@ -571,7 +571,7 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
         event (str): Event type (e.g., 'email_sent', 'bounce_received')
         message (str): Log message text
         details (dict | None): Optional JSON-serializable details dictionary
-        list_id (int | None): Optional mailing list ID this log relates to
+        list_id (str | None): Optional mailing list ID this log relates to
 
     Returns:
         Logs: The created and persisted log entry

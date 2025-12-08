@@ -663,8 +663,9 @@ def test_unknown_mode_logs_error(client, caplog, monkeypatch):
     """Test that unknown list mode logs error"""
     # Create a valid list
     ml = MailingList(
-        name="Test List",
-        address="test@example.com",
+        id="test2",
+        display="Test List",
+        address="test2@example.com",
         mode="broadcast",
         imap_host="mail.example.com",
         imap_port=993,

@@ -19,7 +19,7 @@
         <tr>
             <td><a href="{{ url_for('messages.show', message_id=m.message_id)}}">{{ m.subject }}</a></td>
             <td>{{ m.sent_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
-            <td>{{ m.list.name }}</td>
+            <td>{{ m.list.display }}</td>
             <td>{{ m.sent_successful|length }} / {{ m.sent_failed|length }}</td>
         </tr>
         {% endfor %}

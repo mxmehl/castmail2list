@@ -10,7 +10,7 @@
 {%- from "macros.html" import subscriber_list_buttons %}
 {{ subscriber_list_buttons(subscriber.email) }}
 
-<p>{{ _('On list: %(name)s', name=mailing_list.name) }}</p>
+<p>{{ _('On list: %(name)s', name=mailing_list.display) }}</p>
 
 <form method="POST">
     {{ form.csrf_token }}

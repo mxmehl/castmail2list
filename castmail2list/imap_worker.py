@@ -286,7 +286,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
                 "Sender %s not a subscriber of list %s and did not authenticate otherwise, "
                 "skipping message %s",
                 self.msg.from_values.email,
-                self.ml.name,
+                self.ml.display,
                 self.msg.uid,
             )
 
@@ -464,7 +464,7 @@ def check_all_lists_for_messages(app: Flask) -> None:
     # Iterate over all configured lists
     maillists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
     for ml in maillists:
-        logging.info("Polling '%s' (%s) (%s)", ml.name, ml.address, run_id)
+        logging.info("Polling '%s' (%s) (%s)", ml.display, ml.address, run_id)
         try:
             with MailBox(host=ml.imap_host, port=int(ml.imap_port)).login(
                 username=ml.imap_user, password=ml.imap_pass
@@ -497,13 +497,13 @@ def check_all_lists_for_messages(app: Flask) -> None:
         except MailboxLoginError as e:
             logging.error(
                 "IMAP login failed for list %s (%s): %s",
-                ml.name,
+                ml.display,
                 ml.address,
                 str(e),
             )
         except Exception as e:  # pylint: disable=broad-except
             logging.error(
-                "Error processing list %s: %s\nTraceback: %s", ml.name, e, traceback.format_exc()
+                "Error processing list %s: %s\nTraceback: %s", ml.display, e, traceback.format_exc()
             )
 
     logging.debug("Finished checking for new messages")

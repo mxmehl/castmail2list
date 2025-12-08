@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Edit List Settings') }} - {{ mailing_list.name }}{% endblock %}
+{% block title %}{{ _('Edit List Settings') }} - {{ mailing_list.display }}{% endblock %}
 
 {% block content %}
-<h2>{{ _('Edit List Settings') }}: {{ mailing_list.name }}</h2>
+<h2>{{ _('Edit List Settings') }}: {{ mailing_list.display }}</h2>
 
 {%- include "flash.html" %} {# Show flash messages #}
 

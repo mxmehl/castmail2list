@@ -12,7 +12,7 @@
     </tr>
     <tr>
         <th>{{ _('List') }}</th>
-        <td>{{ message.list.name }} &lt;{{message.list.address}}&gt;</td>
+        <td>{{ message.list.display }} &lt;{{message.list.address}}&gt;</td>
     </tr>
     {#- INCOMING MESSAGES SPECIFICS #}
     {%- if msg_type == "in" %}

@@ -76,8 +76,9 @@ class MailingListForm(CM2LBaseForm):
     """Form for creating and editing mailing lists"""
 
     # Basics
-    name = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=100)])
-    address = EmailField(_("List Email Address"), validators=[DataRequired(), Email()])
+    id = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=50)])
+    domain = StringField(_("Domain"), validators=[])
+    display = StringField(_("Display Name"), validators=[DataRequired(), Length(min=1, max=100)])
 
     # Modes
     mode = RadioField(
