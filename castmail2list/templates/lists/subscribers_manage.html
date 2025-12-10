@@ -84,7 +84,7 @@
             <td>
                 {%- for listid in sub.source %}
                 <a href="{{ url_for('lists.subscribers_manage', list_id=listid) }}">
-                    {{- listid | capitalize -}}
+                    {{- listid -}}
                 </a>
                 {%- if not loop.last %}, {% endif %}
                 {%- endfor %}

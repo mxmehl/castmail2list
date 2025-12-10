@@ -33,11 +33,9 @@ def get_list_subscribers_with_details(list_id: int) -> dict[str, dict]:
         logging.error("Mailing list with ID %s not found", list_id)
         return {}
 
-    subscribers_all = get_list_subscribers(mailing_list)
-    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
-
-    # Add direct subscribers
     subscribers_data: dict[str, dict] = {}
+    # Add direct subscribers
+    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
     for sub in subscribers_direct:
         subscribers_data[sub.email] = {
             "id": sub.id,
@@ -47,20 +45,24 @@ def get_list_subscribers_with_details(list_id: int) -> dict[str, dict]:
             "type": sub.subscriber_type,
             "source": ["direct"],
         }
+
     # Add subscribers from indirect lists
-    for sub in subscribers_all:
-        if sub.email not in subscribers_data:
-            subscribers_data[sub.email] = {
-                "id": sub.id,
-                "name": sub.name,
-                "email": sub.email,
-                "comment": sub.comment,
-                "type": sub.subscriber_type,
-                "source": [sub.list_id],
-            }
-        else:
-            # Take data from first finding, just append source
-            subscribers_data[sub.email]["source"].append(sub.list_id)
+    # Gather indirect subscribers coming from directly subscribed lists
+    for sublist in [s for s in subscribers_direct if s.subscriber_type == "list"]:
+        if sublist_list := is_email_a_list(sublist.email):
+            for sub in get_list_subscribers(sublist_list):
+                if sub.email not in subscribers_data:
+                    subscribers_data[sub.email] = {
+                        "id": sub.id,
+                        "name": sub.name,
+                        "email": sub.email,
+                        "comment": sub.comment,
+                        "type": sub.subscriber_type,
+                        "source": [sublist_list.id],
+                    }
+                else:
+                    # Take data from first finding, just append source
+                    subscribers_data[sub.email]["source"].append(sublist_list.id)
 
     return subscribers_data
 
