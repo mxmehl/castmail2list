@@ -7,8 +7,9 @@
   ],
   "lists": [
     {
-      "name": "General Announcements",
+      "id": "general",
       "address": "general@example.com",
+      "display": "General Announcements",
       "mode": "broadcast",
       "imap_host": "imap.example.com",
       "imap_port": 993,
@@ -31,8 +32,9 @@
       ]
     },
     {
-      "name": "Group Chat",
+      "id": "group",
       "address": "group@example.com",
+      "display": "Group Chat",
       "mode": "group",
       "imap_host": "imap.example.com",
       "imap_port": 993,

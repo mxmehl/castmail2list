@@ -59,8 +59,9 @@ def seed_database(app: Flask, seed_file: str) -> None:
         cfg_lists: list[dict[str, str | int | list]] = cfg.get("lists", [])
         for lst_cfg in cfg_lists:
             new_list = MailingList(
-                name=lst_cfg.get("name"),
+                id=lst_cfg.get("id"),
                 address=lst_cfg.get("address"),
+                display=lst_cfg.get("display"),
                 mode=lst_cfg.get("mode"),
                 imap_host=lst_cfg.get("imap_host"),
                 imap_port=lst_cfg.get("imap_port"),
