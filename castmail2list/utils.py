@@ -182,6 +182,18 @@ def is_email_a_list(email: str) -> MailingList | None:
     return None
 
 
+def get_list_by_id(list_id: str) -> MailingList | None:
+    """
+    Get a mailing list by its ID.
+
+    Args:
+        list_id (str): The ID of the mailing list
+    Returns:
+        MailingList | None: The MailingList object if found, None otherwise
+    """
+    return MailingList.query.filter_by(id=list_id).first()
+
+
 def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
     """
     Get all (deduplicated) subscribers of a mailing list, including those from overlapping
@@ -227,6 +239,72 @@ def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
         ", ".join([sub.email for sub in result]),
     )
     return result
+
+
+def get_list_subscribers_with_details(list_id: str) -> dict[str, dict]:
+    """
+    Get all subscribers for a mailing list with direct and indirect breakdown. The result is a
+    mapping of subscriber email to their details and source lists. Direct subscribers are marked
+    with source ["direct"], while indirect subscribers have a list of source list IDs.
+
+    It may happen that a subscriber appears both as direct and indirect subscriber.
+
+    Args:
+        list_id (str): The ID of the mailing list
+
+    Returns:
+        dict: Mapping of subscriber email to their details and source lists. If the mailing list is
+            not found, returns an empty dictionary.
+    """
+    visited_list_ids = set()
+    subscribers_dict: dict[str, dict] = {}
+
+    ml = get_list_by_id(list_id)
+    if not ml:
+        logging.warning("Mailing list with ID %s not found.", list_id)
+        return subscribers_dict
+
+    def _collect_subscribers(list_obj: MailingList, is_direct: bool = False):
+        """Recursively collect subscribers from the given mailing list and nested lists"""
+        if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
+            return
+        visited_list_ids.add(list_obj.id)  # Mark this list as visited
+
+        # Exclude deleted lists
+        if list_obj.deleted:
+            return
+
+        # Get direct subscribers
+        direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=list_obj.id).all()
+        for sub in direct_subs:
+            # Add subscriber if not already added
+            if sub.email not in subscribers_dict:
+                subscribers_dict[sub.email] = {
+                    "id": sub.id,
+                    "name": sub.name,
+                    "email": sub.email,
+                    "source": ["direct"] if is_direct else [list_obj.id],
+                }
+            else:
+                # Update source list
+                if is_direct:
+                    if "direct" not in subscribers_dict[sub.email]["source"]:
+                        subscribers_dict[sub.email]["source"].append("direct")
+                else:
+                    if list_obj.id not in subscribers_dict[sub.email]["source"]:
+                        subscribers_dict[sub.email]["source"].append(list_obj.id)
+
+        # Iterate over direct subscribers. If any is a list, recurse into it
+        for sub in direct_subs:
+            if nested_list := is_email_a_list(sub.email):
+                # Only recurse if the nested list hasn't been visited yet
+                if nested_list.id not in visited_list_ids:
+                    _collect_subscribers(nested_list, is_direct=False)
+
+    # Start collecting from the given mailing list
+    _collect_subscribers(ml, is_direct=True)
+
+    return subscribers_dict
 
 
 def get_all_subscribers() -> dict[str, list[MailingList]]:

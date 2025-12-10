@@ -1,70 +1,15 @@
 """Service layer for shared logic for both the API and web interface"""
 
 import logging
-from typing import cast
 
 from flask_babel import _
 
 from .models import MailingList, Subscriber, db
-from .utils import get_list_subscribers, is_email_a_list
+from .utils import is_email_a_list
 
 # -----------------------------------------------------------------
 # Subscriber Services
 # -----------------------------------------------------------------
-
-
-def get_list_subscribers_with_details(list_id: int) -> dict[str, dict]:
-    """
-    Get all subscribers for a mailing list with direct and indirect breakdown. The result is a
-    mapping of subscriber email to their details and source lists. Direct subscribers are marked
-    with source ["direct"], while indirect subscribers have a list of source list IDs.
-
-    It may happen that a subscriber appears both as direct and indirect subscriber.
-
-    Args:
-        list_id (int): The ID of the mailing list
-
-    Returns:
-        dict: Mapping of subscriber email to their details and source lists. If the mailing list is
-            not found, returns an empty dictionary.
-    """
-    mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
-    if mailing_list is None:
-        logging.error("Mailing list with ID %s not found", list_id)
-        return {}
-
-    subscribers_data: dict[str, dict] = {}
-    # Add direct subscribers
-    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
-    for sub in subscribers_direct:
-        subscribers_data[sub.email] = {
-            "id": sub.id,
-            "name": sub.name,
-            "email": sub.email,
-            "comment": sub.comment,
-            "type": sub.subscriber_type,
-            "source": ["direct"],
-        }
-
-    # Add subscribers from indirect lists
-    # Gather indirect subscribers coming from directly subscribed lists
-    for sublist in [s for s in subscribers_direct if s.subscriber_type == "list"]:
-        if sublist_list := is_email_a_list(sublist.email):
-            for sub in get_list_subscribers(sublist_list):
-                if sub.email not in subscribers_data:
-                    subscribers_data[sub.email] = {
-                        "id": sub.id,
-                        "name": sub.name,
-                        "email": sub.email,
-                        "comment": sub.comment,
-                        "type": sub.subscriber_type,
-                        "source": [sublist_list.id],
-                    }
-                else:
-                    # Take data from first finding, just append source
-                    subscribers_data[sub.email]["source"].append(sublist_list.id)
-
-    return subscribers_data
 
 
 def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: str = "") -> str:

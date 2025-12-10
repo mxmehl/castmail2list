@@ -12,7 +12,6 @@ from ..models import MailingList, Subscriber, db
 from ..services import (
     add_subscriber_to_list,
     delete_subscriber_from_list,
-    get_list_subscribers_with_details,
     update_subscriber_in_list,
 )
 from ..utils import (
@@ -20,6 +19,7 @@ from ..utils import (
     check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
+    get_list_subscribers_with_details,
     is_email_a_list,
     list_to_string,
     string_to_list,
