@@ -304,6 +304,18 @@ def get_list_subscribers_with_details(list_id: str) -> dict[str, dict]:
     # Start collecting from the given mailing list
     _collect_subscribers(ml, is_direct=True)
 
+    # Remove any subscribers whose email is a list address (do not send to lists themselves)
+    for email in list(subscribers_dict.keys()):
+        if is_email_a_list(email):
+            del subscribers_dict[email]
+
+    logging.debug(
+        "Found %d unique, non-list subscribers with details for the list <%s>: %s",
+        len(subscribers_dict),
+        ml.address,
+        ", ".join(subscribers_dict.keys()),
+    )
+
     return subscribers_dict
 
 
