@@ -13,33 +13,54 @@ from .utils import get_list_subscribers, is_email_a_list
 # -----------------------------------------------------------------
 
 
-def get_subscribers_with_details(list_id: int) -> dict | None:
+def get_list_subscribers_with_details(list_id: int) -> dict[str, dict]:
     """
-    Get all subscribers for a mailing list with direct and indirect breakdown.
+    Get all subscribers for a mailing list with direct and indirect breakdown. The result is a
+    mapping of subscriber email to their details and source lists. Direct subscribers are marked
+    with source ["direct"], while indirect subscribers have a list of source list IDs.
+
+    It may happen that a subscriber appears both as direct and indirect subscriber.
 
     Args:
         list_id (int): The ID of the mailing list
 
     Returns:
-        dict: Mapping MailingList to their subscribers. Returns None if list not found.
+        dict: Mapping of subscriber email to their details and source lists. If the mailing list is
+            not found, returns an empty dictionary.
     """
     mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
-    if not mailing_list:
-        return None
+    if mailing_list is None:
+        logging.error("Mailing list with ID %s not found", list_id)
+        return {}
 
+    subscribers_all = get_list_subscribers(mailing_list)
     subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
-    subscriber_lists = [
-        is_email_a_list(s.email) for s in subscribers_direct if s.subscriber_type == "list"
-    ]
-    subscribers_indirect = {}
-    for sub_list in subscriber_lists:
-        if sub_list:
-            subscribers_indirect[sub_list] = get_list_subscribers(sub_list)
 
-    subscribers_data = {
-        "direct": subscribers_direct,
-        "indirect": subscribers_indirect,
-    }
+    # Add direct subscribers
+    subscribers_data: dict[str, dict] = {}
+    for sub in subscribers_direct:
+        subscribers_data[sub.email] = {
+            "id": sub.id,
+            "name": sub.name,
+            "email": sub.email,
+            "comment": sub.comment,
+            "type": sub.subscriber_type,
+            "source": ["direct"],
+        }
+    # Add subscribers from indirect lists
+    for sub in subscribers_all:
+        if sub.email not in subscribers_data:
+            subscribers_data[sub.email] = {
+                "id": sub.id,
+                "name": sub.name,
+                "email": sub.email,
+                "comment": sub.comment,
+                "type": sub.subscriber_type,
+                "source": [sub.list_id],
+            }
+        else:
+            # Take data from first finding, just append source
+            subscribers_data[sub.email]["source"].append(sub.list_id)
 
     return subscribers_data
 

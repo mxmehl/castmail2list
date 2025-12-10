@@ -12,7 +12,7 @@ from ..models import MailingList, Subscriber, db
 from ..services import (
     add_subscriber_to_list,
     delete_subscriber_from_list,
-    get_subscribers_with_details,
+    get_list_subscribers_with_details,
     update_subscriber_in_list,
 )
 from ..utils import (
@@ -320,15 +320,14 @@ def subscribers_manage(list_id):
         )
 
     # Get subscribers using service layer
-    subscribers_data = get_subscribers_with_details(list_id)
-    if subscribers_data is None:
-        flash(_("Mailing list not found"), "error")
-        return redirect(url_for("lists.index"))
+    subscribers_data = get_list_subscribers_with_details(list_id)
+    # Extract subscribers that are exclusively indirect
+    subscribers_indirect = [s for _, s in subscribers_data.items() if "direct" not in s["source"]]
 
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
-        subscribers_indirect=subscribers_data["indirect"],
+        subscribers_indirect=subscribers_indirect,
         form=form,
     )
 
