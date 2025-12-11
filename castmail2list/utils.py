@@ -194,30 +194,38 @@ def get_list_by_id(list_id: str) -> MailingList | None:
     return MailingList.query.filter_by(id=list_id).first()
 
 
-def get_list_subscribers_recursive(list_id: str) -> dict[str, dict]:
+def get_list_recipients_recursive(
+    list_id: str, only_direct: bool = False, only_indirect: bool = False
+) -> dict[str, dict]:
     """
-    Get all subscribers for a mailing list with direct and indirect breakdown. The result is a
-    mapping of subscriber email to their details and source lists. Direct subscribers are marked
-    with source ["direct"], while indirect subscribers have a list of source list IDs.
+    Get all real recipients for a mailing list with direct and indirect breakdown. The result is a
+    mapping of recipient email to their details and source lists. Direct subscribers are marked with
+    source ["direct"]. Indirect recipients have source list IDs they are subscribed through.
 
-    It may happen that a subscriber appears both as direct and indirect subscriber.
+    Notes:
+    * Recipients are not the same as subscribers. A subscriber is always direct and may be a list. A
+      recipient is always a real person and may also be coming from indirect subscription via nested
+      lists.
+    * It may happen that a recipient appears both as direct and indirect recipient.
 
     Args:
         list_id (str): The ID of the mailing list
+        only_direct (bool): If True, return only direct recipients
+        only_indirect (bool): If True, return only indirect recipients
 
     Returns:
-        dict: Mapping of subscriber email to their details and source lists. If the mailing list is
+        dict: Mapping of recipient email to their details and source lists. If the mailing list is
             not found, returns an empty dictionary.
     """
     visited_list_ids = set()
-    subscribers_dict: dict[str, dict] = {}
+    recipients_dict: dict[str, dict] = {}
 
     ml = get_list_by_id(list_id)
     if not ml:
         logging.warning("Mailing list with ID %s not found.", list_id)
-        return subscribers_dict
+        return recipients_dict
 
-    def _collect_subscribers(list_obj: MailingList, is_direct: bool = False):
+    def _collect_recipients(list_obj: MailingList, is_direct: bool = False):
         """Recursively collect subscribers from the given mailing list and nested lists"""
         if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
             return
@@ -229,47 +237,64 @@ def get_list_subscribers_recursive(list_id: str) -> dict[str, dict]:
 
         # Get direct subscribers
         direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=list_obj.id).all()
-        for sub in direct_subs:
+        for rec in direct_subs:
             # Add subscriber if not already added
-            if sub.email not in subscribers_dict:
-                subscribers_dict[sub.email] = {
-                    "id": sub.id,
-                    "name": sub.name,
-                    "email": sub.email,
+            if rec.email not in recipients_dict:
+                recipients_dict[rec.email] = {
+                    "id": rec.id,
+                    "name": rec.name,
+                    "email": rec.email,
                     "source": ["direct"] if is_direct else [list_obj.id],
                 }
             else:
                 # Update source list
                 if is_direct:
-                    if "direct" not in subscribers_dict[sub.email]["source"]:
-                        subscribers_dict[sub.email]["source"].append("direct")
+                    if "direct" not in recipients_dict[rec.email]["source"]:
+                        recipients_dict[rec.email]["source"].append("direct")
                 else:
-                    if list_obj.id not in subscribers_dict[sub.email]["source"]:
-                        subscribers_dict[sub.email]["source"].append(list_obj.id)
+                    if list_obj.id not in recipients_dict[rec.email]["source"]:
+                        recipients_dict[rec.email]["source"].append(list_obj.id)
 
-        # Iterate over direct subscribers. If any is a list, recurse into it
-        for sub in direct_subs:
-            if nested_list := is_email_a_list(sub.email):
+        # Iterate over direct recipients. If any is a list, recurse into it
+        for rec in direct_subs:
+            if nested_list := is_email_a_list(rec.email):
                 # Only recurse if the nested list hasn't been visited yet
                 if nested_list.id not in visited_list_ids:
-                    _collect_subscribers(nested_list, is_direct=False)
+                    _collect_recipients(nested_list, is_direct=False)
 
     # Start collecting from the given mailing list
-    _collect_subscribers(ml, is_direct=True)
+    _collect_recipients(ml, is_direct=True)
 
-    # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    for email in list(subscribers_dict.keys()):
+    # Remove any recipient whose email is a list address (do not send to lists themselves)
+    for email in list(recipients_dict.keys()):
         if is_email_a_list(email):
-            del subscribers_dict[email]
+            del recipients_dict[email]
 
     logging.debug(
-        "Found %d unique, non-list subscribers with details for the list <%s>: %s",
-        len(subscribers_dict),
+        "Found %d unique, non-list recipients with details for the list <%s>: %s",
+        len(recipients_dict),
         ml.address,
-        ", ".join(subscribers_dict.keys()),
+        ", ".join(recipients_dict.keys()),
     )
 
-    return subscribers_dict
+    # Filter based on only_direct / only_indirect flags
+    if only_direct and only_indirect:
+        # If both are requested, return empty dict (no email can be both)
+        return {}
+    if only_direct:
+        recipients_dict = {
+            email: details
+            for email, details in recipients_dict.items()
+            if "direct" in details.get("source", [])
+        }
+    elif only_indirect:
+        recipients_dict = {
+            email: details
+            for email, details in recipients_dict.items()
+            if "direct" not in details.get("source", [])
+        }
+
+    return recipients_dict
 
 
 def get_all_subscribers() -> dict[str, list[MailingList]]:

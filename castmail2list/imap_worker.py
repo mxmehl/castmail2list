@@ -17,7 +17,7 @@ from .mailer import send_msg_to_subscribers
 from .models import EmailIn, MailingList, db
 from .utils import (
     get_all_messages_id_from_raw_email,
-    get_list_subscribers_recursive,
+    get_list_recipients_recursive,
     get_message_id_from_incoming,
     get_message_id_in_db,
     get_plus_suffix,
@@ -236,7 +236,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             return True
 
         # Get list of subscriber emails
-        subscriber_emails: list[str] = list(get_list_subscribers_recursive(self.ml.id).keys())
+        subscriber_emails: list[str] = list(get_list_recipients_recursive(self.ml.id).keys())
         # No subscribers configured, allow all
         if not subscriber_emails:
             return True

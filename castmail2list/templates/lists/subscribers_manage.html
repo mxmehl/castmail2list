@@ -27,8 +27,8 @@
     </fieldset>
 </form>
 
-<h3>{{ _('Current Subscribers') }}</h3>
-<p>{{ _('All direct subscribers of this list. May include other mailing lists whose subscribers you will find in a second table below.') }}</p>
+<h3>{{ _('Direct Subscribers') }}</h3>
+<p>{{ _('All direct subscribers of this list. May include other mailing lists whose recipients you will find in a second table below.') }}</p>
 {% if mailing_list.subscribers %}
 <table class="striped">
     <thead>
@@ -63,9 +63,9 @@
 <p><em>{{ _('No subscribers yet.') }}</em></p>
 {%- endif %}
 
-<h3>{{ _('Indirect Subscribers') }}</h3>
-<p>{{ _('All indirect subscribers of this list via other mailing lists.') }}</p>
-{%- if subscribers_indirect %}
+<h3>{{ _('Indirect Recipients') }}</h3>
+<p>{{ _('All indirect recipients of this list via subscribed mailing lists.') }}</p>
+{%- if recipients_indirect %}
 <table class="striped">
     <thead>
         <tr>
@@ -75,14 +75,14 @@
         </tr>
     </thead>
     <tbody>
-        {%- for sub in subscribers_indirect %}
+        {%- for email, rec in recipients_indirect.items() %}
         <tr>
-            <td>{{ sub.name if sub.name }}</td>
+            <td>{{ rec.name if rec.name }}</td>
             <td>
-                <a href="{{ url_for('subscribers.by_email', email=sub.email) }}">{{ sub.email }}</a>
+                <a href="{{ url_for('subscribers.by_email', email=rec.email) }}">{{ rec.email }}</a>
             </td>
             <td>
-                {%- for listid in sub.source %}
+                {%- for listid in rec.source %}
                 <a href="{{ url_for('lists.subscribers_manage', list_id=listid) }}">
                     {{- get_list_by_id(listid).display -}}
                 </a>
@@ -94,7 +94,7 @@
     </tbody>
 </table>
 {%- else %}
-<p><em>{{ _('No indirect subscribers.') }}</em></p>
+<p><em>{{ _('No indirect recipients.') }}</em></p>
 {%- endif %}
 
 {% endblock %}

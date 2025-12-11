@@ -19,7 +19,7 @@ from ..utils import (
     check_recommended_list_setting,
     create_email_account,
     flash_form_errors,
-    get_list_subscribers_recursive,
+    get_list_recipients_recursive,
     is_email_a_list,
     list_to_string,
     string_to_list,
@@ -319,15 +319,13 @@ def subscribers_manage(list_id):
             "warning",
         )
 
-    # Get subscribers using service layer
-    subscribers_data = get_list_subscribers_recursive(list_id)
-    # Extract subscribers that are exclusively indirect
-    subscribers_indirect = [s for _, s in subscribers_data.items() if "direct" not in s["source"]]
+    # Get recipients that are exclusively indirect
+    recipients_indirect = get_list_recipients_recursive(list_id=list_id, only_indirect=True)
 
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
-        subscribers_indirect=subscribers_indirect,
+        recipients_indirect=recipients_indirect,
         form=form,
     )
 
