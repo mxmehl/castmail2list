@@ -468,6 +468,47 @@ def test_get_list_recipients_recursive_direct_indirect(client):
     assert list(subs_indirect.keys()) == ["bob@example.com"]
 
 
+def test_list_subscribers(client) -> None:
+    """list_subscribers returns direct subscribers of a mailing list, optionally excluding lists."""
+
+    del client  # ensure app and DB fixtures are active
+
+    ml1 = MailingList(
+        id="l1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2 = MailingList(
+        id="l2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2])
+    db.session.commit()
+
+    # Add subscribers: one normal, one list
+    s1 = Subscriber(list_id=ml1.id, email="alice@example.com")
+    s2 = Subscriber(list_id=ml1.id, email="l2@example.com")
+    db.session.add_all([s1, s2])
+    db.session.commit()
+
+    # Get subscribers including lists
+    subs_including_lists = utils.get_list_subscribers(ml1.id, exclude_lists=False)
+    subs_excluding_lists = utils.get_list_subscribers(ml1.id, exclude_lists=True)
+    assert len(subs_including_lists) == 2
+    assert list(subs_including_lists.keys()) == ["alice@example.com", "l2@example.com"]
+    assert len(subs_excluding_lists) == 1
+    assert list(subs_excluding_lists.keys()) == ["alice@example.com"]
+
+
 def test_check_recommended_list_setting() -> None:
     """check_recommended_list_setting returns warnings for broadcast lists missing security
     settings."""

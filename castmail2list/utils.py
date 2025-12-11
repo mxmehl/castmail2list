@@ -270,13 +270,6 @@ def get_list_recipients_recursive(
         if is_email_a_list(email):
             del recipients_dict[email]
 
-    logging.debug(
-        "Found %d unique, non-list recipients with details for the list <%s>: %s",
-        len(recipients_dict),
-        ml.address,
-        ", ".join(recipients_dict.keys()),
-    )
-
     # Filter based on only_direct / only_indirect flags
     if only_direct and only_indirect:
         # If both are requested, return empty dict (no email can be both)
@@ -294,7 +287,65 @@ def get_list_recipients_recursive(
             if "direct" not in details.get("source", [])
         }
 
+    logging.debug(
+        "Found %d unique, non-list recipients (after optional filters) with details for the list "
+        "<%s>: %s",
+        len(recipients_dict),
+        ml.address,
+        ", ".join(recipients_dict.keys()),
+    )
+
     return recipients_dict
+
+
+def get_list_subscribers(list_id: str, exclude_lists: bool = False) -> dict[str, dict]:
+    """
+    Get all direct subscribers for a mailing list. The result is a mapping of subscriber email to
+    their details.
+
+    Notes:
+
+    * A subscriber is always a direct subscription to the mailing list, and may be either a real
+      person or a list. This is different from recipients, which are always real people and may be
+      direct or indirect by being subscribed via nested lists.
+
+    Args:
+        list_id (str): The ID of the mailing list
+
+        exclude_lists (bool): Whether to exclude subscribers that are mailing lists themselves
+    Returns:
+        dict: Mapping of subscriber email to their details. If the mailing list is not found,
+            returns an empty dictionary.
+    """
+    subscribers_dict: dict[str, dict] = {}
+
+    ml = get_list_by_id(list_id)
+    if not ml:
+        logging.warning("Mailing list with ID %s not found.", list_id)
+        return subscribers_dict
+
+    # Get direct subscribers
+    direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
+    for sub in direct_subs:
+        # Skip if subscriber is a list and include_lists is False
+        if exclude_lists and is_email_a_list(sub.email):
+            continue
+        subscribers_dict[sub.email] = {
+            "id": sub.id,
+            "name": sub.name,
+            "email": sub.email,
+            "comment": sub.comment,
+            "subscriber_type": sub.subscriber_type,
+        }
+
+    logging.debug(
+        "Found %d direct subscribers (after optional filters) with details for the list <%s>: %s",
+        len(subscribers_dict),
+        ml.address,
+        ", ".join(subscribers_dict.keys()),
+    )
+
+    return subscribers_dict
 
 
 def get_all_subscribers() -> dict[str, list[MailingList]]:
