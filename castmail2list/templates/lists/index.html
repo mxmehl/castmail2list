@@ -41,7 +41,7 @@
             {%- endif %}
         </td>
         <td>
-            <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}" role="button" class="secondary">{{ _('Subscribers') }} ({{ get_list_subscribers_with_details(list.id)|length }})</a>
+            <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}" role="button" class="secondary">{{ _('Subscribers') }} ({{ get_list_subscribers_recursive(list.id)|length }})</a>
             <a href="{{ url_for('lists.edit', list_id=list.id) }}" role="button" class="">{{ _('Edit') }}</a>
             <a href="{{ url_for('lists.deactivate', list_id=list.id) }}" role="button" class="danger" onclick="return confirm('{{ _('Are you sure you want to deactivate the list') }} {{ list.display }} <{{ list.address }}>?')">{{ _('Deactivate') }}</a>
         </td>

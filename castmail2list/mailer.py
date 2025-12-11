@@ -20,7 +20,7 @@ from .models import EmailOut, MailingList, db
 from .utils import (
     create_bounce_address,
     create_log_entry,
-    get_list_subscribers_with_details,
+    get_list_subscribers_recursive,
     get_message_id_from_incoming,
 )
 
@@ -46,7 +46,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         self.message_id: str = message_id
         self.ml: MailingList = ml
         self.msg: MailMessage = msg
-        self.subscribers_emails: list[str] = list(get_list_subscribers_with_details(ml.id).keys())
+        self.subscribers_emails: list[str] = list(get_list_subscribers_recursive(ml.id).keys())
         # Additional attributes we need for sending
         self.composed_msg: MIMEMultipart | MIMEText | None = None
         self.from_header: str = ""
@@ -300,7 +300,7 @@ def send_msg_to_subscribers(
     sent_successful: list[str] = []
     sent_failed: list[str] = []
 
-    subscribers_emails: list[str] = list(get_list_subscribers_with_details(ml.id).keys())
+    subscribers_emails: list[str] = list(get_list_subscribers_recursive(ml.id).keys())
     logging.info(
         "Sending message %s to %d subscribers of list <%s>: %s",
         msg.uid,

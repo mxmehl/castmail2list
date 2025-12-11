@@ -27,7 +27,7 @@ from .utils import (
     compile_scss_on_startup,
     get_app_bin_dir,
     get_list_by_id,
-    get_list_subscribers_with_details,
+    get_list_subscribers_recursive,
     get_user_config_path,
     get_version_info,
     is_email_a_list,
@@ -181,7 +181,7 @@ def create_app(
         }
 
     app.jinja_env.globals.update(
-        get_list_subscribers_with_details=get_list_subscribers_with_details,
+        get_list_subscribers_recursive=get_list_subscribers_recursive,
         is_email_a_list=is_email_a_list,
         get_list_by_id=get_list_by_id,
     )

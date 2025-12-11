@@ -194,54 +194,7 @@ def get_list_by_id(list_id: str) -> MailingList | None:
     return MailingList.query.filter_by(id=list_id).first()
 
 
-def get_list_subscribers(ml: MailingList) -> list[Subscriber]:
-    """
-    Get all (deduplicated) subscribers of a mailing list, including those from overlapping
-    lists, recursively.
-    """
-    visited_list_ids = set()
-    subscribers_dict: dict[str, Subscriber] = {}
-
-    def _collect_subscribers(list_obj: MailingList):
-        """Recursively collect subscribers from the given mailing list and nested lists"""
-        if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
-            return
-        visited_list_ids.add(list_obj.id)  # Mark this list as visited
-
-        # Exclude deleted lists
-        if list_obj.deleted:
-            return
-
-        # Get direct subscribers
-        direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=list_obj.id).all()
-        for sub in direct_subs:
-            # Add subscriber if not already added
-            if sub.email not in subscribers_dict:
-                subscribers_dict[sub.email] = sub
-
-        # Iterate over direct subscribers. If any is a list, recurse into it
-        for sub in direct_subs:
-            if nested_list := is_email_a_list(sub.email):
-                # Only recurse if the nested list hasn't been visited yet
-                if nested_list.id not in visited_list_ids:
-                    _collect_subscribers(nested_list)
-
-    # Start collecting from the given mailing list
-    _collect_subscribers(ml)
-
-    # Remove any subscribers whose email is a list address (do not send to lists themselves)
-    result = [sub for sub in subscribers_dict.values() if not is_email_a_list(sub.email)]
-
-    logging.debug(
-        "Found %d unique, non-list subscribers for the list <%s>: %s",
-        len(result),
-        ml.address,
-        ", ".join([sub.email for sub in result]),
-    )
-    return result
-
-
-def get_list_subscribers_with_details(list_id: str) -> dict[str, dict]:
+def get_list_subscribers_recursive(list_id: str) -> dict[str, dict]:
     """
     Get all subscribers for a mailing list with direct and indirect breakdown. The result is a
     mapping of subscriber email to their details and source lists. Direct subscribers are marked

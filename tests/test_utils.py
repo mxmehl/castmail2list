@@ -190,7 +190,7 @@ def test_check_email_account_works_login_error(monkeypatch) -> None:
 
 
 def test_is_email_a_list_and_get_list_subscribers(client):
-    """is_email_a_list and get_list_subscribers_with_details() work with DB-backed
+    """is_email_a_list and get_list_subscribers_recursive() work with DB-backed
     lists/subscribers."""
     del client  # ensure app and DB fixtures are active
 
@@ -219,12 +219,12 @@ def test_is_email_a_list_and_get_list_subscribers(client):
     db.session.add(s)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_with_details(ml.id)
+    subs = utils.get_list_subscribers_recursive(ml.id)
     assert any(sub == "alice@example.com" for sub in subs)
 
 
-def test_get_list_subscribers_no_subs(client):
-    """get_list_subscribers_with_details() returns empty list when no subscribers exist."""
+def test_get_list_subscribers_recursive_no_subs(client):
+    """get_list_subscribers_recursive() returns empty list when no subscribers exist."""
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
@@ -240,12 +240,12 @@ def test_get_list_subscribers_no_subs(client):
     db.session.add(ml)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_with_details(ml.id)
+    subs = utils.get_list_subscribers_recursive(ml.id)
     assert not subs
 
 
-def test_get_list_subscribers_deduplicates(client):
-    """get_list_subscribers_with_details() deduplicates subscribers with same email and with list as
+def test_get_list_subscribers_recursive_deduplicates(client):
+    """get_list_subscribers_recursive() deduplicates subscribers with same email and with list as
     subscriber"""
     del client  # ensure app and DB fixtures are active
 
@@ -281,7 +281,7 @@ def test_get_list_subscribers_deduplicates(client):
     db.session.commit()
 
     # Get subscribers for ml1; should deduplicate
-    subs = utils.get_list_subscribers_with_details(ml1.id)
+    subs = utils.get_list_subscribers_recursive(ml1.id)
     assert len(subs) == 2  # alice and bob
     assert list(subs.keys()) == ["alice@example.com", "bob@example.com"]
     assert "ALICE@example.com" not in subs  # deduplicated
@@ -295,7 +295,7 @@ def test_get_list_subscribers_deduplicates(client):
     db.session.add(s14)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_with_details(ml1.id)
+    subs = utils.get_list_subscribers_recursive(ml1.id)
     assert s14.subscriber_type == "list"
     assert len(subs) == 4  # alice, bob (from list1) + carol and dave (from list2)
     assert "l2@example.com" not in subs  # list email not included
