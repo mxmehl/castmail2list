@@ -3,31 +3,24 @@
 from flask import Flask, jsonify, render_template, request
 
 
-def _generic_error_response(status: int, exception):
-    """Generate a generic error response in JSON format"""
-    message = str(exception.description)
+def _generic_error_handler(e):
+    """Handle HTTP errors - JSON for API routes, HTML for web routes"""
+    status = e.code if hasattr(e, "code") else 500
+    message = str(e.description) if hasattr(e, "description") else str(e)
+
     if request.path.startswith("/api/"):
         return jsonify({"status": status, "message": message}), status
     return render_template("error.html", status=status, message=message), status
 
 
 def register_error_handlers(app: Flask):
-    """Register application-level error handlers"""
+    """Register application-level error handlers for common HTTP errors"""
+    # Register the same handler for multiple error codes
+    error_codes = range(400, 505)
 
-    @app.errorhandler(400)
-    def handle_400(e):
-        """Handle 400 errors - JSON for API, HTML for web"""
-        status = 400
-        return _generic_error_response(status, e)
-
-    @app.errorhandler(401)
-    def handle_401(e):
-        """Handle 401 errors - JSON for API, HTML for web"""
-        status = 401
-        return _generic_error_response(status, e)
-
-    @app.errorhandler(404)
-    def handle_404(e):
-        """Handle 404 errors - JSON for API, HTML for web"""
-        status = 404
-        return _generic_error_response(status, e)
+    for code in error_codes:
+        try:
+            app.register_error_handler(code, _generic_error_handler)
+        except ValueError:
+            # Some codes may not be valid HTTP exceptions; skip those
+            pass
