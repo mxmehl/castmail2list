@@ -99,14 +99,12 @@ def create_test_message(
 def test_broadcast_basic_headers(client, broadcast_list: MailingList):
     """Test basic header composition in broadcast mode"""
     msg = create_test_message()
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com", name="Sub One")]
 
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="new-msg-id@example.com",
-        subscribers=subscribers,
     )
 
     # Check From header - should be list address (no from_addr set)
@@ -133,14 +131,12 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
 def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingList):
     """Test broadcast mode with custom from_addr"""
     msg = create_test_message(to_addrs=("broadcast-from@example.com",))
-    subscribers = [Subscriber(list_id=broadcast_list_with_from.id, email="sub1@example.com")]
 
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list_with_from,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # From should be the custom from_addr
@@ -155,14 +151,12 @@ def test_broadcast_removes_list_from_to_cc(client, broadcast_list: MailingList):
         to_addrs=("broadcast@example.com", "other@example.com"),
         cc_addrs=("broadcast@example.com", "cc@example.com"),
     )
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
 
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # List address should be removed from To and Cc
@@ -174,10 +168,11 @@ def test_broadcast_removes_list_from_to_cc(client, broadcast_list: MailingList):
 
 def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mock):
     """Test avoid_duplicates in broadcast mode skips recipients in To/Cc"""
-    msg = create_test_message(to_addrs=("broadcast@example.com", "sub1@example.com"))
+    dupe = "sub1@example.com"
+    msg = create_test_message(to_addrs=("broadcast@example.com", dupe))
 
     # Create subscriber who is already in To header
-    subscriber = Subscriber(list_id=broadcast_list.id, email="sub1@example.com")
+    subscriber = Subscriber(list_id=broadcast_list.id, email=dupe)
     db.session.add(subscriber)
     db.session.commit()
 
@@ -186,11 +181,10 @@ def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mo
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
     # Send to recipient
-    result = mail.send_email_to_recipient("sub1@example.com")
+    result = mail.send_email_to_recipient(dupe)
 
     # Should return empty bytes (skipped)
     assert result == b""
@@ -199,9 +193,10 @@ def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mo
 
 def test_broadcast_no_avoid_duplicates(client, broadcast_list_no_avoid_dup: MailingList, smtp_mock):
     """Test that without avoid_duplicates, recipients in To/Cc still receive mail"""
-    msg = create_test_message(to_addrs=("broadcast-nodup@example.com", "sub1@example.com"))
+    dupe = "sub1@example.com"
+    msg = create_test_message(to_addrs=("broadcast@example.com", dupe))
 
-    subscriber = Subscriber(list_id=broadcast_list_no_avoid_dup.id, email="sub1@example.com")
+    subscriber = Subscriber(list_id=broadcast_list_no_avoid_dup.id, email=dupe)
     db.session.add(subscriber)
     db.session.commit()
 
@@ -210,11 +205,10 @@ def test_broadcast_no_avoid_duplicates(client, broadcast_list_no_avoid_dup: Mail
         ml=broadcast_list_no_avoid_dup,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
     # Send to recipient
-    result = mail.send_email_to_recipient("sub1@example.com")
+    result = mail.send_email_to_recipient(dupe)
 
     # Should send normally
     assert result != b""
@@ -236,7 +230,6 @@ def test_broadcast_recipient_appended_to_to(
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
     # Send to recipient
@@ -261,14 +254,11 @@ def test_group_basic_headers(client, group_list: MailingList):
     )
 
     # Sender is NOT in subscriber list, so Reply-To will include sender
-    subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com", name="Sub One")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # From header should be "Sender Name via Group List <group@example.com>"
@@ -293,14 +283,11 @@ def test_group_from_with_no_name(client, group_list):
         from_email="sender@example.com", from_name="", to_addrs=("group@example.com",)
     )
 
-    subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Should use email when name is missing
@@ -313,15 +300,11 @@ def test_group_reply_to_when_sender_not_subscriber(client, group_list):
         from_email="external@example.com", from_name="External", to_addrs=("group@example.com",)
     )
 
-    # Subscriber list does NOT include external@example.com
-    subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Reply-To should include both sender and list
@@ -331,19 +314,20 @@ def test_group_reply_to_when_sender_not_subscriber(client, group_list):
 
 def test_group_reply_to_when_sender_is_subscriber(client, group_list):
     """Test Reply-To is just list address when sender is a subscriber"""
-    msg = create_test_message(
-        from_email="sub1@example.com", from_name="Sub One", to_addrs=("group@example.com",)
-    )
+    sub_email = "sub1@example.com"
+    subscriber = Subscriber(list_id=group_list.id, email=sub_email)
+    db.session.add(subscriber)
+    db.session.commit()
 
-    # Subscriber list includes the sender
-    subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
+    msg = create_test_message(
+        from_email=sub_email, from_name="Sub One", to_addrs=("group@example.com",)
+    )
 
     mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Reply-To should only be list address
@@ -358,14 +342,11 @@ def test_group_no_from_values_error(client, group_list: MailingList, caplog):
     msg = MailMessage.from_bytes(raw)
     msg.uid = "no-from"  # type: ignore[attr-defined]
 
-    subscribers = [Subscriber(list_id=group_list.id, email="sub1@example.com")]
-
     OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Should log an error
@@ -378,16 +359,11 @@ def test_group_to_header_preserved(
     """Test that in group mode, original To/Cc are preserved without per-recipient mutation"""
     msg = create_test_message(to_addrs=("original@example.com",), cc_addrs=("cc@example.com",))
 
-    subscriber = Subscriber(list_id=group_list.id, email="newrecipient@example.com")
-    db.session.add(subscriber)
-    db.session.commit()
-
     mail = OutgoingEmail(
         app=client.application,
         ml=group_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
     # Before sending
@@ -419,14 +395,11 @@ def test_threading_headers(client, broadcast_list: MailingList):
     msg = MailMessage.from_bytes(raw)
     msg.uid = "reply"  # type: ignore[attr-defined]
 
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Check In-Reply-To
@@ -443,14 +416,11 @@ def test_cc_header_preserved(client, broadcast_list: MailingList):
     """Test that Cc header is preserved in outgoing message"""
     msg = create_test_message(cc_addrs=("cc1@example.com", "cc2@example.com"))
 
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     assert "cc1@example.com" in mail.composed_msg["Cc"]
@@ -463,38 +433,30 @@ def test_x_recipient_header(
     """Test that X-Recipient header is set per recipient"""
     msg = create_test_message()
 
-    subscriber = Subscriber(list_id=broadcast_list.id, email="specific@example.com")
-    db.session.add(subscriber)
-    db.session.commit()
+    recipient = "specific@example.com"
 
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
-    mail.send_email_to_recipient("specific@example.com")
+    mail.send_email_to_recipient(recipient=recipient)
 
     # Check X-Recipient was set
-    assert mail.composed_msg["X-Recipient"] == "specific@example.com"
+    assert mail.composed_msg["X-Recipient"] == recipient
 
 
 def test_envelope_from_is_bounce_address(client, broadcast_list: MailingList, smtp_mock):
     """Test that SMTP envelope-from uses bounce address format"""
     msg = create_test_message()
 
-    subscriber = Subscriber(list_id=broadcast_list.id, email="recipient@example.com")
-    db.session.add(subscriber)
-    db.session.commit()
-
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=[subscriber],
     )
 
     mail.send_email_to_recipient("recipient@example.com")
@@ -532,14 +494,11 @@ def test_multipart_alternative_text_and_html(client, broadcast_list: MailingList
     msg = MailMessage.from_bytes(raw)
     msg.uid = "multipart"  # type: ignore[attr-defined]
 
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Should use MIMEMultipart
@@ -551,14 +510,11 @@ def test_simple_text_message(client, broadcast_list: MailingList):
     """Test simple text-only message"""
     msg = create_test_message(body_text="Simple text body")
 
-    subscribers = [Subscriber(list_id=broadcast_list.id, email="sub1@example.com")]
-
     mail = OutgoingEmail(
         app=client.application,
         ml=broadcast_list,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Should not be multipart for simple text
@@ -679,14 +635,12 @@ def test_unknown_mode_logs_error(client, caplog, monkeypatch):
     monkeypatch.setattr(type(ml), "mode", property(lambda self: "invalid-mode"))
 
     msg = create_test_message()
-    subscribers = [Subscriber(list_id=ml.id, email="sub1@example.com")]
 
     OutgoingEmail(
         app=client.application,
         ml=ml,
         msg=msg,
         message_id="<new-msg-id@example.com>",
-        subscribers=subscribers,
     )
 
     # Should log an error

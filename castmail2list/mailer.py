@@ -16,11 +16,11 @@ from flask import Flask
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import EmailOut, MailingList, Subscriber, db
+from .models import EmailOut, MailingList, db
 from .utils import (
     create_bounce_address,
     create_log_entry,
-    get_list_subscribers,
+    get_list_subscribers_recursive,
     get_message_id_from_incoming,
 )
 
@@ -34,7 +34,6 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         ml: MailingList,
         msg: MailMessage,
         message_id: str,
-        subscribers: list[Subscriber],
     ) -> None:
         # Relevant settings from app config
         self.app_domain: str = app.config["DOMAIN"]
@@ -47,7 +46,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         self.message_id: str = message_id
         self.ml: MailingList = ml
         self.msg: MailMessage = msg
-        self.subscribers: list[Subscriber] = subscribers
+        self.subscribers_emails: list[str] = list(get_list_subscribers_recursive(ml.id).keys())
         # Additional attributes we need for sending
         self.composed_msg: MIMEMultipart | MIMEText | None = None
         self.from_header: str = ""
@@ -131,7 +130,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             # Set Reply-To:
             # * Set to list address to avoid replies going to all subscribers
             # * If sender is not a recipient of the list, add them as Reply-To as well
-            if self.msg.from_values.email not in [sub.email for sub in self.subscribers]:
+            if self.msg.from_values.email not in self.subscribers_emails:
                 self.reply_to = f"{self.msg.from_values.email}, {self.ml.address}"
             else:
                 self.reply_to = self.ml.address
@@ -301,25 +300,25 @@ def send_msg_to_subscribers(
     sent_successful: list[str] = []
     sent_failed: list[str] = []
 
-    subscribers: list[Subscriber] = get_list_subscribers(ml)
+    subscribers_emails: list[str] = list(get_list_subscribers_recursive(ml.id).keys())
     logging.info(
         "Sending message %s to %d subscribers of list <%s>: %s",
         msg.uid,
-        len(subscribers),
+        len(subscribers_emails),
         ml.address,
-        ", ".join([sub.email for sub in subscribers]),
+        ", ".join(subscribers_emails),
     )
 
     # Prepare message class
     new_msgid = make_msgid(idstring="castmail2list", domain=ml.address.split("@")[-1]).strip("<>")
-    mail = OutgoingEmail(app=app, ml=ml, msg=msg, message_id=new_msgid, subscribers=subscribers)
+    mail = OutgoingEmail(app=app, ml=ml, msg=msg, message_id=new_msgid)
 
     # Store fundamental information about to-be-sent message in database
     email_out = EmailOut(
         email_in_mid=get_message_id_from_incoming(msg),
         message_id=new_msgid,
         list_id=ml.id,
-        recipients=[sub.email for sub in subscribers],
+        recipients=subscribers_emails,
         sent_at=datetime.now(timezone.utc),
     )
 
@@ -329,18 +328,18 @@ def send_msg_to_subscribers(
         logging.warning("No HTML or Plaintext content in message %s", msg.uid)
 
     # --- Send to each subscriber individually ---
-    for subscriber in subscribers:
+    for subscriber in subscribers_emails:
         try:
             # Copy mail class to avoid cross-contamination between recipients
             recipient_mail = deepcopy(mail)
             # Send email to recipient
             sent_msg = recipient_mail.send_email_to_recipient(
-                recipient=subscriber.email, dry=app.config.get("DRY", False)
+                recipient=subscriber, dry=app.config.get("DRY", False)
             )
 
             # Store sent message in Sent folder via IMAP if we have one
             if sent_msg:
-                sent_successful.append(subscriber.email)
+                sent_successful.append(subscriber)
                 with tempfile.NamedTemporaryFile(mode="w+", delete=True) as tmpfile:
                     tmpfile.write(msg.obj.as_string())
                     tmpfile.flush()
@@ -352,7 +351,7 @@ def send_msg_to_subscribers(
                         logging.info(
                             "[DRY MODE] Would store sent message for %s in Sent folder "
                             "and mark as read.",
-                            subscriber.email,
+                            subscriber,
                         )
                     else:
                         mailbox.append(
@@ -361,16 +360,16 @@ def send_msg_to_subscribers(
                             flag_set=["\\Seen"],
                         )
             else:
-                sent_failed.append(subscriber.email)
+                sent_failed.append(subscriber)
                 logging.warning(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
-                    subscriber.email,
+                    subscriber,
                 )
         except Exception as e:  # pylint: disable=broad-except
-            sent_failed.append(subscriber.email)
+            sent_failed.append(subscriber)
             logging.error(
                 "Failed to send message to %s: %s\nTraceback: %s",
-                subscriber.email,
+                subscriber,
                 e,
                 traceback.format_exc(),
             )

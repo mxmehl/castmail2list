@@ -190,7 +190,8 @@ def test_check_email_account_works_login_error(monkeypatch) -> None:
 
 
 def test_is_email_a_list_and_get_list_subscribers(client):
-    """is_email_a_list and get_list_subscribers work with DB-backed lists/subscribers."""
+    """is_email_a_list and get_list_subscribers_recursive() work with DB-backed
+    lists/subscribers."""
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
@@ -218,12 +219,12 @@ def test_is_email_a_list_and_get_list_subscribers(client):
     db.session.add(s)
     db.session.commit()
 
-    subs = utils.get_list_subscribers(ml)
-    assert any(sub.email == "alice@example.com" for sub in subs)
+    subs = utils.get_list_subscribers_recursive(ml.id)
+    assert any(sub == "alice@example.com" for sub in subs)
 
 
-def test_get_list_subscribers_no_subs(client):
-    """get_list_subscribers returns empty list when no subscribers exist."""
+def test_get_list_subscribers_recursive_no_subs(client):
+    """get_list_subscribers_recursive() returns empty list when no subscribers exist."""
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
@@ -239,12 +240,13 @@ def test_get_list_subscribers_no_subs(client):
     db.session.add(ml)
     db.session.commit()
 
-    subs = utils.get_list_subscribers(ml)
-    assert subs == []
+    subs = utils.get_list_subscribers_recursive(ml.id)
+    assert not subs
 
 
-def test_get_list_subscribers_deduplicates(client):
-    """get_list_subscribers deduplicates subscribers with same email and with list as subscriber"""
+def test_get_list_subscribers_recursive_deduplicates(client):
+    """get_list_subscribers_recursive() deduplicates subscribers with same email and with list as
+    subscriber"""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -272,18 +274,17 @@ def test_get_list_subscribers_deduplicates(client):
     s11 = Subscriber(list_id=ml1.id, email="alice@example.com", name="Alice")
     s12 = Subscriber(list_id=ml1.id, email="ALICE@example.com", name="Alice Dup")
     s13 = Subscriber(list_id=ml1.id, email="bob@example.com")
-    s21 = Subscriber(list_id=ml2.id, email="alice@example.com")  # duplicate email
+    s21 = Subscriber(list_id=ml2.id, email="alice@example.com", name="Alice 2")  # duplicate email
     s22 = Subscriber(list_id=ml2.id, email="carol@example.com")
-    s23 = Subscriber(list_id=ml2.id, email="dave@example.com")
+    s23 = Subscriber(list_id=ml2.id, email="DAVE@example.com")  # to test case insensitivity
     db.session.add_all([s11, s12, s13, s21, s22, s23])
     db.session.commit()
 
     # Get subscribers for ml1; should deduplicate
-    subs = utils.get_list_subscribers(ml1)
-    subs_emails = [sub.email for sub in subs]
+    subs = utils.get_list_subscribers_recursive(ml1.id)
     assert len(subs) == 2  # alice and bob
-    assert subs_emails == ["alice@example.com", "bob@example.com"]
-    assert "ALICE@example.com" not in subs_emails  # deduplicated
+    assert list(subs.keys()) == ["alice@example.com", "bob@example.com"]
+    assert "ALICE@example.com" not in subs  # deduplicated
 
     # Add ml2 as subscriber for ml1
     s14 = Subscriber(
@@ -294,17 +295,22 @@ def test_get_list_subscribers_deduplicates(client):
     db.session.add(s14)
     db.session.commit()
 
-    subs = utils.get_list_subscribers(ml1)
-    subs_emails = [sub.email for sub in subs]
+    subs = utils.get_list_subscribers_recursive(ml1.id)
     assert s14.subscriber_type == "list"
     assert len(subs) == 4  # alice, bob (from list1) + carol and dave (from list2)
-    assert "l2@example.com" not in subs_emails  # list email not included
-    assert subs_emails == [
+    assert "l2@example.com" not in subs  # list email not included
+    assert list(subs.keys()) == [
         "alice@example.com",
         "bob@example.com",
         "carol@example.com",
         "dave@example.com",
     ]
+
+    # Check that metadata is correct
+    assert subs["alice@example.com"]["name"] == "Alice"  # from first subscriber
+    assert subs["alice@example.com"]["source"] == ["direct", "l2"]  # direct and from l2
+    assert subs["dave@example.com"]["source"] == ["l2"]  # only from l2
+    assert subs["dave@example.com"]["email"] == "dave@example.com"  # correct email
 
 
 def test_check_recommended_list_setting() -> None:

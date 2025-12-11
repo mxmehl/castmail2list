@@ -1,47 +1,15 @@
-"""Service layer for business logic in CastMail2List application"""
+"""Service layer for shared logic for both the API and web interface"""
 
 import logging
-from typing import cast
 
 from flask_babel import _
 
 from .models import MailingList, Subscriber, db
-from .utils import get_list_subscribers, is_email_a_list
+from .utils import is_email_a_list
 
 # -----------------------------------------------------------------
 # Subscriber Services
 # -----------------------------------------------------------------
-
-
-def get_subscribers_with_details(list_id: int) -> dict | None:
-    """
-    Get all subscribers for a mailing list with direct and indirect breakdown.
-
-    Args:
-        list_id (int): The ID of the mailing list
-
-    Returns:
-        dict: Mapping MailingList to their subscribers. Returns None if list not found.
-    """
-    mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
-    if not mailing_list:
-        return None
-
-    subscribers_direct = cast(list[Subscriber], mailing_list.subscribers)
-    subscriber_lists = [
-        is_email_a_list(s.email) for s in subscribers_direct if s.subscriber_type == "list"
-    ]
-    subscribers_indirect = {}
-    for sub_list in subscriber_lists:
-        if sub_list:
-            subscribers_indirect[sub_list] = get_list_subscribers(sub_list)
-
-    subscribers_data = {
-        "direct": subscribers_direct,
-        "indirect": subscribers_indirect,
-    }
-
-    return subscribers_data
 
 
 def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: str = "") -> str:
@@ -104,23 +72,18 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
         return _("Database error: ") + str(e)
 
 
-def update_subscriber_in_list(
-    list_id: str, subscriber_id: int, name: str, email: str, comment: str | None = None
-) -> str:
+def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -> str:
     """
     Update an existing subscriber in a mailing list.
 
     Args:
         list_id (str): The ID of the mailing list
         subscriber_id (int): The ID of the subscriber to update
-        name (str): New name for the subscriber
-        email (str): New email address for the subscriber
-        comment (str | None): New comment for the subscriber
+        **kwargs: Fields to update (name, email, comment). If not provided, existing values are kept
 
     Returns:
         str: An error message if any issues occur, otherwise empty string on success
     """
-    # TODO: Deal with incomplete data, don't overwrite existing fields with None
     # Verify list exists
     mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
     if mailing_list is None:
@@ -133,32 +96,46 @@ def update_subscriber_in_list(
     if subscriber.list_id != list_id:
         return f"Subscriber {subscriber_id} does not belong to list {list_id}"
 
-    # Normalize email
-    email = email.strip().lower()
+    # Get updated fields or keep existing
+    name_new = kwargs.get("name")
+    email_new = kwargs.get("email")
+    comment_new = kwargs.get("comment")
+    subscriber_type_new = None  # use existing type unless email changes
 
-    # Check if new email conflicts with existing subscriber (but not itself)
-    existing_subscriber: Subscriber | None = Subscriber.query.filter_by(
-        list_id=list_id, email=email
-    ).first()
-    if existing_subscriber and existing_subscriber.id != subscriber_id:
-        return f'Email "{email}" is already subscribed to this list'
+    # Special case: update of email, check for conflicts
+    if email_new and email_new != subscriber.email:
+        email_new = email_new.strip().lower()
 
-    # Check if subscriber is an existing list. If so, set type and re-use name
-    if existing_list := is_email_a_list(email):
-        name = existing_list.display
-        subscriber_type = "list"
-    else:
-        subscriber_type = "normal"
+        # Check if new email conflicts with existing subscriber on the same list (but not itself)
+        existing_subscriber: Subscriber | None = Subscriber.query.filter_by(
+            list_id=list_id, email=email_new
+        ).first()
+        if existing_subscriber and existing_subscriber.id != subscriber_id:
+            return f'Email "{email_new}" is already subscribed to this list'
+
+        # Check if subscriber's new email is an existing list. If so, set type and re-use name
+        if existing_list := is_email_a_list(email_new):
+            name_new = existing_list.display
+            subscriber_type_new = "list"
+        else:
+            subscriber_type_new = "normal"
 
     # Update subscriber fields
-    subscriber.name = name
-    subscriber.email = email
-    subscriber.comment = comment  # type: ignore[assignment]
-    subscriber.subscriber_type = subscriber_type
+    for field, value in {
+        "name": name_new,
+        "email": email_new,
+        "comment": comment_new,
+        "subscriber_type": subscriber_type_new,
+    }.items():
+        if value is not None:
+            logging.debug("Updating field %s of subscriber %s to '%s'", field, subscriber_id, value)
+            setattr(subscriber, field, value)
 
     try:
         db.session.commit()
-        logging.info('Subscriber "%s" updated in mailing list %s', email, mailing_list.address)
+        logging.info(
+            'Subscriber "%s" updated in mailing list %s', subscriber.email, mailing_list.address
+        )
         return ""
     except Exception as e:  # pylint: disable=broad-exception-caught
         db.session.rollback()
