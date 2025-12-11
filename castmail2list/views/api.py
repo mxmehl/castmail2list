@@ -5,8 +5,13 @@ from functools import wraps
 from flask import Blueprint, abort, jsonify, request
 from flask_login import current_user
 
-from ..models import User
-from ..services import get_lists
+from ..models import Subscriber, User
+from ..services import (
+    add_subscriber_to_list,
+    delete_subscriber_from_list,
+    get_lists,
+    update_subscriber_in_list,
+)
 from ..status import status_complete
 from ..utils import get_list_by_id, get_list_recipients_recursive, get_list_subscribers
 
@@ -39,7 +44,7 @@ def api_auth_required(f):
 
 @api1.route("/status", methods=["GET"])
 @api_auth_required
-def status():
+def status_get():
     """Provide overall status information as JSON"""
     stats = status_complete()
     return jsonify(stats)
@@ -47,7 +52,7 @@ def status():
 
 @api1.route("/lists", methods=["GET"])
 @api_auth_required
-def lists_all():
+def lists_get():
     """Provide a list of all mailing lists as JSON"""
     # Get query parameters
     show_deactivated = request.args.get("show_deactivated", "false").lower() == "true"
@@ -58,7 +63,7 @@ def lists_all():
 
 @api1.route("/lists/<list_id>/subscribers", methods=["GET"])
 @api_auth_required
-def list_subscribers(list_id):
+def list_subscribers_get(list_id):
     """Provide a list of direct subscribers for a specific mailing list as JSON"""
     # Get query parameters
     exclude_lists = request.args.get("exclude_lists", "false").lower() == "true"
@@ -73,9 +78,81 @@ def list_subscribers(list_id):
     return jsonify(subscribers)
 
 
+@api1.route("/lists/<list_id>/subscribers", methods=["PUT"])
+@api_auth_required
+def list_subscribers_put(list_id: str):
+    """Add a new subscriber to a specific mailing list via API"""
+    # Parse query parameters
+    data: dict = request.get_json()
+    if not data or "email" not in data:
+        abort(400, description="Missing 'email' in request body")
+
+    email = data["email"]
+    name = data.get("name", "")
+    comment = data.get("comment", "")
+
+    # Add subscriber using service layer
+    error_message = add_subscriber_to_list(list_id=list_id, email=email, name=name, comment=comment)
+
+    # Return errors or success message
+    if error_message:
+        abort(400, description=error_message)
+    return jsonify({"message": f"Subscriber {email} added successfully to list {list_id}"}), 201
+
+
+@api1.route("/lists/<list_id>/subscribers/<email>", methods=["DELETE", "PATCH"])
+@api_auth_required
+def list_subscribers_delete_patch(list_id: str, email: str):
+    """Delete or update an existing subscriber of a specific mailing list via API"""
+    # We need to fetch the subscriber here for PATCH requests
+    subscriber: Subscriber | None = Subscriber.query.filter_by(
+        list_id=list_id, email=email
+    ).first()  # Fetch subscriber ID for update
+    if not subscriber:
+        abort(404, description=f"Subscriber with email {email} not found on list {list_id}")
+
+    if request.method == "DELETE":
+        # Delete subscriber using service layer
+        error_message = delete_subscriber_from_list(list_id=list_id, subscriber_email=email)
+
+        # Return errors or success message
+        if error_message:
+            abort(400, description=error_message)
+        return (
+            jsonify({"message": f"Subscriber {email} deleted successfully from list {list_id}"}),
+            200,
+        )
+
+    if request.method == "PATCH":
+        # Parse query parameters
+        data: dict = request.get_json()
+        email_new = data.get("email", "")
+        name_new = data.get("name", "")
+        comment_new = data.get("comment", "")
+
+        # Update subscriber using service layer
+        error_message = update_subscriber_in_list(
+            list_id=list_id,
+            subscriber_id=subscriber.id,
+            email=email_new,
+            name=name_new,
+            comment=comment_new,
+        )
+
+        # Return errors or success message
+        if error_message:
+            abort(400, description=error_message)
+        return (
+            jsonify({"message": f"Subscriber {email} updated successfully on list {list_id}"}),
+            200,
+        )
+
+    return abort(405)
+
+
 @api1.route("/lists/<list_id>/recipients", methods=["GET"])
 @api_auth_required
-def list_recipients(list_id):
+def list_recipients_get(list_id):
     """Provide a list of recipients for a specific mailing list as JSON"""
     # Get query parameters
     only_direct = request.args.get("only_direct", "false").lower() == "true"

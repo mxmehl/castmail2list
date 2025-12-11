@@ -153,7 +153,9 @@ def create_app(
     )
 
     # Enable CSRF protection
-    CSRFProtect(app)
+    csrf = CSRFProtect(app)
+    # Exempt API blueprint from CSRF protection (uses API key auth instead)
+    csrf.exempt(api1)
 
     # Configure Flask-Login
     login_manager = LoginManager()

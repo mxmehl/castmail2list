@@ -39,7 +39,7 @@ def get_lists(show_deactivated: bool = False) -> dict[str, dict]:
 # -----------------------------------------------------------------
 
 
-def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: str = "") -> str:
+def add_subscriber_to_list(list_id: str, email: str, name: str = "", comment: str = "") -> str:
     """
     Add a new subscriber to a mailing list.
 
@@ -51,7 +51,7 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
         * Create and save new subscriber
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         email (str): Email address of the subscriber
         name (str): Name of the subscriber (optional)
         comment (str): Optional comment about the subscriber (optional)
@@ -70,7 +70,7 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
     # Check if subscriber already exists
     existing_subscriber = Subscriber.query.filter_by(list_id=list_id, email=email).first()
     if existing_subscriber:
-        return f'Email "{email}" is already subscribed to this list'
+        return f"Email {email} is already subscribed to list {list_id}"
 
     # Check if subscriber is an existing list. If so, set type and re-use name
     if existing_list := is_email_a_list(email):
@@ -191,7 +191,7 @@ def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
         list_id=list_id, email=subscriber_email
     ).first()
     if not subscriber:
-        return f"Subscriber with email {subscriber_email} not found"
+        return f"Subscriber with email {subscriber_email} not found on list {list_id}"
     if subscriber.list_id != list_id:
         return f"Subscriber {subscriber_email} does not belong to list {list_id}"
 
@@ -210,12 +210,12 @@ def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
         return _("Database error: ") + str(e)
 
 
-def get_subscriber_by_id(list_id: int, subscriber_id: int) -> tuple[Subscriber | None, str | None]:
+def get_subscriber_by_id(list_id: str, subscriber_id: int) -> tuple[Subscriber | None, str | None]:
     """
     Get a single subscriber by ID.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_id (int): The ID of the subscriber
 
     Returns:
