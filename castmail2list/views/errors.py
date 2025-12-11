@@ -14,6 +14,12 @@ def _generic_error_response(status: int, exception):
 def register_error_handlers(app: Flask):
     """Register application-level error handlers"""
 
+    @app.errorhandler(400)
+    def handle_400(e):
+        """Handle 400 errors - JSON for API, HTML for web"""
+        status = 400
+        return _generic_error_response(status, e)
+
     @app.errorhandler(401)
     def handle_401(e):
         """Handle 401 errors - JSON for API, HTML for web"""

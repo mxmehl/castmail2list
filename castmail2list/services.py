@@ -8,6 +8,33 @@ from .models import MailingList, Subscriber, db
 from .utils import is_email_a_list
 
 # -----------------------------------------------------------------
+# Lists Services
+# -----------------------------------------------------------------
+
+
+def get_lists(show_deactivated: bool = False) -> dict[str, dict]:
+    """
+    Retrieve all mailing lists.
+
+    Returns:
+
+    """
+    lists: list[MailingList] = MailingList.query.all()
+    if not show_deactivated:
+        lists = [ml for ml in lists if not ml.deleted]
+    return {
+        ml.id: {
+            "id": ml.id,
+            "address": ml.address,
+            "display": ml.display,
+            "mode": ml.mode,
+            "deleted": ml.deleted,
+        }
+        for ml in lists
+    }
+
+
+# -----------------------------------------------------------------
 # Subscriber Services
 # -----------------------------------------------------------------
 
