@@ -248,31 +248,24 @@ def get_subscriber_by_id(list_id: str, subscriber_id: int) -> tuple[Subscriber |
     return subscriber, None
 
 
-def get_subscriber_by_email(list_id: int, subscriber_email: str) -> tuple[Subscriber | None, str]:
+def get_subscriber_by_email(list_id: str, subscriber_email: str) -> Subscriber | None:
     """
     Get a single subscriber by list ID and subscriber email.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_email (str): The email of the subscriber
 
     Returns:
-        tuple: A tuple of (subscriber, error_message).
-            - On success: (Subscriber object, "")
-            - On failure: (None, error message string)
+        Subscriber | None: Subscriber object if found, otherwise None
     """
-    # Verify list exists
-    mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
-    if not mailing_list:
-        return None, f"Mailing list with ID {list_id} not found"
-
     # Verify subscriber exists and belongs to this list
     subscriber: Subscriber | None = Subscriber.query.filter_by(
         list_id=list_id, email=subscriber_email
     ).first()
     if not subscriber:
-        return None, f"Subscriber with email {subscriber_email} not found on list {list_id}"
+        return None
     if subscriber.list_id != list_id:
-        return None, f"Subscriber {subscriber_email} does not belong to list {list_id}"
+        return None
 
-    return subscriber, ""
+    return subscriber
