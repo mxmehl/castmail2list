@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Error') }}{% endblock %}
+
+{% block content %}
+<h2>{{ _('Error') }} {{ status }}</h2>
+
+{%- include "flash.html" %} {# Show flash messages #}
+
+<p>
+  {{ message }}
+</p>
+
+<p>
+  <a href="{{ url_for('general.index') }}">{{ _('Return to Home') }}</a>
+</p>
+
+{% endblock %}

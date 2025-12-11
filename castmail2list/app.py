@@ -27,13 +27,14 @@ from .utils import (
     compile_scss_on_startup,
     get_app_bin_dir,
     get_list_by_id,
-    get_list_subscribers_recursive,
+    get_list_recipients_recursive,
     get_user_config_path,
     get_version_info,
     is_email_a_list,
 )
 from .views.api import api1
 from .views.auth import auth
+from .views.errors import register_error_handlers
 from .views.general import general
 from .views.lists import lists
 from .views.logs import logs
@@ -152,7 +153,9 @@ def create_app(
     )
 
     # Enable CSRF protection
-    CSRFProtect(app)
+    csrf = CSRFProtect(app)
+    # Exempt API blueprint from CSRF protection (uses API key auth instead)
+    csrf.exempt(api1)
 
     # Configure Flask-Login
     login_manager = LoginManager()
@@ -181,7 +184,7 @@ def create_app(
         }
 
     app.jinja_env.globals.update(
-        get_list_subscribers_recursive=get_list_subscribers_recursive,
+        get_list_recipients_recursive=get_list_recipients_recursive,
         is_email_a_list=is_email_a_list,
         get_list_by_id=get_list_by_id,
     )
@@ -212,6 +215,9 @@ def create_app(
 
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
+
+    # Register error handlers
+    register_error_handlers(app)
 
     # Debug logging of config
     logging.debug("App configuration:\n%s", app.config)

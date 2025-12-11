@@ -190,7 +190,7 @@ def test_check_email_account_works_login_error(monkeypatch) -> None:
 
 
 def test_is_email_a_list_and_get_list_subscribers(client):
-    """is_email_a_list and get_list_subscribers_recursive() work with DB-backed
+    """is_email_a_list and get_list_recipients_recursive() work with DB-backed
     lists/subscribers."""
     del client  # ensure app and DB fixtures are active
 
@@ -219,12 +219,12 @@ def test_is_email_a_list_and_get_list_subscribers(client):
     db.session.add(s)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml.id)
+    subs = utils.get_list_recipients_recursive(ml.id)
     assert any(sub == "alice@example.com" for sub in subs)
 
 
-def test_get_list_subscribers_recursive_no_subs(client):
-    """get_list_subscribers_recursive() returns empty list when no subscribers exist."""
+def test_get_list_recipients_recursive_no_subs(client):
+    """get_list_recipients_recursive() returns empty list when no subscribers exist."""
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
@@ -240,12 +240,12 @@ def test_get_list_subscribers_recursive_no_subs(client):
     db.session.add(ml)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml.id)
+    subs = utils.get_list_recipients_recursive(ml.id)
     assert not subs
 
 
-def test_get_list_subscribers_recursive_deduplicates(client):
-    """get_list_subscribers_recursive() deduplicates subscribers with same email and with list as
+def test_get_list_recipients_recursive_deduplicates(client):
+    """get_list_recipients_recursive() deduplicates subscribers with same email and with list as
     subscriber"""
     del client  # ensure app and DB fixtures are active
 
@@ -281,7 +281,7 @@ def test_get_list_subscribers_recursive_deduplicates(client):
     db.session.commit()
 
     # Get subscribers for ml1; should deduplicate
-    subs = utils.get_list_subscribers_recursive(ml1.id)
+    subs = utils.get_list_recipients_recursive(ml1.id)
     assert len(subs) == 2  # alice and bob
     assert list(subs.keys()) == ["alice@example.com", "bob@example.com"]
     assert "ALICE@example.com" not in subs  # deduplicated
@@ -295,7 +295,7 @@ def test_get_list_subscribers_recursive_deduplicates(client):
     db.session.add(s14)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml1.id)
+    subs = utils.get_list_recipients_recursive(ml1.id)
     assert s14.subscriber_type == "list"
     assert len(subs) == 4  # alice, bob (from list1) + carol and dave (from list2)
     assert "l2@example.com" not in subs  # list email not included
@@ -313,8 +313,8 @@ def test_get_list_subscribers_recursive_deduplicates(client):
     assert subs["dave@example.com"]["email"] == "dave@example.com"  # correct email
 
 
-def test_get_list_subscribers_recursive_circular_reference(client):
-    """get_list_subscribers_recursive() handles circular list subscriptions without infinite loop"""
+def test_get_list_recipients_recursive_circular_reference(client):
+    """get_list_recipients_recursive() handles circular list subscriptions without infinite loop"""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -350,13 +350,13 @@ def test_get_list_subscribers_recursive_circular_reference(client):
     db.session.add_all([s12, s22])
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml1.id)
+    subs = utils.get_list_recipients_recursive(ml1.id)
     assert len(subs) == 2  # alice and bob
     assert list(subs.keys()) == ["alice@example.com", "bob@example.com"]
 
 
-def test_get_list_subscribers_recursive_deep(client):
-    """get_list_subscribers_recursive() handles lists subscribing to lists multiple levels deep"""
+def test_get_list_recipients_recursive_deep(client):
+    """get_list_recipients_recursive() handles lists subscribing to lists multiple levels deep"""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -402,7 +402,7 @@ def test_get_list_subscribers_recursive_deep(client):
     db.session.add_all([s12, s22])
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml1.id)
+    subs = utils.get_list_recipients_recursive(ml1.id)
     assert len(subs) == 3  # alice, bob, carol
     assert list(subs.keys()) == ["alice@example.com", "bob@example.com", "carol@example.com"]
     assert subs["bob@example.com"]["source"] == ["l2"]  # from l2
@@ -413,11 +413,100 @@ def test_get_list_subscribers_recursive_deep(client):
     db.session.add(s13)
     db.session.commit()
 
-    subs = utils.get_list_subscribers_recursive(ml1.id)
+    subs = utils.get_list_recipients_recursive(ml1.id)
     assert len(subs) == 3  # still alice, bob, carol
     assert list(subs.keys()) == ["alice@example.com", "bob@example.com", "carol@example.com"]
     assert subs["bob@example.com"]["source"] == ["l2"]  # from l2
     assert subs["carol@example.com"]["source"] == ["l3"]  # from l3
+
+
+def test_get_list_recipients_recursive_direct_indirect(client):
+    """get_list_recipients_recursive() handles only_direct and only_indirect flags correctly"""
+    del client  # ensure app and DB fixtures are active
+
+    ml1: MailingList = MailingList(
+        id="l1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2: MailingList = MailingList(
+        id="l2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2])
+    db.session.commit()
+
+    # Add normal subscribers
+    s11 = Subscriber(list_id=ml1.id, email="alice@example.com", name="Alice")
+    s21 = Subscriber(list_id=ml2.id, email="bob@example.com")
+    db.session.add_all([s11, s21])
+    db.session.commit()
+
+    # Add ml2 as subscriber for ml1
+    s12 = Subscriber(list_id=ml1.id, email="l2@example.com", subscriber_type="list")
+    db.session.add_all([s12])
+    db.session.commit()
+
+    subs_all = utils.get_list_recipients_recursive(ml1.id)
+    subs_direct = utils.get_list_recipients_recursive(ml1.id, only_direct=True)
+    subs_indirect = utils.get_list_recipients_recursive(ml1.id, only_indirect=True)
+
+    assert len(subs_all) == 2  # alice and bob
+    assert len(subs_direct) == 1  # only alice
+    assert len(subs_indirect) == 1  # only bob
+    assert list(subs_all.keys()) == ["alice@example.com", "bob@example.com"]
+    assert list(subs_direct.keys()) == ["alice@example.com"]
+    assert list(subs_indirect.keys()) == ["bob@example.com"]
+
+
+def test_list_subscribers(client) -> None:
+    """list_subscribers returns direct subscribers of a mailing list, optionally excluding lists."""
+
+    del client  # ensure app and DB fixtures are active
+
+    ml1 = MailingList(
+        id="l1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2 = MailingList(
+        id="l2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2])
+    db.session.commit()
+
+    # Add subscribers: one normal, one list
+    s1 = Subscriber(list_id=ml1.id, email="alice@example.com")
+    s2 = Subscriber(list_id=ml1.id, email="l2@example.com")
+    db.session.add_all([s1, s2])
+    db.session.commit()
+
+    # Get subscribers including lists
+    subs_including_lists = utils.get_list_subscribers(ml1.id, exclude_lists=False)
+    subs_excluding_lists = utils.get_list_subscribers(ml1.id, exclude_lists=True)
+    assert len(subs_including_lists) == 2
+    assert list(subs_including_lists.keys()) == ["alice@example.com", "l2@example.com"]
+    assert len(subs_excluding_lists) == 1
+    assert list(subs_excluding_lists.keys()) == ["alice@example.com"]
 
 
 def test_check_recommended_list_setting() -> None:

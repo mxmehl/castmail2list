@@ -5,14 +5,41 @@ import logging
 from flask_babel import _
 
 from .models import MailingList, Subscriber, db
-from .utils import is_email_a_list
+from .utils import is_email_a_list, validate_email
+
+# -----------------------------------------------------------------
+# Lists Services
+# -----------------------------------------------------------------
+
+
+def get_lists(show_deactivated: bool = False) -> dict[str, dict]:
+    """
+    Retrieve all mailing lists.
+
+    Returns:
+
+    """
+    lists: list[MailingList] = MailingList.query.all()
+    if not show_deactivated:
+        lists = [ml for ml in lists if not ml.deleted]
+    return {
+        ml.id: {
+            "id": ml.id,
+            "address": ml.address,
+            "display": ml.display,
+            "mode": ml.mode,
+            "deleted": ml.deleted,
+        }
+        for ml in lists
+    }
+
 
 # -----------------------------------------------------------------
 # Subscriber Services
 # -----------------------------------------------------------------
 
 
-def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: str = "") -> str:
+def add_subscriber_to_list(list_id: str, email: str, name: str = "", comment: str = "") -> str:
     """
     Add a new subscriber to a mailing list.
 
@@ -24,7 +51,7 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
         * Create and save new subscriber
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         email (str): Email address of the subscriber
         name (str): Name of the subscriber (optional)
         comment (str): Optional comment about the subscriber (optional)
@@ -40,10 +67,14 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
     # Normalize email
     email = email.strip().lower()
 
+    # Validate email
+    if not validate_email(email):
+        return f"Invalid email address: {email}"
+
     # Check if subscriber already exists
     existing_subscriber = Subscriber.query.filter_by(list_id=list_id, email=email).first()
     if existing_subscriber:
-        return f'Email "{email}" is already subscribed to this list'
+        return f"Email {email} is already subscribed to list {list_id}"
 
     # Check if subscriber is an existing list. If so, set type and re-use name
     if existing_list := is_email_a_list(email):
@@ -73,6 +104,7 @@ def add_subscriber_to_list(list_id: int, email: str, name: str = "", comment: st
 
 
 def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -> str:
+    # pylint: disable=too-many-return-statements
     """
     Update an existing subscriber in a mailing list.
 
@@ -105,6 +137,9 @@ def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -
     # Special case: update of email, check for conflicts
     if email_new and email_new != subscriber.email:
         email_new = email_new.strip().lower()
+        # Validate new email
+        if not validate_email(email_new):
+            return f"Invalid email address: {email_new}"
 
         # Check if new email conflicts with existing subscriber on the same list (but not itself)
         existing_subscriber: Subscriber | None = Subscriber.query.filter_by(
@@ -127,6 +162,9 @@ def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -
         "comment": comment_new,
         "subscriber_type": subscriber_type_new,
     }.items():
+        if field == "email" and not value:
+            # Skip empty email updates
+            continue
         if value is not None:
             logging.debug("Updating field %s of subscriber %s to '%s'", field, subscriber_id, value)
             setattr(subscriber, field, value)
@@ -164,7 +202,7 @@ def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
         list_id=list_id, email=subscriber_email
     ).first()
     if not subscriber:
-        return f"Subscriber with email {subscriber_email} not found"
+        return f"Subscriber with email {subscriber_email} not found on list {list_id}"
     if subscriber.list_id != list_id:
         return f"Subscriber {subscriber_email} does not belong to list {list_id}"
 
@@ -183,12 +221,12 @@ def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
         return _("Database error: ") + str(e)
 
 
-def get_subscriber_by_id(list_id: int, subscriber_id: int) -> tuple[Subscriber | None, str | None]:
+def get_subscriber_by_id(list_id: str, subscriber_id: int) -> tuple[Subscriber | None, str | None]:
     """
     Get a single subscriber by ID.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_id (int): The ID of the subscriber
 
     Returns:
@@ -211,31 +249,24 @@ def get_subscriber_by_id(list_id: int, subscriber_id: int) -> tuple[Subscriber |
     return subscriber, None
 
 
-def get_subscriber_by_email(list_id: int, subscriber_email: str) -> tuple[Subscriber | None, str]:
+def get_subscriber_by_email(list_id: str, subscriber_email: str) -> Subscriber | None:
     """
     Get a single subscriber by list ID and subscriber email.
 
     Args:
-        list_id (int): The ID of the mailing list
+        list_id (str): The ID of the mailing list
         subscriber_email (str): The email of the subscriber
 
     Returns:
-        tuple: A tuple of (subscriber, error_message).
-            - On success: (Subscriber object, "")
-            - On failure: (None, error message string)
+        Subscriber | None: Subscriber object if found, otherwise None
     """
-    # Verify list exists
-    mailing_list: MailingList | None = MailingList.query.filter_by(id=list_id).first()
-    if not mailing_list:
-        return None, f"Mailing list with ID {list_id} not found"
-
     # Verify subscriber exists and belongs to this list
     subscriber: Subscriber | None = Subscriber.query.filter_by(
         list_id=list_id, email=subscriber_email
     ).first()
     if not subscriber:
-        return None, f"Subscriber with email {subscriber_email} not found on list {list_id}"
+        return None
     if subscriber.list_id != list_id:
-        return None, f"Subscriber {subscriber_email} does not belong to list {list_id}"
+        return None
 
-    return subscriber, ""
+    return subscriber
