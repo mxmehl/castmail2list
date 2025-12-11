@@ -313,6 +313,113 @@ def test_get_list_subscribers_recursive_deduplicates(client):
     assert subs["dave@example.com"]["email"] == "dave@example.com"  # correct email
 
 
+def test_get_list_subscribers_recursive_circular_reference(client):
+    """get_list_subscribers_recursive() handles circular list subscriptions without infinite loop"""
+    del client  # ensure app and DB fixtures are active
+
+    ml1: MailingList = MailingList(
+        id="l1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2: MailingList = MailingList(
+        id="l2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2])
+    db.session.commit()
+
+    # Add normal subscribers
+    s11 = Subscriber(list_id=ml1.id, email="alice@example.com", name="Alice")
+    s21 = Subscriber(list_id=ml2.id, email="bob@example.com")
+    db.session.add_all([s11, s21])
+    db.session.commit()
+
+    # Add circular list subscriptions
+    s12 = Subscriber(list_id=ml1.id, email="l2@example.com", subscriber_type="list")
+    s22 = Subscriber(list_id=ml2.id, email="l1@example.com", subscriber_type="list")
+    db.session.add_all([s12, s22])
+    db.session.commit()
+
+    subs = utils.get_list_subscribers_recursive(ml1.id)
+    assert len(subs) == 2  # alice and bob
+    assert list(subs.keys()) == ["alice@example.com", "bob@example.com"]
+
+
+def test_get_list_subscribers_recursive_deep(client):
+    """get_list_subscribers_recursive() handles lists subscribing to lists multiple levels deep"""
+    del client  # ensure app and DB fixtures are active
+
+    ml1: MailingList = MailingList(
+        id="l1",
+        address="l1@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml2: MailingList = MailingList(
+        id="l2",
+        address="l2@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    ml3: MailingList = MailingList(
+        id="l3",
+        address="l3@example.com",
+        mode="broadcast",
+        imap_host="imap.example",
+        imap_port=993,
+        imap_user="u",
+        imap_pass="p",
+    )
+    db.session.add_all([ml1, ml2, ml3])
+    db.session.commit()
+
+    # Add normal subscribers
+    s11 = Subscriber(list_id=ml1.id, email="alice@example.com", name="Alice")
+    s21 = Subscriber(list_id=ml2.id, email="bob@example.com")
+    s31 = Subscriber(list_id=ml3.id, email="carol@example.com")
+    db.session.add_all([s11, s21, s31])
+    db.session.commit()
+
+    # Add list subscriptions: ml1 -> ml2 -> ml3
+    s12 = Subscriber(list_id=ml1.id, email="l2@example.com", subscriber_type="list")
+    s22 = Subscriber(list_id=ml2.id, email="l3@example.com", subscriber_type="list")
+    db.session.add_all([s12, s22])
+    db.session.commit()
+
+    subs = utils.get_list_subscribers_recursive(ml1.id)
+    assert len(subs) == 3  # alice, bob, carol
+    assert list(subs.keys()) == ["alice@example.com", "bob@example.com", "carol@example.com"]
+    assert subs["bob@example.com"]["source"] == ["l2"]  # from l2
+    assert subs["carol@example.com"]["source"] == ["l3"]  # from l3
+
+    # State doesn't change if m3 is added as subscriber to m1 directly
+    s13 = Subscriber(list_id=ml1.id, email="l3@example.com", subscriber_type="list")
+    db.session.add(s13)
+    db.session.commit()
+
+    subs = utils.get_list_subscribers_recursive(ml1.id)
+    assert len(subs) == 3  # still alice, bob, carol
+    assert list(subs.keys()) == ["alice@example.com", "bob@example.com", "carol@example.com"]
+    assert subs["bob@example.com"]["source"] == ["l2"]  # from l2
+    assert subs["carol@example.com"]["source"] == ["l3"]  # from l3
+
+
 def test_check_recommended_list_setting() -> None:
     """check_recommended_list_setting returns warnings for broadcast lists missing security
     settings."""
