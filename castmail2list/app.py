@@ -34,6 +34,7 @@ from .utils import (
 )
 from .views.api import api1
 from .views.auth import auth
+from .views.errors import register_error_handlers
 from .views.general import general
 from .views.lists import lists
 from .views.logs import logs
@@ -212,6 +213,9 @@ def create_app(
 
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
+
+    # Register error handlers
+    register_error_handlers(app)
 
     # Debug logging of config
     logging.debug("App configuration:\n%s", app.config)

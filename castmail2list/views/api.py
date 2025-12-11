@@ -4,7 +4,6 @@ from functools import wraps
 
 from flask import Blueprint, abort, jsonify, request
 from flask_login import current_user
-from werkzeug.exceptions import NotFound, Unauthorized
 
 from ..models import User
 from ..status import status_complete
@@ -42,25 +41,3 @@ def status():
     """Provide overall status information as JSON"""
     stats = status_complete()
     return jsonify(stats)
-
-
-# -----------------------------------------------------------------
-# API Error Handlers
-# -----------------------------------------------------------------
-
-
-def _generic_error_handler(status_code: int, message: str):
-    """Handle errors for the API"""
-    return jsonify({"status": status_code, "message": message}), status_code
-
-
-@api1.app_errorhandler(404)
-def error_404(e: NotFound):
-    """Handle errors for the API"""
-    return _generic_error_handler(e.code, e.description)
-
-
-@api1.app_errorhandler(401)
-def error_401(e: Unauthorized):
-    """Handle errors for the API"""
-    return _generic_error_handler(e.code, e.description)
