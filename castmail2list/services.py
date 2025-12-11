@@ -154,6 +154,9 @@ def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -
         "comment": comment_new,
         "subscriber_type": subscriber_type_new,
     }.items():
+        if field == "email" and not value:
+            # Skip empty email updates
+            continue
         if value is not None:
             logging.debug("Updating field %s of subscriber %s to '%s'", field, subscriber_id, value)
             setattr(subscriber, field, value)
