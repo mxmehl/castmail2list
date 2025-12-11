@@ -742,18 +742,21 @@ def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
     return log_entries
 
 
-def validate_email(email: str, allow_smtputf8: bool = True) -> bool:
+def validate_email(email: str, allow_smtputf8: bool = True, check_deliverability=False) -> bool:
     """
     Validate the format of an email address.
 
     Args:
         email (str): The email address to validate
         allow_smtputf8 (bool): Whether to allow SMTPUTF8 addresses
+        check_deliverability (bool): Whether to check deliverability of the email address
     Returns:
         bool: True if the email format is valid, False otherwise
     """
     try:
-        email_validator.validate_email(email, allow_smtputf8=allow_smtputf8)
+        email_validator.validate_email(
+            email, allow_smtputf8=allow_smtputf8, check_deliverability=check_deliverability
+        )
         return True
     except email_validator.EmailNotValidError as e:
         logging.debug("Email validation failed for %s: %s", email, e)

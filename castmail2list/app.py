@@ -7,6 +7,7 @@ from logging.config import dictConfig
 from pathlib import Path
 from shutil import copy2
 
+from flasgger import Swagger
 from flask import Flask
 from flask_babel import Babel
 from flask_limiter import Limiter
@@ -218,6 +219,33 @@ def create_app(
 
     # Register error handlers
     register_error_handlers(app)
+
+    # Initialize Swagger documentation for API
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": "apispec",
+                "route": "/api/docs/apispec.json",
+                "rule_filter": lambda rule: rule.rule.startswith("/api/v1"),
+            }
+        ],
+        "static_url_path": "/api/docs/static",
+        "swagger_ui": True,
+        "specs_route": "/api/docs/",
+    }
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "CastMail2List API",
+            "description": "API for managing mailing lists and subscribers",
+            "version": get_version_info(debug=app.debug),
+        },
+        "securityDefinitions": {
+            "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
+        },
+    }
+    Swagger(app, config=swagger_config, template=swagger_template)
 
     # Debug logging of config
     logging.debug("App configuration:\n%s", app.config)
