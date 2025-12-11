@@ -104,6 +104,7 @@ def add_subscriber_to_list(list_id: str, email: str, name: str = "", comment: st
 
 
 def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -> str:
+    # pylint: disable=too-many-return-statements
     """
     Update an existing subscriber in a mailing list.
 
