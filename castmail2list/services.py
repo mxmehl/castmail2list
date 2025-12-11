@@ -5,7 +5,7 @@ import logging
 from flask_babel import _
 
 from .models import MailingList, Subscriber, db
-from .utils import is_email_a_list
+from .utils import is_email_a_list, validate_email
 
 # -----------------------------------------------------------------
 # Lists Services
@@ -66,6 +66,10 @@ def add_subscriber_to_list(list_id: str, email: str, name: str = "", comment: st
 
     # Normalize email
     email = email.strip().lower()
+
+    # Validate email
+    if not validate_email(email):
+        return f"Invalid email address: {email}"
 
     # Check if subscriber already exists
     existing_subscriber = Subscriber.query.filter_by(list_id=list_id, email=email).first()
@@ -132,6 +136,9 @@ def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -
     # Special case: update of email, check for conflicts
     if email_new and email_new != subscriber.email:
         email_new = email_new.strip().lower()
+        # Validate new email
+        if not validate_email(email_new):
+            return f"Invalid email address: {email_new}"
 
         # Check if new email conflicts with existing subscriber on the same list (but not itself)
         existing_subscriber: Subscriber | None = Subscriber.query.filter_by(

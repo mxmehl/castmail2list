@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import email_validator  # dependency for WTForms email validator
 from flask import Flask, flash
 from flask_babel import _
 from imap_tools import MailBox, MailboxLoginError
@@ -739,3 +740,21 @@ def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
         cutoff_date = datetime.now() - timedelta(days=days)
         log_entries = [log for log in log_entries if log.timestamp >= cutoff_date]
     return log_entries
+
+
+def validate_email(email: str, allow_smtputf8: bool = True) -> bool:
+    """
+    Validate the format of an email address.
+
+    Args:
+        email (str): The email address to validate
+        allow_smtputf8 (bool): Whether to allow SMTPUTF8 addresses
+    Returns:
+        bool: True if the email format is valid, False otherwise
+    """
+    try:
+        email_validator.validate_email(email, allow_smtputf8=allow_smtputf8)
+        return True
+    except email_validator.EmailNotValidError as e:
+        logging.debug("Email validation failed for %s: %s", email, e)
+        return False
