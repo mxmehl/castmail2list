@@ -19,7 +19,7 @@ def get_lists(show_deactivated: bool = False) -> dict[str, dict]:
     Returns:
 
     """
-    lists: list[MailingList] = MailingList.query.all()
+    lists: list[MailingList] = MailingList.query.order_by(MailingList.id).all()
     if not show_deactivated:
         lists = [ml for ml in lists if not ml.deleted]
     return {

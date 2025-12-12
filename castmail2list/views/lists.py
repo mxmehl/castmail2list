@@ -42,14 +42,18 @@ def before_request() -> None:
 @lists.route("/", methods=["GET"])
 def index():
     """Show all active mailing lists"""
-    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
+    active_lists: list[MailingList] = (
+        MailingList.query.order_by(MailingList.id).filter_by(deleted=False).all()
+    )
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
 @lists.route("/deactivated", methods=["GET"])
 def deactivated():
     """Show all deactivated mailing lists"""
-    deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
+    deactivated_lists: list[MailingList] = (
+        MailingList.query.order_by(MailingList.id).filter_by(deleted=True).all()
+    )
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
 
 
