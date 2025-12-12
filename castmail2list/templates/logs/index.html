@@ -9,7 +9,7 @@
   <fieldset role="group">
     <select name="fields" aria-label="Searched fields" required>
       <option selected disabled value="">
-        Select the field to search
+        {{ _('Select the field to search') }}
       </option>
       <option>Date</option>
       <option>Level</option>
@@ -18,7 +18,7 @@
       <option>List</option>
     </select>
     <input type="text" name="text" placeholder="{{ _('Search term') }}" autocomplete="email" value="{{ search_text }}" />
-    <input type="submit" value="Search" />
+    <input type="submit" value="{{ _('Search') }}" />
   </fieldset>
 </form>
 
