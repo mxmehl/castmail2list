@@ -212,9 +212,10 @@ __marimo__/
 
 # SCSS compiled files
 *.scss.css*
-# Local seed file
-seed.json
 # Config file
 config.yaml
 # Databases
 *.db
+# CSV and JSON files
+*.csv
+*.json
