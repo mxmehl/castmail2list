@@ -195,7 +195,8 @@ def create_app(
         return app
 
     # Set up rate limiting
-    app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
+    app.config.setdefault("RATE_LIMIT_DEFAULT", "3 per 1 minute")
+    app.config.setdefault("RATE_LIMIT_API", "200 per 1 minute")
     app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
     app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
     limiter = Limiter(
@@ -204,6 +205,10 @@ def create_app(
         storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
     )
     limiter.init_app(app)
+
+    # Exempt API blueprint from default limits and apply custom API limit
+    limiter.exempt(api1)
+    limiter.limit(app.config.get("RATE_LIMIT_API", "200 per 1 minute"))(api1)
 
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
         logging.warning(
