@@ -90,7 +90,7 @@ def backup_sqlite_database(config_database_uri: str) -> None:
         logging.warning("Database file not found, skipping backup")
 
 
-def create_app(
+def create_app(  # pylint: disable=too-many-statements
     config_overrides: dict | None = None,
     yaml_config_path: str | None = None,
     one_off_call: bool = False,
