@@ -5,9 +5,25 @@ from typing import TYPE_CHECKING
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import Mapped, validates
+from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase, Mapped, validates
 
-db = SQLAlchemy()
+
+class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
+    """Base class for all models with naming convention for constraints"""
+
+    metadata = MetaData(
+        naming_convention={
+            "ix": "ix_%(column_0_label)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+            "pk": "pk_%(table_name)s",
+        }
+    )
+
+
+db = SQLAlchemy(model_class=Base)
 if TYPE_CHECKING:
     from flask_sqlalchemy.model import Model
 else:
@@ -165,7 +181,9 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     id = db.Column(db.Integer, primary_key=True)
-    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=False)
+    list_id: str = db.Column(
+        db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=False
+    )
     name: str = db.Column(db.String, nullable=True)
     email: str = db.Column(db.String, nullable=False)
     comment: str = db.Column(db.String, nullable=True)
@@ -207,7 +225,9 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
-    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=False)
+    list_id: str = db.Column(
+        db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=False
+    )
     subject: str = db.Column(db.String, nullable=True)
     from_addr: str = db.Column(db.String, nullable=True)
     headers: str = db.Column(db.Text, nullable=False)
@@ -247,7 +267,7 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
     email_in_mid: str = db.Column(db.String, db.ForeignKey("email_in.message_id"), nullable=False)
-    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=True)
+    list_id: str = db.Column(db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=True)
     subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
     raw: str = db.Column(db.Text)  # store full RFC822 text
@@ -284,4 +304,6 @@ class Logs(Model):  # pylint: disable=too-few-public-methods
     event: str = db.Column(db.String, nullable=False)  # Event type: "sent-msg", "login-attempt"
     message: str = db.Column(db.Text, nullable=False)  # Short log message
     details: dict = db.Column(db.JSON, nullable=True)  # Optional detailed log message in JSON
-    list_id: str = db.Column(db.String, db.ForeignKey("list.id"), nullable=True)  # Associated list
+    list_id: str = db.Column(
+        db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=True
+    )  # Associated list

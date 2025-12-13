@@ -120,10 +120,10 @@ def list_subscribers_get(list_id: str):
     return jsonify(subscribers)
 
 
-@api1.route("/lists/<list_id>/subscribers", methods=["PUT"])
+@api1.route("/lists/<list_id>/subscribers", methods=["POST"])
 @api_auth_required
 @api_require_list
-def list_subscribers_put(list_id: str):
+def list_subscribers_post(list_id: str):
     """Add a new subscriber to a specific mailing list via API"""
     # Parse query parameters
     data: dict = request.get_json()

@@ -8,7 +8,7 @@ from flask_login import login_required
 
 from ..config import AppConfig
 from ..forms import MailingListForm, SubscriberAddForm
-from ..models import MailingList, Subscriber, db
+from ..models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
 from ..services import (
     add_subscriber_to_list,
     delete_subscriber_from_list,
@@ -42,14 +42,18 @@ def before_request() -> None:
 @lists.route("/", methods=["GET"])
 def index():
     """Show all active mailing lists"""
-    active_lists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
+    active_lists: list[MailingList] = (
+        MailingList.query.order_by(MailingList.id).filter_by(deleted=False).all()
+    )
     return render_template("lists/index.html", lists=active_lists, config=AppConfig)
 
 
 @lists.route("/deactivated", methods=["GET"])
 def deactivated():
     """Show all deactivated mailing lists"""
-    deactivated_lists: list[MailingList] = MailingList.query.filter_by(deleted=True).all()
+    deactivated_lists: list[MailingList] = (
+        MailingList.query.order_by(MailingList.id).filter_by(deleted=True).all()
+    )
     return render_template("lists/deactivated.html", lists=deactivated_lists, config=AppConfig)
 
 
@@ -191,7 +195,8 @@ def edit(list_id: str):
             )
 
         # Detect change of ID
-        if new_id != mailing_list.id:
+        old_id = mailing_list.id
+        if new_id != old_id:
             flash(
                 _(
                     "You changed the name of the mailing list. However, this did not change the "
@@ -228,6 +233,17 @@ def edit(list_id: str):
         # Convert comma-separated fields to list object for storage in DB
         mailing_list.allowed_senders = string_to_list(form.allowed_senders.data, lower=True)
         mailing_list.sender_auth = string_to_list(form.sender_auth.data)
+
+        # Handle ID change by updating related records first
+        if new_id != old_id:
+            # Update all related records to point to the new ID
+            Subscriber.query.filter_by(list_id=old_id).update({"list_id": new_id})
+            EmailIn.query.filter_by(list_id=old_id).update({"list_id": new_id})
+            EmailOut.query.filter_by(list_id=old_id).update({"list_id": new_id})
+            Logs.query.filter_by(list_id=old_id).update({"list_id": new_id})
+
+            # Now update the primary key
+            mailing_list.id = new_id
 
         db.session.commit()
         flash(_('List "%(name)s" updated successfully!', name=mailing_list.display), "success")
