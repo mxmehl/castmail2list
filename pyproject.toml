@@ -4,7 +4,7 @@
 
 [tool.poetry]
 name = "castmail2list"
-version = "0.4.0"
+version = "0.4.1"
 description = "Simple mailing list software with IMAP mailbox backend, web interface, and multiple list modes."
 repository = "https://github.com/mxmehl/castmail2list"
 authors = ["Max Mehl <mail@mehl.mx>"]
