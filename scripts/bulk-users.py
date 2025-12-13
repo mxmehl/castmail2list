@@ -44,7 +44,7 @@ def main():
 
             if args.operation == "add":
                 data = {"email": email, "name": name, "comment": comment}
-                response = requests.put(
+                response = requests.post(
                     api_base.format(list_id=list_id),
                     json=data,
                     headers=headers,
