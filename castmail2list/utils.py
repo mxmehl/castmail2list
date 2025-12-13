@@ -337,6 +337,7 @@ def get_list_subscribers(list_id: str, exclude_lists: bool = False) -> dict[str,
             "email": sub.email,
             "comment": sub.comment,
             "subscriber_type": sub.subscriber_type,
+            "list_id": sub.list_id,
         }
 
     logging.debug(
