@@ -27,7 +27,9 @@ def by_email(email: str):
     """Show which lists a subscriber is part of"""
     # Find all subscriptions for this email address
     email_norm = email.strip().lower()
-    subscriptions: list[Subscriber] = Subscriber.query.filter_by(email=email_norm).all()
+    subscriptions: list[Subscriber] = (
+        Subscriber.query.order_by(Subscriber.email).filter_by(email=email_norm).all()
+    )
 
     if not subscriptions:
         flash(_('No subscriptions found for "%(email)s"', email=email), "warning")

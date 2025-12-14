@@ -29,7 +29,7 @@
 
 <h3>{{ _('Direct Subscribers') }}</h3>
 <p>{{ _('All direct subscribers of this list. May include other mailing lists whose recipients you will find in a second table below.') }}</p>
-{% if mailing_list.subscribers %}
+{% if subscribers_direct %}
 <table class="striped">
     <thead>
         <tr>
@@ -40,7 +40,7 @@
         </tr>
     </thead>
     <tbody>
-        {%- for subscriber in mailing_list.subscribers %}
+        {%- for _email, subscriber in subscribers_direct.items() %}
         {%- if subscriber.subscriber_type == "list" %}{% set list = is_email_a_list(subscriber.email) %}{% endif %}
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
