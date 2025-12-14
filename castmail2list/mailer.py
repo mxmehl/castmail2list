@@ -104,7 +104,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
                 self.msg.html or self.msg.text, "html" if self.msg.html else "plain"
             )
 
-    def prepare_common_headers(self) -> None:
+    def prepare_common_headers(self) -> None:  # pylint: disable=too-many-branches
         """Prepare common email headers, except To which is per-recipient"""
         # --- Sanity checks ---
         if not self.composed_msg:
