@@ -13,10 +13,11 @@
         <tr>
             <th>{{ _('Email') }}</th>
             <th>{{ _('Subscribed Lists') }}</th>
+            <th>{{ _('Bounces') }}</th>
         </tr>
     </thead>
     <tbody>
-        {% for email, lists in subscribers.items() %}
+        {% for email, details in subscribers.items() %}
         {%- if is_email_a_list(email) %}{% set list = is_email_a_list(email) %}{% endif %}
         <tr>
             <td>
@@ -26,8 +27,8 @@
                 {% endif %}
             </td>
             <td>
-                {% if lists %}
-                    {% for list in lists %}
+                {% if details.lists %}
+                    {% for list in details.lists %}
                         <a href="{{ url_for('lists.subscribers_manage', list_id=list.id) }}">{{ list.display }}</a>
                         {% if list.deleted %} ({{ _('Deactivated') }}){% endif %}
                         {% if not loop.last %}, {% endif %}
@@ -35,6 +36,8 @@
                 {% else %}
                     <em>{{ _('Not subscribed to any lists.') }}</em>
                 {% endif %}
+            </td>
+            <td>{{ details.bounces }}</td>
         </tr>
         {% endfor %}
     </tbody>
