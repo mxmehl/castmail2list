@@ -508,6 +508,14 @@ def send_rejection_notification(  # pylint: disable=too-many-arguments
         logging.debug("Skipping rejection notification for %s", sender_email)
         return False
 
+    # Log sending attempt
+    create_log_entry(
+        level="info",
+        event="email_out",
+        message=f"Sending rejection notification to {sender_email} for message to {recipient}",
+        details={"recipient": recipient, "reason": reason},
+    )
+
     try:
         text_body = render_template(
             "email_rejection_notification.txt",
