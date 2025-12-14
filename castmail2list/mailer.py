@@ -121,8 +121,15 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
                 ml_address=self.ml.address,
                 ml_display=self.ml.display,
             )
-            # Reply-To: No Reply-To, sender is the expected recipient of replies
-            self.reply_to = ""
+            # Set Reply-To:
+            # * If the list has a custom From address, no Reply-To is needed
+            # * If not, set Reply-To to the original sender to allow direct replies. In this case,
+            #   it is also set for the X-MailFrom header.
+            if self.ml.from_addr:
+                self.reply_to = ""
+            else:
+                self.reply_to = self.msg.from_values.email
+                self.x_mailfrom_header = self.msg.from_values.email
             # Remove list address from To and CC headers to avoid confusion
             if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
                 self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
