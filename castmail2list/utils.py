@@ -604,21 +604,26 @@ def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     date.
 
     Args:
-        only (str): If "bounces", return only bounce messages; if "normal", return only normal
-            messages; if empty, return all messages
+        only (str): Filter the messages
+            * If "ok", return only successful
+            * If "bounces", return only bounce messages
+            * If "failures", return only failure messages (except bounces)
+            * If empty, return all messages
         days (int): Only return messages from the last given number of days. If 0, return all
 
     Returns:
         list[Message]: A list of all requested messages, descending by received date
     """
-    if only not in ("", "bounces", "normal"):
+    if only not in ("", "bounces", "failures", "ok"):
         logging.critical("Invalid 'only' parameter for get_all_messages: %s", only)
         raise ValueError(f"Invalid 'only' parameter: {only}")
     all_messages: list[EmailIn] = EmailIn.query.order_by(EmailIn.received_at.desc()).all()
     if only == "bounces":
         all_messages = [msg for msg in all_messages if msg.status == "bounce-msg"]
-    if only == "normal":
-        all_messages = [msg for msg in all_messages if msg.status != "bounce-msg"]
+    if only == "failures":
+        all_messages = [msg for msg in all_messages if msg.status not in ("ok", "bounce-msg")]
+    if only == "ok":
+        all_messages = [msg for msg in all_messages if msg.status == "ok"]
     if days > 0:
         cutoff_date = datetime.now() - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]

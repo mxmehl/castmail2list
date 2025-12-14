@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-15 11:38+0100\n"
+"POT-Creation-Date: 2025-12-15 16:04+0100\n"
 "PO-Revision-Date: 2025-12-12 17:08+0100\n"
 "Last-Translator: \n"
 "Language: de\n"
@@ -192,7 +192,7 @@ msgstr "Regeneriere API-Schlüssel"
 msgid "Update Your Account"
 msgstr "Aktualisiere dein Konto"
 
-#: castmail2list/imap_worker.py:360
+#: castmail2list/imap_worker.py:356
 #, python-format
 msgid ""
 "This is a broadcast list. Only authorized senders can send messages to "
@@ -201,7 +201,7 @@ msgstr ""
 "Das ist eine Verteiler-Liste. Nur autorisierte Absender können "
 "Nachrichten an %(address)s senden."
 
-#: castmail2list/imap_worker.py:376
+#: castmail2list/imap_worker.py:388
 #, python-format
 msgid ""
 "This is a group list that only accepts messages from subscribers of "
@@ -210,7 +210,7 @@ msgstr ""
 "Das ist eine Gruppenliste, die ausschließlich Nachrichten von Abonnenten "
 "von %(address)s akzeptiert."
 
-#: castmail2list/mailer.py:524
+#: castmail2list/mailer.py:533
 #, python-format
 msgid "Message to %(recipient)s not delivered"
 msgstr "Nachricht an %(recipient)s nicht zugestellt"
@@ -258,7 +258,7 @@ msgstr "Nachrichten"
 msgid "Lists"
 msgstr "Listen"
 
-#: castmail2list/templates/base.html:36 castmail2list/templates/index.html:120
+#: castmail2list/templates/base.html:36 castmail2list/templates/index.html:137
 #: castmail2list/templates/lists/deactivated.html:35
 #: castmail2list/templates/lists/index.html:44
 #: castmail2list/templates/lists/subscribers_manage.html:3
@@ -277,11 +277,11 @@ msgstr "Konto"
 msgid "Message Not Delivered"
 msgstr "Nachricht nicht zugestellt"
 
-#: castmail2list/templates/email_rejection_notification.txt:4
+#: castmail2list/templates/email_rejection_notification.txt:5
 msgid "Hello,"
 msgstr "Hallo,"
 
-#: castmail2list/templates/email_rejection_notification.txt:6
+#: castmail2list/templates/email_rejection_notification.txt:7
 #, python-format
 msgid ""
 "Your message to %(recipient)s could not be delivered for the following "
@@ -290,7 +290,7 @@ msgstr ""
 "deine Nachricht an %(recipient)s konnte aus folgendem Grund nicht "
 "zugestellt werden:"
 
-#: castmail2list/templates/email_rejection_notification.txt:11
+#: castmail2list/templates/email_rejection_notification.txt:12
 #, python-format
 msgid ""
 "This is an automated message from the mailing list system at %(domain)s. "
@@ -321,7 +321,8 @@ msgstr ""
 
 #: castmail2list/templates/index.html:10
 #: castmail2list/templates/messages/detail.html:28
-#: castmail2list/templates/messages/index.html:20
+#: castmail2list/templates/messages/failures.html:15
+#: castmail2list/templates/messages/index.html:21
 msgid "Status"
 msgstr "Status"
 
@@ -330,22 +331,23 @@ msgid "Incoming Emails"
 msgstr "Eingehende E-Mails"
 
 #: castmail2list/templates/index.html:16 castmail2list/templates/index.html:34
-#: castmail2list/templates/index.html:109
-#: castmail2list/templates/index.html:121
+#: castmail2list/templates/index.html:126
+#: castmail2list/templates/index.html:138
 msgid "Total"
 msgstr "Gesamt"
 
 #: castmail2list/templates/index.html:17 castmail2list/templates/index.html:35
 #: castmail2list/templates/index.html:52 castmail2list/templates/index.html:72
-#: castmail2list/templates/index.html:92
+#: castmail2list/templates/index.html:92 castmail2list/templates/index.html:109
 msgid "Last 7 days"
 msgstr "Letzte 7 Tage"
 
 #: castmail2list/templates/index.html:26 castmail2list/templates/index.html:44
 #: castmail2list/templates/index.html:64 castmail2list/templates/index.html:84
 #: castmail2list/templates/index.html:101
-#: castmail2list/templates/index.html:113
-#: castmail2list/templates/index.html:123
+#: castmail2list/templates/index.html:118
+#: castmail2list/templates/index.html:130
+#: castmail2list/templates/index.html:140
 msgid "View all"
 msgstr "Alle anschauen"
 
@@ -362,20 +364,26 @@ msgid "Warnings"
 msgstr "Warnungen"
 
 #: castmail2list/templates/index.html:91
+#: castmail2list/templates/messages/failures.html:2
+#: castmail2list/templates/messages/failures.html:4
+msgid "Incoming Email Failures"
+msgstr "Eingehende E-Mail-Fehler"
+
+#: castmail2list/templates/index.html:108
 msgid "Bounces"
 msgstr "Bounces"
 
-#: castmail2list/templates/index.html:108
+#: castmail2list/templates/index.html:125
 #: castmail2list/templates/lists/index.html:3
 #: castmail2list/templates/lists/index.html:6
 msgid "Mailing Lists"
 msgstr "Mailinglisten"
 
-#: castmail2list/templates/index.html:110
+#: castmail2list/templates/index.html:127
 msgid "Active"
 msgstr "Aktiv"
 
-#: castmail2list/templates/index.html:111
+#: castmail2list/templates/index.html:128
 #: castmail2list/templates/lists/subscribers_manage.html:50
 #: castmail2list/templates/subscribers/by_email.html:31
 #: castmail2list/templates/subscribers/index.html:25
@@ -548,7 +556,8 @@ msgstr "E-Mail"
 #: castmail2list/templates/logs/index.html:32
 #: castmail2list/templates/messages/bounces.html:13
 #: castmail2list/templates/messages/detail.html:14
-#: castmail2list/templates/messages/index.html:19
+#: castmail2list/templates/messages/failures.html:14
+#: castmail2list/templates/messages/index.html:20
 #: castmail2list/templates/messages/sent.html:13
 #: castmail2list/templates/subscribers/index.html:25
 msgid "List"
@@ -638,14 +647,16 @@ msgstr "Bounce-Nachrichten"
 
 #: castmail2list/templates/messages/bounces.html:11
 #: castmail2list/templates/messages/detail.html:10
-#: castmail2list/templates/messages/index.html:16
+#: castmail2list/templates/messages/failures.html:11
+#: castmail2list/templates/messages/index.html:17
 #: castmail2list/templates/messages/sent.html:11
 msgid "Subject"
 msgstr "Betreff"
 
 #: castmail2list/templates/messages/bounces.html:12
 #: castmail2list/templates/messages/detail.html:24
-#: castmail2list/templates/messages/index.html:18
+#: castmail2list/templates/messages/failures.html:13
+#: castmail2list/templates/messages/index.html:19
 msgid "Received At"
 msgstr "Empfangen am"
 
@@ -660,7 +671,8 @@ msgid "Message detail"
 msgstr "Nachrichten-Details"
 
 #: castmail2list/templates/messages/detail.html:20
-#: castmail2list/templates/messages/index.html:17
+#: castmail2list/templates/messages/failures.html:12
+#: castmail2list/templates/messages/index.html:18
 msgid "From"
 msgstr "Von"
 
@@ -699,6 +711,10 @@ msgid "View Sent Messages"
 msgstr "Versendete Nachrichten anschauen"
 
 #: castmail2list/templates/messages/index.html:10
+msgid "View Failure Messages"
+msgstr "Fehler-Nachrichten anschauen"
+
+#: castmail2list/templates/messages/index.html:11
 msgid "View Bounce Messages"
 msgstr "Bounce-Nachrichten anschauen"
 
@@ -875,7 +891,7 @@ msgstr "Hinweis: Dieser Abonnent ist selbst eine Mailingliste."
 msgid "Log entry not found."
 msgstr "Logeintrag nicht gefunden."
 
-#: castmail2list/views/messages.py:40
+#: castmail2list/views/messages.py:62
 msgid "Message not found"
 msgstr "Nachricht nicht gefunden"
 

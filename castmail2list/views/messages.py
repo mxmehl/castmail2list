@@ -23,8 +23,30 @@ def before_request() -> None:
 @messages.route("/")
 def index() -> str:
     """Show all normal incoming messages"""
-    msgs: list[EmailIn] = get_all_incoming_messages(only="normal")
+    msgs: list[EmailIn] = get_all_incoming_messages(only="ok")
     return render_template("messages/index.html", messages=msgs)
+
+
+@messages.route("/bounces")
+def bounces() -> str:
+    """Show only bounced messages"""
+    return render_template(
+        "messages/bounces.html", messages=get_all_incoming_messages(only="bounces")
+    )
+
+
+@messages.route("/failures")
+def failures() -> str:
+    """Show only failure messages (except bounces)"""
+    return render_template(
+        "messages/failures.html", messages=get_all_incoming_messages(only="failures")
+    )
+
+
+@messages.route("/sent")
+def sent() -> str:
+    """Show all outgoing messages"""
+    return render_template("messages/sent.html", messages=get_all_outgoing_messages())
 
 
 @messages.route("/<message_id>")
@@ -39,17 +61,3 @@ def show(message_id: str) -> str:
         )
     flash(_("Message not found"), "error")
     return render_template("messages/detail.html", message=None)
-
-
-@messages.route("/bounces")
-def bounces() -> str:
-    """Show only bounced messages"""
-    return render_template(
-        "messages/bounces.html", messages=get_all_incoming_messages(only="bounces")
-    )
-
-
-@messages.route("/sent")
-def sent() -> str:
-    """Show all outgoing messages"""
-    return render_template("messages/sent.html", messages=get_all_outgoing_messages())

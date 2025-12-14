@@ -37,10 +37,12 @@ def status_complete() -> dict:
     Returns:
         dict: A dictionary containing overall status information.
     """
-    email_in_all = get_all_incoming_messages(only="normal")
-    email_in_days_7 = get_all_incoming_messages(only="normal", days=7)
+    email_in_all = get_all_incoming_messages(only="ok")
+    email_in_days_7 = get_all_incoming_messages(only="ok", days=7)
     bounce_days_7 = get_all_incoming_messages(only="bounces", days=7)
     bounce_last_5 = get_all_incoming_messages(only="bounces")[:5]
+    email_in_fail_all = get_all_incoming_messages(only="failures")
+    email_in_fail_days_7 = get_all_incoming_messages(only="failures", days=7)
     email_out_all = get_all_outgoing_messages()
     email_out_days_7 = get_all_outgoing_messages(days=7)
     errors_days_7 = get_log_entries(exact=True, days=7, level="error")
@@ -60,15 +62,40 @@ def status_complete() -> dict:
             "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_days_7],
             "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_all[:5]],
         },
+        "email_in_failures": {
+            "count": len(email_in_fail_all),
+            "days_7": [
+                {"mid": msg.message_id, "subject": msg.subject, "status": msg.status}
+                for msg in email_in_fail_days_7
+            ],
+            "last_5": [
+                {"mid": msg.message_id, "subject": msg.subject, "status": msg.status}
+                for msg in email_in_fail_all[:5]
+            ],
+        },
         "bounces": {
             "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_days_7],
             "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_last_5],
         },
         "email_out": {
             "count": len(email_out_all),
-            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_out_days_7],
+            "days_7": [
+                {
+                    "mid": msg.message_id,
+                    "subject": msg.subject,
+                    "sent_successful": len(msg.sent_successful),
+                    "sent_failed": len(msg.sent_failed),
+                }
+                for msg in email_out_days_7
+            ],
             "last_5": [
-                {"mid": msg.message_id, "subject": msg.subject} for msg in email_out_all[:5]
+                {
+                    "mid": msg.message_id,
+                    "subject": msg.subject,
+                    "sent_successful": len(msg.sent_successful),
+                    "sent_failed": len(msg.sent_failed),
+                }
+                for msg in email_out_all[:5]
             ],
         },
         "errors": {

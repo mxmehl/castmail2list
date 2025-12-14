@@ -602,7 +602,7 @@ def test_get_all_incoming_messages(client) -> None:
     assert any(msg.message_id == "bounce-1" for msg in recent_bounces)
 
     # Retrieve normal messages from the last 7 days
-    recent_normals = utils.get_all_incoming_messages(only="normal", days=7)
+    recent_normals = utils.get_all_incoming_messages(only="ok", days=7)
     assert len(recent_normals) == 1
     assert any(msg.message_id == "normal-1" for msg in recent_normals)
 
