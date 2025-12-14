@@ -727,3 +727,67 @@ def test_store_msg_generates_message_id_when_missing(incoming_message_factory):
     stored_msg = all_msgs[-1] if all_msgs else None
     assert stored_msg is not None
     assert stored_msg.message_id != ""
+
+
+# ==================== Tests for Rejection Notifications Integration ====================
+# Note: Detailed unit tests for should_notify_sender() and send_rejection_notification()
+# are in test_mailer.py. These integration tests only verify end-to-end workflow.
+
+
+def test_rejection_notification_integration_known_sender(
+    mailing_list: MailingList, incoming_message_factory, smtp_mock
+):
+    """Integration test: rejection notification sent to known sender via full workflow"""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = ["allowed@example.com"]
+
+    # Add the rejected sender to database (so they're "known")
+    subscriber = Subscriber(
+        list_id=mailing_list.id, email="rejected@example.com", name="Rejected User"
+    )
+    db.session.add(subscriber)
+    db.session.commit()
+
+    raw = (
+        b"Subject: Test\nTo: list@example.com\nFrom: rejected@example.com\n"
+        b"Message-ID: <test123>\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "rej-1"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    incoming.app.config["NOTIFY_REJECTED_SENDERS"] = True
+    incoming.app.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+
+    res = incoming.process_incoming_msg()
+    assert res is False  # Message rejected
+
+    # Verify SMTP was called (notification sent)
+    assert len(smtp_mock) == 1
+    assert smtp_mock[0]["to_addrs"] == "rejected@example.com"
+
+
+def test_rejection_notification_integration_unknown_sender(
+    mailing_list: MailingList, incoming_message_factory, smtp_mock
+):
+    """Integration test: no notification for unknown sender via full workflow"""
+    mailing_list.mode = "broadcast"
+    mailing_list.allowed_senders = ["allowed@example.com"]
+
+    raw = (
+        b"Subject: Test\nTo: list@example.com\nFrom: unknown@example.com\n"
+        b"Message-ID: <test789>\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "rej-3"
+
+    incoming: IncomingEmail = incoming_message_factory(msg)
+    incoming.app.config["NOTIFY_REJECTED_SENDERS"] = True
+    incoming.app.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    incoming.app.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+
+    res = incoming.process_incoming_msg()
+    assert res is False  # Message rejected
+
+    # Verify NO SMTP send was attempted (notification was not sent)
+    assert len(smtp_mock) == 0
