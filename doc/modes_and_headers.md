@@ -28,15 +28,23 @@ where they behave the same.
 - SMTP envelope-from: constructed using `create_bounce_address(ml_address, recipient)`
   (this is the envelope/bounce address used for SMTP delivery in both modes).
 
+## Sanity checks
+
+- If `msg.from_values` is missing, the code logs an error and cannot prepare the proper `From` header (sending is not performed).
+
 ## Broadcast mode (ml.mode == "broadcast")
 
 - From header:
-  - `From` is the list's configured `from_addr` if set, otherwise the list address.
-  - The message appears to come from the list (or the list's From address).
+  - `From` is the list's configured `from_addr` if set (allows a custom sender address).
+  - If no `from_addr` is configured, uses `"Sender Name via List Name <list@address>"`
+    format (same as group mode).
 - Reply-To:
-  - No `Reply-To` header is set by CastMail2List in broadcast mode (empty). Replies
-    are expected to go to the original sender (as they appear in the message or
-    handled by the recipient client).
+  - If `from_addr` is set: No `Reply-To` header (replies go to the custom From address).
+  - If no `from_addr`: `Reply-To` is set to the original sender's email address to allow
+    direct replies.
+- X-MailFrom:
+  - If `from_addr` is set: Not set.
+  - If no `from_addr`: Set to the original sender's email address (for debugging/tracking).
 - To/Cc handling:
   - The list address is removed from `To` and `Cc` when composing the outgoing
     message (to avoid confusion).
@@ -53,8 +61,6 @@ where they behave the same.
   - `From` is set to `"Sender Name via List Name <list@address>"` (built from the
     original sender and the list name). This exposes the original sender while still
     showing the list context.
-  - If `msg.from_values` is missing, the code logs an error and cannot prepare the
-    proper `From` header (sending is not performed normally).
 - Reply-To:
   - By default `Reply-To` is the list address (`ml.address`).
   - If the original sender is not a subscriber, the header becomes
@@ -96,11 +102,11 @@ where they behave the same.
 
 ## Quick reference table
 
-Header / Behavior | broadcast | group
-:---|:---:|:---:
-From | `ml.from_addr` or `ml.address` | `"Sender Name via List Name <list@address>"`
-Reply-To | none | `ml.address` or `"sender, ml.address"` if sender not subscriber
-X-MailFrom | (not set) | original sender email
-To header mutation | recipient appended per-recipient | original To preserved
-Avoid duplicates (`ml.avoid_duplicates`) | applies | applies
-SMTP envelope-from | per-recipient bounce address | per-recipient bounce address
+| Header / Behavior                        |                                broadcast                                |                              group                              |
+| :--------------------------------------- | :---------------------------------------------------------------------: | :-------------------------------------------------------------: |
+| From                                     | `ml.from_addr` (if set) or `"Sender Name via List Name <list@address>"` |          `"Sender Name via List Name <list@address>"`           |
+| Reply-To                                 |           none (if `from_addr` set) or original sender email            | `ml.address` or `"sender, ml.address"` if sender not subscriber |
+| X-MailFrom                               |          (not set if `from_addr` set) or original sender email          |                      original sender email                      |
+| To header mutation                       |                    recipient appended per-recipient                     |                      original To preserved                      |
+| Avoid duplicates (`ml.avoid_duplicates`) |                                 applies                                 |                             applies                             |
+| SMTP envelope-from                       |                      per-recipient bounce address                       |                  per-recipient bounce address                   |

@@ -11,7 +11,7 @@ from pathlib import Path
 import email_validator  # dependency for WTForms email validator
 from flask import Flask, flash
 from flask_babel import _
-from imap_tools import MailBox, MailboxLoginError
+from imap_tools import EmailAddress, MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
 from platformdirs import user_config_path
 from sqlalchemy import func
@@ -166,6 +166,25 @@ def parse_bounce_address(bounce_address: str) -> str | None:
     except ValueError:
         logging.warning("Failed to parse bounce address: %s", bounce_address)
         return None
+
+
+def generate_via_from_header(
+    from_values: EmailAddress | None, ml_address: str, ml_display: str
+) -> str:
+    """Generate 'Sender Name via List Name <list@address>' format for From header.
+
+    Args:
+        from_values (EmailAddress | None): The original From header values
+        ml_address (str): The mailing list email address
+        ml_display (str): The display name of the mailing list
+
+    Returns:
+        str: Formatted From header string
+    """
+    if not from_values:
+        logging.error("No valid From header, cannot generate via header")
+        return ""
+    return f"{from_values.name or from_values.email} " f"via {ml_display} <{ml_address}>"
 
 
 def is_email_a_list(email: str) -> MailingList | None:
