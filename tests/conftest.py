@@ -276,7 +276,7 @@ def fixture_broadcast_list_with_from(client) -> MailingList:
         id="broadcast-from",
         display="Broadcast From List",
         address="broadcast-from@example.com",
-        from_addr="custom@example.com",
+        from_addr="Custom <custom@example.com>",
         mode="broadcast",
         avoid_duplicates=True,
         imap_host="mail.example.com",

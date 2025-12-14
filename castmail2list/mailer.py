@@ -20,6 +20,7 @@ from .models import EmailOut, MailingList, db
 from .utils import (
     create_bounce_address,
     create_log_entry,
+    generate_via_from_header,
     get_list_recipients_recursive,
     get_message_id_from_incoming,
 )
@@ -105,13 +106,21 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
 
     def prepare_common_headers(self) -> None:
         """Prepare common email headers, except To which is per-recipient"""
+        # --- Sanity checks ---
         if not self.composed_msg:
             raise ValueError("Message container type not chosen yet")
+        if not self.msg.from_values:
+            logging.error("No valid From header in message %s, cannot send", self.msg.uid)
+            return
 
         # --- Prepare From and Reply-To headers based on list mode ---
         if self.ml.mode == "broadcast":
-            # From: Use the list's From address if set, otherwise the list address itself
-            self.from_header = self.ml.from_addr or self.ml.address
+            # From: Use the list's From address if set, otherwise use the via format
+            self.from_header = self.ml.from_addr or generate_via_from_header(
+                from_values=self.msg.from_values,
+                ml_address=self.ml.address,
+                ml_display=self.ml.display,
+            )
             # Reply-To: No Reply-To, sender is the expected recipient of replies
             self.reply_to = ""
             # Remove list address from To and CC headers to avoid confusion
@@ -119,13 +128,11 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
                 self.msg.to = tuple(addr for addr in self.msg.to if addr != self.ml.address)
                 self.msg.cc = tuple(addr for addr in self.msg.cc if addr != self.ml.address)
         elif self.ml.mode == "group":
-            # From: Use "Sender Name via List Name <list@address>" format if possible
-            if not self.msg.from_values:
-                logging.error("No valid From header in message %s, cannot send", self.msg.uid)
-                return
-            self.from_header = (
-                f"{self.msg.from_values.name or self.msg.from_values.email} "
-                f"via {self.ml.display} <{self.ml.address}>"
+            # From: Use "Sender Name via List Name <list@address>" format
+            self.from_header = generate_via_from_header(
+                from_values=self.msg.from_values,
+                ml_address=self.ml.address,
+                ml_display=self.ml.display,
             )
             # Set Reply-To:
             # * Set to list address to avoid replies going to all subscribers

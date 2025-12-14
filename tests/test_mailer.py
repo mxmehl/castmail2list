@@ -107,8 +107,8 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
         message_id="new-msg-id@example.com",
     )
 
-    # Check From header - should be list address (no from_addr set)
-    assert mail.from_header == "broadcast@example.com"
+    # Check From header - should be "Sender Name via Broadcast List <...>" format
+    assert mail.from_header == "Sender Name via Broadcast List <broadcast@example.com>"
 
     # Check Reply-To - should be empty in broadcast mode
     assert mail.reply_to == ""
@@ -118,7 +118,7 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
 
     # Check common headers
     assert mail.composed_msg is not None
-    assert mail.composed_msg["From"] == "broadcast@example.com"
+    assert mail.composed_msg["From"] == "Sender Name via Broadcast List <broadcast@example.com>"
     assert mail.composed_msg["Sender"] == "broadcast@example.com"
     assert mail.composed_msg["Message-ID"] == "<new-msg-id@example.com>"
     assert mail.composed_msg["Original-Message-ID"] == "<test@example.com>"
@@ -140,8 +140,8 @@ def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingLis
     )
 
     # From should be the custom from_addr
-    assert mail.from_header == "custom@example.com"
-    assert mail.composed_msg["From"] == "custom@example.com"
+    assert mail.from_header == "Custom <custom@example.com>"
+    assert mail.composed_msg["From"] == "Custom <custom@example.com>"
     assert mail.composed_msg["Sender"] == "broadcast-from@example.com"
 
 
