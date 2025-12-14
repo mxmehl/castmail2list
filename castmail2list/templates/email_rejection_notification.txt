@@ -1,0 +1,12 @@
+{%- set subject = _('Message Not Delivered') %}
+{{ subject }}
+{{ '=' * subject|length }}
+
+{{ _('Hello,') }}
+
+{{ _('Your message to %(recipient)s could not be delivered for the following reason:', recipient=recipient) }}
+
+    {{ reason }}
+
+--
+{{ _('This is an automated message from the mailing list system at %(domain)s. Please do not reply to this email.', domain=domain) }}

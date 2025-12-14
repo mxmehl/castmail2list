@@ -33,8 +33,12 @@ CONFIG_SCHEMA = {
         "SMTP_USER": {"type": "string"},
         "SMTP_PASS": {"type": "string"},
         "SMTP_STARTTLS": {"type": "boolean"},
+        "SYSTEM_EMAIL": {"type": "string"},
+        "NOTIFY_REJECTED_SENDERS": {"type": "boolean"},
+        "NOTIFY_REJECTED_KNOWN_ONLY": {"type": "boolean"},
+        "NOTIFY_REJECTED_TRUSTED_DOMAINS": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["SECRET_KEY", "DOMAIN", "HOST_TYPE", "SMTP_HOST"],
+    "required": ["SECRET_KEY", "DOMAIN", "SYSTEM_EMAIL", "HOST_TYPE", "SMTP_HOST"],
     "additionalProperties": False,
 }
 
@@ -49,6 +53,7 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     # General settings
     LANGUAGE: str = "en"  # Supported languages: "en", "de"
     DOMAIN: str = ""
+    SYSTEM_EMAIL: str = ""
     HOST_TYPE = ""  # used for auto list creation. Can be: empty, uberspace7, uberspace8
     CREATE_LISTS_AUTOMATICALLY: bool = False
     POLL_INTERVAL_SECONDS: int = 60
@@ -73,6 +78,11 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     SMTP_STARTTLS = True
+
+    # Sender notification settings
+    NOTIFY_REJECTED_SENDERS: bool = False
+    NOTIFY_REJECTED_KNOWN_ONLY: bool = True
+    NOTIFY_REJECTED_TRUSTED_DOMAINS: list[str] = []
 
     @classmethod
     def validate_config_schema(cls, cfg: dict, schema: dict) -> None:

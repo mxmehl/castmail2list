@@ -11,6 +11,7 @@ DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
 SECRET_KEY: "" # Default: ""
 LANGUAGE: "en" # Supported languages: "en", "de". Default: "en"
 DOMAIN: "lists.example.com" # Default: ""
+SYSTEM_EMAIL: "noreply@lists.example.com" # Default: ""
 HOST_TYPE: "uberspace7" # Can be: uberspace7, uberspace8. Default: ""
 CREATE_LISTS_AUTOMATICALLY: true # Default: false
 POLL_INTERVAL_SECONDS: 60 # Default: 60
@@ -35,3 +36,13 @@ SMTP_PORT: 587 # Default: 587
 SMTP_USER: "list@example.com" # Default: ""
 SMTP_PASS: "your-password-here" # Default: ""
 SMTP_STARTTLS: true # Default: true
+
+# Sender notification settings
+# Send rejection notifications to senders whose messages could not be delivered
+NOTIFY_REJECTED_SENDERS: false # Default: false
+# Only notify senders who are already in the database (subscribers)
+NOTIFY_REJECTED_KNOWN_ONLY: true # Default: true
+# Always notify senders from these domains (even if not in database)
+NOTIFY_REJECTED_TRUSTED_DOMAINS: # Default: []
+  - "example.com"
+  - "trusted-domain.org"
