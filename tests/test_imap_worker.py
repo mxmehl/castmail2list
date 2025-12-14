@@ -8,7 +8,7 @@ from imap_tools import MailboxLoginError, MailMessage
 import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
 from castmail2list.imap_worker import IncomingEmail, create_required_folders
-from castmail2list.models import EmailIn, MailingList, Subscriber, db
+from castmail2list.models import EmailIn, Logs, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
@@ -169,6 +169,25 @@ def test_duplicate_detection_moves_to_duplicate(
 
     # Verify mailbox_stub recorded move to duplicate folder for the second UID
     assert mailbox_stub._moves.get("dup-2") == incoming2.app.config["IMAP_FOLDER_DUPLICATE"]
+
+    # Verify DB has only one Message with our Message-ID
+    stored_msgs = EmailIn.query.filter_by(message_id="dup-test-1@example.com").all()
+    assert len(stored_msgs) == 1
+
+    # Verify DB has a log entry for the duplicate attempt
+    duplicate_logs: list[Logs] = Logs.query.filter_by(
+        event="email_in", list_id=incoming2.ml.id
+    ).all()
+    assert len(duplicate_logs) == 1
+    assert duplicate_logs[0].message.startswith("Duplicate message detected")
+    assert duplicate_logs[0].details.get("original-message-id") == "dup-test-1@example.com"
+
+    # Verify that the duplicate message is still stored in DB, but with a different Message-ID
+    duplicate_stored: list[EmailIn] = EmailIn.query.filter_by(
+        subject="Dup", status="duplicate"
+    ).all()
+    assert len(duplicate_stored) == 1
+    assert duplicate_stored[0].message_id.startswith("duplicate-")
 
 
 def test_broadcast_sender_not_allowed(

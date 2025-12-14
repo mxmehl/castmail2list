@@ -6,13 +6,13 @@ import time
 import traceback
 import uuid
 from datetime import datetime, timezone
+from email.utils import make_msgid
 
 from flask import Flask
 from flask_babel import gettext as _
 from flufl.bounce import scan_message
 from imap_tools import MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
-from sqlalchemy.exc import IntegrityError
 
 from .mailer import send_msg_to_subscribers, send_rejection_notification
 from .models import EmailIn, MailingList, db
@@ -437,19 +437,37 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         Returns:
             bool: True if message was new and stored, False if it was a duplicate
         """
-        if status == "ok":
-            target_folder = self.app.config["IMAP_FOLDER_PROCESSED"]
-        elif status == "bounce-msg":
-            target_folder = self.app.config["IMAP_FOLDER_BOUNCES"]
-        elif status == "duplicate":
-            target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
-        else:
-            target_folder = self.app.config["IMAP_FOLDER_DENIED"]
+        # Check if message already exists in database to avoid identity conflicts
+        message_id = get_message_id_from_incoming(self.msg)
+        existing = db.session.get(EmailIn, message_id)
 
-        # Store message in database
+        if existing:
+            # Message is a duplicate. Log, set a random Message-ID to avoid conflicts, save in DB
+            # with status "duplicate" (which moves it to the duplicate folder later)
+            logging.warning(
+                "Message %s already processed (Message-ID %s exists in DB), skipping",
+                self.msg.uid,
+                message_id,
+            )
+            create_log_entry(
+                level="warning",
+                event="email_in",
+                message=(f"Duplicate message detected to {self.ml.address}"),
+                details={
+                    "status": "duplicate",
+                    "original-message-id": message_id,
+                    "sender": self.msg.from_values.email if self.msg.from_values else "",
+                },
+                list_id=self.ml.id,
+            )
+            # Set new random Message-ID to avoid DB conflicts
+            message_id = "duplicate-" + make_msgid(domain=self.app.config["DOMAIN"]).strip("<>")
+            status = "duplicate"
+
+        # Store new message in database
         m = EmailIn()
         m.list_id = self.ml.id
-        m.message_id = get_message_id_from_incoming(self.msg)
+        m.message_id = message_id
         m.subject = self.msg.subject
         m.from_addr = self.msg.from_
         m.headers = str(dict(self.msg.headers.items()))
@@ -463,20 +481,22 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             )
             return True
         db.session.add(m)
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            logging.warning(
-                "Message %s already processed (Message-ID %s exists in DB), skipping",
-                self.msg.uid,
-                m.message_id,
-            )
-            target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
+        db.session.commit()
 
-        # Mark message as seen and move to target folder
+        # Mark message as seen
         self.mailbox.flag(uid_list=self.msg.uid, flag_set=["\\Seen"], value=True)  # type: ignore
+
+        # Move message to appropriate folder based on status
+        if status == "ok":
+            target_folder = self.app.config["IMAP_FOLDER_PROCESSED"]
+        elif status == "bounce-msg":
+            target_folder = self.app.config["IMAP_FOLDER_BOUNCES"]
+        elif status == "duplicate":
+            target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
+        else:
+            target_folder = self.app.config["IMAP_FOLDER_DENIED"]
         self.mailbox.move(uid_list=self.msg.uid, destination_folder=target_folder)  # type: ignore
+
         logging.debug(
             "Marked message %s as seen and moved to folder '%s'", self.msg.uid, target_folder
         )
