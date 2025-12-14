@@ -288,6 +288,9 @@ def get_list_recipients_recursive(
             if "direct" not in details.get("source", [])
         }
 
+    # Sort by email
+    recipients_dict = dict(sorted(recipients_dict.items(), key=lambda item: item[0]))
+
     logging.debug(
         "Found %d unique, non-list recipients (after optional filters) with details for the list "
         "<%s>: %s",
@@ -326,7 +329,9 @@ def get_list_subscribers(list_id: str, exclude_lists: bool = False) -> dict[str,
         return subscribers_dict
 
     # Get direct subscribers
-    direct_subs: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
+    direct_subs: list[Subscriber] = (
+        Subscriber.query.order_by(Subscriber.email).filter_by(list_id=ml.id).all()
+    )
     for sub in direct_subs:
         # Skip if subscriber is a list and include_lists is False
         if exclude_lists and is_email_a_list(sub.email):
@@ -366,6 +371,9 @@ def get_all_subscribers() -> dict[str, list[MailingList]]:
             if sub.email not in subscriber_map:
                 subscriber_map[sub.email] = []
             subscriber_map[sub.email].append(ml)
+
+    # sort subscriber_map by email
+    subscriber_map = dict(sorted(subscriber_map.items(), key=lambda item: item[0]))
 
     return subscriber_map
 

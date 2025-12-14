@@ -20,6 +20,7 @@ from ..utils import (
     create_email_account,
     flash_form_errors,
     get_list_recipients_recursive,
+    get_list_subscribers,
     is_email_a_list,
     list_to_string,
     string_to_list,
@@ -341,6 +342,7 @@ def subscribers_manage(list_id):
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
+        subscribers_direct=get_list_subscribers(list_id=list_id),
         recipients_indirect=recipients_indirect,
         form=form,
     )
