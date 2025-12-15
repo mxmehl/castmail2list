@@ -12,11 +12,12 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 
-from flask import Flask
+from flask import Flask, render_template
+from flask_babel import _
 from imap_tools import MailBox
 from imap_tools.message import MailMessage
 
-from .models import EmailOut, MailingList, db
+from .models import EmailOut, MailingList, Subscriber, db
 from .utils import (
     create_bounce_address,
     create_log_entry,
@@ -24,6 +25,42 @@ from .utils import (
     get_list_recipients_recursive,
     get_message_id_from_incoming,
 )
+
+
+def send_email_via_smtp(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    smtp_host: str,
+    smtp_port: int,
+    smtp_user: str,
+    smtp_password: str,
+    smtp_starttls: bool,
+    message: bytes,
+    from_addr: str,
+    to_addrs: str,
+    local_hostname: str | None = None,
+) -> None:
+    """
+    Send an email via SMTP with the given configuration.
+
+    Args:
+        smtp_host (str): SMTP server hostname
+        smtp_port (int): SMTP server port
+        smtp_user (str): SMTP username for authentication
+        smtp_password (str): SMTP password for authentication
+        smtp_starttls (bool): Whether to use STARTTLS
+        message (str): Email message to send
+        from_addr (str): Sender address (for sendmail method)
+        to_addrs (str): Recipient address(es) (for sendmail method)
+        local_hostname (str | None): Optional local hostname for SMTP connection
+
+    Raises:
+        Exception: If sending fails
+    """
+    with smtplib.SMTP(smtp_host, smtp_port, local_hostname=local_hostname) as server:
+        if smtp_starttls:
+            server.starttls()
+        if smtp_user and smtp_password:
+            server.login(smtp_user, smtp_password)
+        server.sendmail(from_addr=from_addr, to_addrs=to_addrs, msg=message)
 
 
 class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
@@ -39,7 +76,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         # Relevant settings from app config
         self.app_domain: str = app.config["DOMAIN"]
         self.smtp_server: str = app.config["SMTP_HOST"]
-        self.smtp_port: str | int = app.config["SMTP_PORT"]
+        self.smtp_port: int = int(app.config["SMTP_PORT"])
         self.smtp_user: str = app.config["SMTP_USER"]
         self.smtp_password: str = app.config["SMTP_PASS"]
         self.smtp_starttls: bool = app.config["SMTP_STARTTLS"]
@@ -263,22 +300,17 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             return self.composed_msg.as_bytes()
         try:
             # Send the email
-            with smtplib.SMTP(
-                self.smtp_server,
-                int(self.smtp_port),
+            send_email_via_smtp(
+                smtp_host=self.smtp_server,
+                smtp_port=self.smtp_port,
+                smtp_user=self.smtp_user,
+                smtp_password=self.smtp_password,
+                smtp_starttls=self.smtp_starttls,
+                message=self.composed_msg.as_bytes(),
+                from_addr=create_bounce_address(ml_address=self.ml.address, recipient=recipient),
+                to_addrs=recipient,
                 local_hostname=self.ml.address.split("@")[-1],
-            ) as server:
-                if self.smtp_starttls:
-                    server.starttls()
-                if self.smtp_user and self.smtp_password:
-                    server.login(self.smtp_user, self.smtp_password)
-                server.sendmail(
-                    from_addr=create_bounce_address(
-                        ml_address=self.ml.address, recipient=recipient
-                    ),
-                    to_addrs=recipient,
-                    msg=self.composed_msg.as_string(),
-                )
+            )
             logging.info("Email sent to %s", recipient)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -405,3 +437,147 @@ def send_msg_to_subscribers(
     db.session.commit()
 
     return sent_successful, sent_failed
+
+
+def should_notify_sender(app: Flask, sender_email: str) -> bool:
+    """
+    Determine if a sender should be notified about message rejection.
+
+    Args:
+        app: Flask application instance
+        sender_email: Email address of the sender (case-insensitive)
+
+    Returns:
+        bool: True if sender should be notified, False otherwise
+    """
+    # Check if notifications are enabled
+    if not app.config.get("NOTIFY_REJECTED_SENDERS", False):
+        return False
+
+    # Normalize email to lowercase for case-insensitive comparison
+    sender_email_lower = sender_email.lower()
+
+    # Check if sender domain is in trusted domains list
+    trusted_domains: list[str] = app.config.get("NOTIFY_REJECTED_TRUSTED_DOMAINS", [])
+    if trusted_domains:
+        sender_domain = sender_email_lower.split("@")[-1] if "@" in sender_email_lower else ""
+        # Case-insensitive domain comparison
+        if any(sender_domain == domain.lower() for domain in trusted_domains):
+            logging.debug("Sender %s is in trusted domain, will notify", sender_email)
+            return True
+
+    # If restricted to known senders only, check database
+    if app.config.get("NOTIFY_REJECTED_KNOWN_ONLY", True):
+        subscriber = db.session.query(Subscriber).filter_by(email=sender_email_lower).first()
+        if subscriber:
+            logging.debug("Sender %s found in database, will notify", sender_email)
+            return True
+        logging.debug(
+            "Sender %s not in database and NOTIFY_REJECTED_KNOWN_ONLY is True, will not notify",
+            sender_email,
+        )
+        return False
+
+    # If not restricted to known senders and not in trusted domains, notify anyway
+    logging.debug("Sender %s will be notified (no restrictions active)", sender_email)
+    return True
+
+
+def send_rejection_notification(  # pylint: disable=too-many-arguments
+    app: Flask,
+    sender_email: str,
+    recipient: str,
+    reason: str,
+    in_reply_to: str | None = None,
+) -> bool:
+    """
+    Send a rejection notification to a sender whose message was not delivered.
+
+    Args:
+        app (Flask): Flask application instance
+        sender_email (str): Email address to send notification to
+        recipient (str): The list/recipient the sender tried to send to
+        reason (str): Reason for rejection
+        in_reply_to (str | None): Optional Message-ID to reference in the notification
+
+    Returns:
+        bool: True if notification was sent successfully, False otherwise
+    """
+    # Check if we should notify this sender
+    if not should_notify_sender(app, sender_email):
+        logging.debug("Skipping rejection notification for %s", sender_email)
+        return False
+
+    # Log sending attempt
+    create_log_entry(
+        level="info",
+        event="email_out",
+        message=f"Sending rejection notification to {sender_email} for message to {recipient}",
+        details={"recipient": recipient, "reason": reason},
+    )
+
+    try:
+        text_body = render_template(
+            "email_rejection_notification.txt",
+            recipient=recipient,
+            reason=reason,
+            domain=app.config["DOMAIN"],
+        )
+
+        # Create plain text message
+        msg = MIMEText(text_body, "plain", "utf-8")
+        # App
+        msg["X-Mailer"] = "CastMail2List"
+        msg["X-CastMail2List-Domain"] = app.config["DOMAIN"]
+        # Message
+        msg["Subject"] = _("Message to %(recipient)s not delivered", recipient=recipient)
+        msg["From"] = app.config["SYSTEM_EMAIL"]
+        msg["To"] = sender_email
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain=app.config["DOMAIN"])
+        # Threading and references
+        if in_reply_to:
+            msg["In-Reply-To"] = in_reply_to
+            msg["References"] = in_reply_to
+        # Prevent auto-responder loops
+        msg["Auto-Submitted"] = "auto-replied"  # RFC 3834
+        msg["X-Auto-Response-Suppress"] = "All"  # Prevent auto-responder loops
+        msg["Precedence"] = "bulk"
+
+        # Send email via SMTP
+        if app.config.get("DRY", False):
+            logging.info(
+                "[DRY MODE] Would send rejection notification to %s for message to %s",
+                sender_email,
+                recipient,
+            )
+            return True
+
+        send_email_via_smtp(
+            smtp_host=app.config["SMTP_HOST"],
+            smtp_port=app.config["SMTP_PORT"],
+            smtp_user=app.config["SMTP_USER"],
+            smtp_password=app.config["SMTP_PASS"],
+            smtp_starttls=app.config.get("SMTP_STARTTLS", True),
+            message=msg.as_bytes(),
+            from_addr="",  # Empty Return-Path as it's an auto response
+            to_addrs=sender_email,
+            local_hostname=app.config["DOMAIN"],
+        )
+
+        logging.info(
+            "Sent rejection notification to %s for message to %s (reason: %s)",
+            sender_email,
+            recipient,
+            reason,
+        )
+        return True
+
+    except Exception as e:  # pylint: disable=broad-except
+        logging.error(
+            "Failed to send rejection notification to %s: %s\nTraceback: %s",
+            sender_email,
+            e,
+            traceback.format_exc(),
+        )
+        return False

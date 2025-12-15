@@ -10,53 +10,17 @@ produce correct email headers and behavior as documented in doc/modes_and_header
 import email
 from unittest.mock import MagicMock
 
-import pytest
 from imap_tools import MailMessage
-from pytest import MonkeyPatch
 
-from castmail2list.mailer import OutgoingEmail, send_msg_to_subscribers
+from castmail2list.mailer import (
+    OutgoingEmail,
+    send_msg_to_subscribers,
+    send_rejection_notification,
+    should_notify_sender,
+)
 from castmail2list.models import MailingList, Subscriber, db
 
 # pylint: disable=protected-access,too-many-arguments,too-many-positional-arguments
-
-
-@pytest.fixture(name="smtp_mock")
-def fixture_smtp_mock(monkeypatch: MonkeyPatch):
-    """
-    Mock smtplib.SMTP to avoid actual network calls.
-
-    Returns a mock object that records all sendmail calls for inspection.
-    """
-    smtp_calls = []
-
-    class MockSMTP:
-        """Mock SMTP server for testing"""
-
-        def __init__(self, host, port, local_hostname=None):
-            self.host = host
-            self.port = port
-            self.local_hostname = local_hostname
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            pass
-
-        def starttls(self):
-            """Mock starttls"""
-
-        def login(self, user, password):
-            """Mock login"""
-
-        def sendmail(self, from_addr, to_addrs, msg):
-            """Record sendmail call"""
-            smtp_calls.append(
-                {"from_addr": from_addr, "to_addrs": to_addrs, "msg": msg, "msg_parsed": msg}
-            )
-
-    monkeypatch.setattr("castmail2list.mailer.smtplib.SMTP", MockSMTP)
-    return smtp_calls
 
 
 def create_test_message(
@@ -584,7 +548,12 @@ def test_send_msg_deepcopy_prevents_cross_contamination(
     # Parse the sent messages to verify X-Recipient is unique
     recipients_found: list[str] = []
     for call in smtp_mock:
-        msg_parsed = email.message_from_string(call["msg"])
+        # Handle both bytes and string messages
+        msg_data = call["msg"]
+        if isinstance(msg_data, bytes):
+            msg_parsed = email.message_from_bytes(msg_data)
+        else:
+            msg_parsed = email.message_from_string(msg_data)
         recipients_found.append(msg_parsed["X-Recipient"])
 
     # Each message should have correct X-Recipient
@@ -651,3 +620,197 @@ def test_unknown_mode_logs_error(client, caplog, monkeypatch):
 
     # Should log an error
     assert "Unknown list mode" in caplog.text
+
+
+# ==================== Tests for Rejection Notifications ====================
+
+
+def test_should_notify_sender_disabled(client):
+    """should_notify_sender returns False when NOTIFY_REJECTED_SENDERS is False"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = False
+    assert should_notify_sender(client.application, "test@example.com") is False
+
+
+def test_should_notify_sender_known_only_not_in_db(client):
+    """should_notify_sender returns False when sender not in DB and KNOWN_ONLY is True"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+
+    assert should_notify_sender(client.application, "unknown@example.com") is False
+
+
+def test_should_notify_sender_known_only_in_db(client):
+    """should_notify_sender returns True when sender in DB and KNOWN_ONLY is True"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+
+    # Get the default mailing list from client fixture
+    ml = MailingList.query.filter_by(address="list@example.com").first()
+    assert ml is not None
+
+    # Add subscriber to DB
+    subscriber = Subscriber(list_id=ml.id, email="known@example.com", name="Known User")
+    db.session.add(subscriber)
+    db.session.commit()
+
+    assert should_notify_sender(client.application, "known@example.com") is True
+
+
+def test_should_notify_sender_case_insensitive(client):
+    """should_notify_sender is case-insensitive for email addresses"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+
+    # Get the default mailing list from client fixture
+    ml = MailingList.query.filter_by(address="list@example.com").first()
+    assert ml is not None
+
+    # Add subscriber with lowercase email
+    subscriber = Subscriber(list_id=ml.id, email="user@example.com", name="Test User")
+    db.session.add(subscriber)
+    db.session.commit()
+
+    # Check with different casing
+    assert should_notify_sender(client.application, "USER@EXAMPLE.COM") is True
+    assert should_notify_sender(client.application, "User@Example.Com") is True
+
+
+def test_should_notify_sender_trusted_domain(client):
+    """should_notify_sender returns True for trusted domains even if not in DB"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = ["trusted.com", "internal.org"]
+
+    # Not in DB but from trusted domain
+    assert should_notify_sender(client.application, "anyone@trusted.com") is True
+    assert should_notify_sender(client.application, "user@INTERNAL.ORG") is True  # case-insensitive
+
+    # Not in DB and not from trusted domain
+    assert should_notify_sender(client.application, "stranger@untrusted.com") is False
+
+
+def test_should_notify_sender_no_restrictions(client):
+    """should_notify_sender returns True when KNOWN_ONLY is False and no trusted domains"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+
+    # Anyone should be notified
+    assert should_notify_sender(client.application, "anyone@anywhere.com") is True
+
+
+def test_send_rejection_notification_disabled(client, smtp_mock):
+    """send_rejection_notification should not send when notifications are disabled"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = False
+    client.application.config["DOMAIN"] = "lists.example.com"
+    client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
+
+    result = send_rejection_notification(
+        app=client.application,
+        sender_email="test@example.com",
+        recipient="list@example.com",
+        reason="Not authorized",
+    )
+
+    assert result is False
+    assert len(smtp_mock) == 0
+
+
+def test_send_rejection_notification_success(client, smtp_mock):
+    """send_rejection_notification should send email to known sender"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
+    client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
+    client.application.config["DOMAIN"] = "lists.example.com"
+    client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
+
+    # Get the default mailing list from client fixture
+    ml = MailingList.query.filter_by(address="list@example.com").first()
+    assert ml is not None
+
+    # Add subscriber
+    subscriber = Subscriber(list_id=ml.id, email="known@example.com", name="Known User")
+    db.session.add(subscriber)
+    db.session.commit()
+
+    result = send_rejection_notification(
+        app=client.application,
+        sender_email="known@example.com",
+        recipient="broadcast@example.com",
+        reason="You are not authorized to send to this list",
+    )
+
+    assert result is True
+    assert len(smtp_mock) == 1
+
+    # Verify email was sent
+    call = smtp_mock[0]
+    assert call["to_addrs"] == "known@example.com"
+    assert call["from_addr"] == ""  # Empty Return-Path for auto-response
+
+    # Parse message to check headers and content
+    msg_bytes = call["msg"]
+    parsed = email.message_from_bytes(msg_bytes)
+
+    assert parsed["To"] == "known@example.com"
+    assert parsed["From"] == "noreply@lists.example.com"
+    assert "broadcast@example.com" in parsed["Subject"]
+    assert parsed["Auto-Submitted"] == "auto-replied"
+    assert parsed["X-Auto-Response-Suppress"] == "All"
+    assert parsed["Precedence"] == "bulk"
+
+    # Check body content
+    body_bytes = parsed.get_payload(decode=True)
+    body = body_bytes.decode() if isinstance(body_bytes, bytes) else str(body_bytes)
+    assert "broadcast@example.com" in body
+    assert "not authorized" in body.lower()
+
+
+def test_send_rejection_notification_with_reply_to(client, smtp_mock):
+    """send_rejection_notification should set In-Reply-To when provided"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
+    client.application.config["DOMAIN"] = "lists.example.com"
+    client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
+
+    original_msgid = "<original-message-123@sender.com>"
+
+    result = send_rejection_notification(
+        app=client.application,
+        sender_email="sender@example.com",
+        recipient="list@example.com",
+        reason="Not a member",
+        in_reply_to=original_msgid,
+    )
+
+    assert result is True
+    assert len(smtp_mock) == 1
+
+    # Parse message to check threading headers
+    call = smtp_mock[0]
+    parsed = email.message_from_bytes(call["msg"])
+
+    assert parsed["In-Reply-To"] == original_msgid
+    assert parsed["References"] == original_msgid
+
+
+def test_send_rejection_notification_dry_mode(client, smtp_mock):
+    """send_rejection_notification should not send in DRY mode"""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
+    client.application.config["DRY"] = True
+    client.application.config["DOMAIN"] = "lists.example.com"
+    client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
+
+    result = send_rejection_notification(
+        app=client.application,
+        sender_email="test@example.com",
+        recipient="list@example.com",
+        reason="Test rejection",
+    )
+
+    assert result is True  # Function returns True in DRY mode
+    assert len(smtp_mock) == 0  # But no actual email sent

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from flask import Flask
 from imap_tools import MailMessage
+from pytest import MonkeyPatch
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import generate_password_hash
 
@@ -327,3 +328,48 @@ def fixture_group_list(client) -> MailingList:
     db.session.add(ml)
     db.session.commit()
     return ml
+
+
+# ---------------------- SMTP Mocking Fixture ----------------------
+
+
+@pytest.fixture(name="smtp_mock")
+def fixture_smtp_mock(monkeypatch: MonkeyPatch):
+    """SMTP mock that records all sendmail calls.
+
+    Returns a list where each call is recorded as a dict with:
+    - from_addr: envelope sender
+    - to_addrs: recipient(s)
+    - msg: raw message bytes
+    - msg_parsed: same as msg (kept for compatibility)
+    """
+    smtp_calls = []
+
+    class MockSMTP:  # pylint: disable=too-few-public-methods
+        """Mock SMTP class that records calls instead of sending emails."""
+
+        def __init__(self, host, port, local_hostname=None):
+            self.host = host
+            self.port = port
+            self.local_hostname = local_hostname
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def starttls(self):
+            """Mock starttls"""
+
+        def login(self, user, password):
+            """Mock login"""
+
+        def sendmail(self, from_addr, to_addrs, msg):
+            """Record sendmail call"""
+            smtp_calls.append(
+                {"from_addr": from_addr, "to_addrs": to_addrs, "msg": msg, "msg_parsed": msg}
+            )
+
+    monkeypatch.setattr("castmail2list.mailer.smtplib.SMTP", MockSMTP)
+    return smtp_calls

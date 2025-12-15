@@ -8,14 +8,16 @@ import uuid
 from datetime import datetime, timezone
 
 from flask import Flask
+from flask_babel import gettext as _
 from flufl.bounce import scan_message
 from imap_tools import MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
 from sqlalchemy.exc import IntegrityError
 
-from .mailer import send_msg_to_subscribers
+from .mailer import send_msg_to_subscribers, send_rejection_notification
 from .models import EmailIn, MailingList, db
 from .utils import (
+    create_log_entry,
     get_all_messages_id_from_raw_email,
     get_list_recipients_recursive,
     get_message_id_from_incoming,
@@ -350,10 +352,66 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         if self.ml.mode == "broadcast":
             if not self._check_broadcast_sender_authorization():
                 status = "sender-not-allowed"
+                reason = _(
+                    "This is a broadcast list. Only authorized senders can send messages to "
+                    "%(address)s.",
+                    address=self.ml.address,
+                )
+                # Send rejection notification
+                send_rejection_notification(
+                    app=self.app,
+                    sender_email=self.msg.from_values.email,
+                    recipient=self.ml.address,
+                    reason=reason,
+                    in_reply_to=get_message_id_from_incoming(self.msg),
+                )
+                # Log rejection event
+                create_log_entry(
+                    level="warning",
+                    event="email_in",
+                    message=(
+                        f"Rejection of {self.msg.from_values.email} "
+                        f"for message to {self.ml.address}"
+                    ),
+                    details={
+                        "status": status,
+                        "reason": reason,
+                        "in-reply-to": get_message_id_from_incoming(self.msg),
+                    },
+                    list_id=self.ml.id,
+                )
                 return status, error_info
         elif self.ml.mode == "group":
             if not self._check_group_sender_authorization():
                 status = "sender-not-allowed"
+                reason = _(
+                    "This is a group list that only accepts messages from subscribers of "
+                    "%(address)s.",
+                    address=self.ml.address,
+                )
+                # Send rejection notification
+                send_rejection_notification(
+                    app=self.app,
+                    sender_email=self.msg.from_values.email,
+                    recipient=self.ml.address,
+                    reason=reason,
+                    in_reply_to=get_message_id_from_incoming(self.msg),
+                )
+                # Log rejection event
+                create_log_entry(
+                    level="warning",
+                    event="email_in",
+                    message=(
+                        f"Rejection of {self.msg.from_values.email} "
+                        f"for message to {self.ml.address}"
+                    ),
+                    details={
+                        "status": status,
+                        "reason": reason,
+                        "in-reply-to": get_message_id_from_incoming(self.msg),
+                    },
+                    list_id=self.ml.id,
+                )
                 return status, error_info
 
         # --- Email is actually a message by this CastMail2List instance itself (duplicate) ---
