@@ -62,10 +62,10 @@ where they behave the same.
     original sender and the list name). This exposes the original sender while still
     showing the list context.
 - Reply-To:
-  - By default `Reply-To` is the list address (`ml.address`).
+  - By default `Reply-To` is the list name and address (`ml.display <ml.address>`).
   - If the original sender is not a subscriber, the header becomes
-    `"original-sender, list-address"` so replies go to both the sender and the list.
-  - If the original sender is a subscriber, `Reply-To` is just the list address.
+    `Sender <original-sender>, List <list-address>"` so replies go to both the sender and the list.
+  - If the original sender is a subscriber, `Reply-To` is just the list name and address.
 - X-MailFrom:
   - `X-MailFrom` is set to the original sender's email address (helps debugging).
 - To/Cc handling:
@@ -102,11 +102,11 @@ where they behave the same.
 
 ## Quick reference table
 
-| Header / Behavior                        |                                broadcast                                |                              group                              |
-| :--------------------------------------- | :---------------------------------------------------------------------: | :-------------------------------------------------------------: |
-| From                                     | `ml.from_addr` (if set) or `"Sender Name via List Name <list@address>"` |          `"Sender Name via List Name <list@address>"`           |
-| Reply-To                                 |           none (if `from_addr` set) or original sender email            | `ml.address` or `"sender, ml.address"` if sender not subscriber |
-| X-MailFrom                               |          (not set if `from_addr` set) or original sender email          |                      original sender email                      |
-| To header mutation                       |                    recipient appended per-recipient                     |                      original To preserved                      |
-| Avoid duplicates (`ml.avoid_duplicates`) |                                 applies                                 |                             applies                             |
-| SMTP envelope-from                       |                      per-recipient bounce address                       |                  per-recipient bounce address                   |
+| Header / Behavior                        |                                broadcast                                |                              group                               |
+| :--------------------------------------- | :---------------------------------------------------------------------: | :--------------------------------------------------------------: |
+| From                                     | `ml.from_addr` (if set) or `"Sender Name via List Name <list@address>"` |          `"Sender Name via List Name <list@address>"`            |
+| Reply-To                                 |           original sender email, or none if `from_addr` set             | `ml.address`, or `"sender, ml.address"` if sender not subscriber |
+| X-MailFrom                               |          (not set if `from_addr` set) or original sender email          |                      original sender email                       |
+| To header mutation                       |                    recipient appended per-recipient                     |                      original To preserved                       |
+| Avoid duplicates (`ml.avoid_duplicates`) |                                 applies                                 |                             applies                              |
+| SMTP envelope-from                       |                      per-recipient bounce address                       |                  per-recipient bounce address                    |
