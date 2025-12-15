@@ -208,11 +208,16 @@ def is_email_a_list(email: str) -> MailingList | None:
     Check if the given email address is the address of one of the configured active or inactive
     mailing lists.
 
+    To avoid case sensitivity issues, the check is done in a case-insensitive manner.
+
+    It also removes any +suffix before checking.
+
     Args:
         email (str): The email address to check
     Returns:
-        MailingList | None: The MailingList object if the email is a list address, None otherwise
+        The MailingList object if the email is a list address, None otherwise
     """
+    email = remove_plus_suffix(email)
     if ml := MailingList.query.filter(func.lower(MailingList.address) == func.lower(email)).first():
         return ml
     return None

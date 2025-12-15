@@ -23,6 +23,7 @@ from .utils import (
     get_message_id_from_incoming,
     get_message_id_in_db,
     get_plus_suffix,
+    is_email_a_list,
     is_expanded_address_the_mailing_list,
     parse_bounce_address,
     remove_plus_suffix,
@@ -111,18 +112,17 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
 
         return "", []
 
-    def _validate_email_sender_authentication(self) -> str:
+    def _validate_email_sender_authentication(self) -> bool:
         """
         Validate sender authentication for a mailing list, if a sender authentication password is
         configured. The password is expected to be provided as a +suffix in the To address.
 
         Notes:
         * the password is case-sensitive.
-        * the +suffix is not removed from the To address here; that is done separately after
-        successful authentication.
+        * the +suffix is not removed from the To address here; that is done separately
 
         Returns:
-            str: The successful To address if authentication passed, else empty string
+            bool: True if authentication passed, else False
         """
         sender_email = self.msg.from_values.email if self.msg.from_values else ""
 
@@ -130,33 +130,35 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         for to_addr in self.msg.to:
             if is_expanded_address_the_mailing_list(to_addr, self.ml.address):
                 plus_suffix = get_plus_suffix(to_addr)
-                if plus_suffix in self.ml.sender_auth:
+                if plus_suffix and plus_suffix in self.ml.sender_auth:
                     logging.debug(
-                        "Sender <%s> provided valid authentication password for list <%s>",
+                        "Sender <%s> provided valid authentication password for list <%s>: %s",
                         sender_email,
                         self.ml.address,
+                        plus_suffix,
                     )
-                    return to_addr
-        return ""
+                    return True
+        return False
 
-    def _remove_password_in_to_address(self, old_to: str, new_to: str) -> None:
+    def _remove_suffixes_in_to_addresses(self) -> None:
         """
-        Replace the To address in the MailMessage object.
+        Replace any +suffix in any To address which corresponds to a known email list, to avoid
+        leaking authentication passwords to subscribers.
 
-        Args:
-            old_to (str): The old To address to be replaced
-            new_to (str): The new To address to set
+        Edits self.msg.to and self.msg.to_values in place.
         """
         # Replace in msg.to
         to_addresses = list(self.msg.to)
-        to_addresses = [new_to if old_to else to for to in to_addresses]
+        to_addresses = [
+            remove_plus_suffix(to) if is_email_a_list(to) else to for to in to_addresses
+        ]
         self.msg.to = tuple(to_addresses)
 
         # Replace in msg.to_values
         to_value_addresses = list(self.msg.to_values)
-        for to in to_value_addresses:
-            if to.email == old_to:
-                to.email = new_to
+        for to_value in to_value_addresses:
+            if is_email_a_list(to_value.email):
+                to_value.email = remove_plus_suffix(to_value.email)
         self.msg.to_values = tuple(to_value_addresses)
 
     def _check_broadcast_sender_authorization(self) -> bool:
@@ -193,19 +195,8 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             )
 
         # Check if sender provided valid authentication password
-        elif self.ml.sender_auth and (
-            passed_to_address := self._validate_email_sender_authentication()
-        ):
+        elif self.ml.sender_auth and self._validate_email_sender_authentication():
             sender_allowed = True
-            # Remove the +password suffix from the To address so subscribers don't see it
-            self._remove_password_in_to_address(
-                old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
-            )
-            logging.debug(
-                "Sender <%s> provided valid authentication password for list <%s>",
-                self.msg.from_values.email,
-                self.ml.address,
-            )
 
         # Log rejection if sender is not allowed
         if not sender_allowed:
@@ -267,14 +258,8 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             )
 
         # Bypass check if sender provided valid sender authentication password
-        elif self.ml.sender_auth and (
-            passed_to_address := self._validate_email_sender_authentication()
-        ):
+        elif self.ml.sender_auth and self._validate_email_sender_authentication():
             sender_allowed = True
-            # Remove the +password suffix from the To address so subscribers don't see it
-            self._remove_password_in_to_address(
-                old_to=passed_to_address, new_to=remove_plus_suffix(passed_to_address)
-            )
             logging.debug(
                 "Sender <%s> is not a subscriber but provided valid authentication password "
                 "for list <%s>",
@@ -527,6 +512,9 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             status=status,
             error_info=error_info,
         )
+
+        # Remove all plus suffixes from To addresses to avoid leaking passwords to subscribers
+        self._remove_suffixes_in_to_addresses()
 
         # If status is not "ok" or message is duplicate, signal to skip sending
         if status != "ok" or not no_duplicate:
