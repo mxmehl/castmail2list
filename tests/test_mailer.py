@@ -74,8 +74,8 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
     # Check From header - should be "Sender Name via Broadcast List <...>" format
     assert mail.from_header == "Sender Name via Broadcast List <broadcast@example.com>"
 
-    # Check Reply-To - should be empty in broadcast mode
-    assert mail.reply_to == "sender@example.com"
+    # Check Reply-To
+    assert mail.reply_to == "Sender Name <sender@example.com>"
 
     # Check X-MailFrom - should not be set in broadcast mode
     assert mail.x_mailfrom_header == "sender@example.com"
@@ -83,7 +83,7 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
     # Check common headers
     assert mail.composed_msg is not None
     assert mail.composed_msg["From"] == "Sender Name via Broadcast List <broadcast@example.com>"
-    assert mail.composed_msg["Reply-To"] == "sender@example.com"
+    assert mail.composed_msg["Reply-To"] == "Sender Name <sender@example.com>"
     assert mail.composed_msg["Sender"] == "broadcast@example.com"
     assert mail.composed_msg["X-MailFrom"] == "sender@example.com"
     assert mail.composed_msg["Message-ID"] == "<new-msg-id@example.com>"
@@ -240,8 +240,11 @@ def test_group_basic_headers(client, group_list: MailingList):
     assert mail.composed_msg["X-MailFrom"] == "sender@example.com"
 
     # Reply-To should include sender and list (sender is NOT a subscriber)
-    assert mail.reply_to == "sender@example.com, group@example.com"
-    assert mail.composed_msg["Reply-To"] == "sender@example.com, group@example.com"
+    assert mail.reply_to == "Sender Name <sender@example.com>, Group List <group@example.com>"
+    assert (
+        mail.composed_msg["Reply-To"]
+        == "Sender Name <sender@example.com>, Group List <group@example.com>"
+    )
 
     # Sender should still be list address
     assert mail.composed_msg["Sender"] == "group@example.com"
@@ -278,8 +281,11 @@ def test_group_reply_to_when_sender_not_subscriber(client, group_list):
     )
 
     # Reply-To should include both sender and list
-    assert mail.reply_to == "external@example.com, group@example.com"
-    assert mail.composed_msg["Reply-To"] == "external@example.com, group@example.com"
+    assert mail.reply_to == "External <external@example.com>, Group List <group@example.com>"
+    assert (
+        mail.composed_msg["Reply-To"]
+        == "External <external@example.com>, Group List <group@example.com>"
+    )
 
 
 def test_group_reply_to_when_sender_is_subscriber(client, group_list):
@@ -301,8 +307,8 @@ def test_group_reply_to_when_sender_is_subscriber(client, group_list):
     )
 
     # Reply-To should only be list address
-    assert mail.reply_to == "group@example.com"
-    assert mail.composed_msg["Reply-To"] == "group@example.com"
+    assert mail.reply_to == "Group List <group@example.com>"
+    assert mail.composed_msg["Reply-To"] == "Group List <group@example.com>"
 
 
 def test_group_no_from_values_error(client, group_list: MailingList, caplog):

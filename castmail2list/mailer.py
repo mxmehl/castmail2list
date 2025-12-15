@@ -24,6 +24,7 @@ from .utils import (
     generate_via_from_header,
     get_list_recipients_recursive,
     get_message_id_from_incoming,
+    reply_to_from_email_and_name,
 )
 
 
@@ -165,7 +166,9 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             if self.ml.from_addr:
                 self.reply_to = ""
             else:
-                self.reply_to = self.msg.from_values.email
+                self.reply_to = reply_to_from_email_and_name(
+                    self.msg.from_values.email, self.msg.from_values.name
+                )
                 self.x_mailfrom_header = self.msg.from_values.email
             # Remove list address from To and CC headers to avoid confusion
             if self.ml.address in self.msg.to or self.ml.address in self.msg.cc:
@@ -181,10 +184,15 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             # Set Reply-To:
             # * Set to list address to avoid replies going to all subscribers
             # * If sender is not a recipient of the list, add them as Reply-To as well
+            self.reply_to = reply_to_from_email_and_name(self.ml.address, self.ml.display)
             if self.msg.from_values.email not in self.subscribers_emails:
-                self.reply_to = f"{self.msg.from_values.email}, {self.ml.address}"
-            else:
-                self.reply_to = self.ml.address
+                self.reply_to = (
+                    reply_to_from_email_and_name(
+                        self.msg.from_values.email, self.msg.from_values.name
+                    )
+                    + ", "
+                    + self.reply_to
+                )
             # Add X-MailFrom with original sender address
             self.x_mailfrom_header = self.msg.from_values.email
         else:

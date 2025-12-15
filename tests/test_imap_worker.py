@@ -123,19 +123,14 @@ def test_sender_authentication_and_to_cleanup(mailing_list: MailingList, incomin
 
     # No authentication should return empty string
     passed = incoming_noauth._validate_email_sender_authentication()
-    assert passed == ""
+    assert passed is False
 
     # Bad authentication should return empty string
     passed = incoming_badauth._validate_email_sender_authentication()
-    assert passed == ""
-
+    assert passed is False
     # OK authentication should return the matching To address
     passed = incoming_ok._validate_email_sender_authentication()
-    assert passed == "list+secret123@example.com"
-
-    # after removing the suffix the stored To should be without +secret123
-    incoming_ok._remove_password_in_to_address(old_to=passed, new_to="list@example.com")
-    assert any("+secret123" not in t for t in incoming_ok.msg.to)
+    assert passed is True
 
 
 def test_duplicate_detection_moves_to_duplicate(
@@ -238,6 +233,10 @@ def test_broadcast_sender_auth_as_alternative(mailing_list: MailingList, incomin
     incoming: IncomingEmail = incoming_message_factory(msg)
     res = incoming.process_incoming_msg()
     assert res is True
+
+    # Verify that password is not leaked to recipients
+    assert all("+secret123" not in to for to in incoming.msg.to)
+    assert all("+secret123" not in to.email for to in incoming.msg.to_values)
 
 
 def test_broadcast_only_sender_auth(
@@ -680,7 +679,7 @@ def test_validate_sender_auth_when_from_missing(
     passed = incoming._validate_email_sender_authentication()
     # Current behaviour: authentication is checked by +suffix only,
     # independent of From header presence
-    assert passed == "list+pw@example.com"
+    assert passed is True
 
 
 def test_validate_duplicate_from_same_instance(incoming_message_factory, mailbox_stub: MailboxStub):
