@@ -374,22 +374,26 @@ def get_list_subscribers(list_id: str, exclude_lists: bool = False) -> dict[str,
     return subscribers_dict
 
 
-def get_all_subscribers() -> dict[str, list[MailingList]]:
+def get_all_subscribers() -> dict[str, dict[str, list[MailingList] | int]]:
     """
-    Get all subscribers from the database, and the lists they are subscribed to.
+    Get all subscribers from the database, the lists they are subscribed to, and the number of
+    bounces. As subscribers may be subscribed to multiple lists, the result is a mapping of email
+    address, not the individual DB record.
 
     Returns:
-        dict[str, dict]: A mapping of email addresses to the lists they are subscribed to
+        dict: A mapping of email addresses to the lists they are subscribed to and their
+        bounce count
     """
-    subscriber_map: dict[str, list[MailingList]] = {}
+    subscriber_map: dict[str, dict] = {}
 
     all_lists: list[MailingList] = MailingList.query.all()
     for ml in all_lists:
         subscribers: list[Subscriber] = Subscriber.query.filter_by(list_id=ml.id).all()
         for sub in subscribers:
             if sub.email not in subscriber_map:
-                subscriber_map[sub.email] = []
-            subscriber_map[sub.email].append(ml)
+                subscriber_map[sub.email] = {"lists": [], "bounces": 0}
+            subscriber_map[sub.email]["lists"].append(ml)
+            subscriber_map[sub.email]["bounces"] += sub.bounces
 
     # sort subscriber_map by email
     subscriber_map = dict(sorted(subscriber_map.items(), key=lambda item: item[0]))

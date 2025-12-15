@@ -188,6 +188,7 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
     email: str = db.Column(db.String, nullable=False)
     comment: str = db.Column(db.String, nullable=True)
     subscriber_type: str = db.Column(db.String, default="normal")  # subscriber or list
+    bounces: int = db.Column(db.Integer, nullable=False, default=0)
 
     @validates("email")
     def _validate_email(self, _, value):
@@ -196,6 +197,10 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
         if "@" not in value:
             raise ValueError(f"Invalid email address: {value}")
         return value.lower() if isinstance(value, str) else value
+
+    def increase_bounce(self):
+        """Increase bounce count by 1"""
+        self.bounces += 1
 
 
 class EmailIn(Model):  # pylint: disable=too-few-public-methods

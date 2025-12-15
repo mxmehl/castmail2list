@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-15 16:04+0100\n"
+"POT-Creation-Date: 2025-12-15 16:38+0100\n"
 "PO-Revision-Date: 2025-12-12 17:08+0100\n"
 "Last-Translator: \n"
 "Language: de\n"
@@ -192,7 +192,7 @@ msgstr "Regeneriere API-Schlüssel"
 msgid "Update Your Account"
 msgstr "Aktualisiere dein Konto"
 
-#: castmail2list/imap_worker.py:356
+#: castmail2list/imap_worker.py:364
 #, python-format
 msgid ""
 "This is a broadcast list. Only authorized senders can send messages to "
@@ -201,7 +201,7 @@ msgstr ""
 "Das ist eine Verteiler-Liste. Nur autorisierte Absender können "
 "Nachrichten an %(address)s senden."
 
-#: castmail2list/imap_worker.py:388
+#: castmail2list/imap_worker.py:396
 #, python-format
 msgid ""
 "This is a group list that only accepts messages from subscribers of "
@@ -220,7 +220,7 @@ msgstr "Nachricht an %(recipient)s nicht zugestellt"
 msgid "Database error: "
 msgstr "Datenbankfehler: "
 
-#: castmail2list/utils.py:568
+#: castmail2list/utils.py:572
 msgid ""
 "In Broadcast mode, it is recommended to set Allowed Senders and/or Sender"
 " Authentication Passwords!"
@@ -370,6 +370,7 @@ msgid "Incoming Email Failures"
 msgstr "Eingehende E-Mail-Fehler"
 
 #: castmail2list/templates/index.html:108
+#: castmail2list/templates/subscribers/index.html:16
 msgid "Bounces"
 msgstr "Bounces"
 
@@ -386,8 +387,8 @@ msgstr "Aktiv"
 #: castmail2list/templates/index.html:128
 #: castmail2list/templates/lists/subscribers_manage.html:50
 #: castmail2list/templates/subscribers/by_email.html:31
-#: castmail2list/templates/subscribers/index.html:25
-#: castmail2list/templates/subscribers/index.html:32
+#: castmail2list/templates/subscribers/index.html:26
+#: castmail2list/templates/subscribers/index.html:33
 msgid "Deactivated"
 msgstr "Deaktiviert"
 
@@ -559,7 +560,7 @@ msgstr "E-Mail"
 #: castmail2list/templates/messages/failures.html:14
 #: castmail2list/templates/messages/index.html:20
 #: castmail2list/templates/messages/sent.html:13
-#: castmail2list/templates/subscribers/index.html:25
+#: castmail2list/templates/subscribers/index.html:26
 msgid "List"
 msgstr "Liste"
 
@@ -749,7 +750,7 @@ msgid "Remove from this List"
 msgstr "Aus dieser Liste entfernt"
 
 #: castmail2list/templates/subscribers/by_email.html:44
-#: castmail2list/templates/subscribers/index.html:36
+#: castmail2list/templates/subscribers/index.html:37
 msgid "Not subscribed to any lists."
 msgstr "Keinerlei Liste abonniert."
 
@@ -760,9 +761,9 @@ msgstr "Abonnenten-Übersicht"
 
 #: castmail2list/templates/subscribers/index.html:15
 msgid "Subscribed Lists"
-msgstr "Abonnierte LIsten"
+msgstr "Abonnierte Listen"
 
-#: castmail2list/templates/subscribers/index.html:43
+#: castmail2list/templates/subscribers/index.html:46
 msgid "There are no subscribers anywhere."
 msgstr "Noch keine Abonnenten vorhanden."
 

@@ -15,7 +15,7 @@ from imap_tools import MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
 
 from .mailer import send_msg_to_subscribers, send_rejection_notification
-from .models import EmailIn, MailingList, db
+from .models import EmailIn, MailingList, Subscriber, db
 from .utils import (
     create_log_entry,
     get_all_messages_id_from_raw_email,
@@ -346,6 +346,14 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             )
             status = "bounce-msg"
             error_info = {"bounced_recipients": bounced_recipients, "bounced_mid": causing_mid}
+
+            # Increment bounce count for affected subscriber(s)
+            subscriber: Subscriber | None = Subscriber.query.filter_by(
+                list_id=self.ml.id, email=bounced_recipients.lower().strip()
+            ).first()
+            if subscriber and isinstance(subscriber, Subscriber):
+                subscriber.increase_bounce()
+
             return status, error_info
 
         # --- Sender authorization (mode-specific) ---
