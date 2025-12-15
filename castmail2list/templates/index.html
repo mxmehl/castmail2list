@@ -86,6 +86,23 @@
     </div>
   </article>
 
+  <article class="card" id="email_in_failures">
+    <div>
+      <h3>{{ _('Incoming Email Failures') }}</h3>
+      <p>{{ _('Last 7 days') }}: {{ stats.email_in_failures.days_7 | length }}</p>
+      <ul>
+        {%- for msg in stats.email_in_failures.last_5 %}
+        <li>
+          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="view-all">
+        <em><a href="{{ url_for('messages.failures') }}">{{ _('View all') }} <i class="fa-solid fa-arrow-up-right-from-square"></i></a></em>
+      </p>
+    </div>
+  </article>
+
   <article class="card" id="bounces">
     <div>
       <h3>{{ _('Bounces') }}</h3>
