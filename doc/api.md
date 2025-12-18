@@ -1,3 +1,8 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # API Documentation
 
 ## Using the API with Authentication

@@ -1,3 +1,8 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Sender Authorization
 
 This document explains how CastMail2List controls who can send messages to a mailing list. The authorization logic differs between the two list modes (`broadcast` and `group`) but shares common mechanisms.
@@ -23,6 +28,7 @@ In broadcast mode, the list is designed for one-to-many communication (like anno
 ### Authorization Rules
 
 When **either or both** `allowed_senders` or `sender_auth` are configured:
+
 - The sender must be authorized by **at least one** of these methods
 - If **neither** is configured, **any sender** can post to the list which is a risk
 
@@ -35,6 +41,7 @@ When **either or both** `allowed_senders` or `sender_auth` are configured:
 ### Example Scenarios
 
 **Scenario 1: Only allowed_senders configured**
+
 ```
 allowed_senders: ["admin@example.com", "news@example.com"]
 sender_auth: []
@@ -45,6 +52,7 @@ sender_auth: []
 ```
 
 **Scenario 2: Only sender_auth configured**
+
 ```
 allowed_senders: []
 sender_auth: ["secret123", "pass456"]
@@ -54,6 +62,7 @@ sender_auth: ["secret123", "pass456"]
 ```
 
 **Scenario 3: Both configured (either works)**
+
 ```
 allowed_senders: ["admin@example.com"]
 sender_auth: ["secret123"]
@@ -64,6 +73,7 @@ sender_auth: ["secret123"]
 ```
 
 **Scenario 4: Neither configured**
+
 ```
 allowed_senders: []
 sender_auth: []
@@ -80,9 +90,11 @@ In group mode, the list is designed for many-to-many communication (like discuss
 The "Only subscribers can send" setting (`only_subscribers_send`) controls the base authorization:
 
 When `only_subscribers_send` is **disabled** (default):
+
 - **Any sender** can post to the list (no restrictions)
 
 When `only_subscribers_send` is **enabled**:
+
 - The sender must be authorized by **one** of these methods (checked in order):
   1. Is a subscriber of the list
   2. Listed in `allowed_senders`
@@ -98,6 +110,7 @@ When `only_subscribers_send` is **enabled**:
 ### Example Scenarios
 
 **Scenario 1: Subscribers only (strict)**
+
 ```
 only_subscribers_send: true
 allowed_senders: []
@@ -110,6 +123,7 @@ subscribers: ["alice@example.com", "bob@example.com"]
 ```
 
 **Scenario 2: Subscribers + bypass via allowed_senders**
+
 ```
 only_subscribers_send: true
 allowed_senders: ["moderator@example.com"]
@@ -122,6 +136,7 @@ subscribers: ["alice@example.com"]
 ```
 
 **Scenario 3: Subscribers + bypass via sender_auth**
+
 ```
 only_subscribers_send: true
 allowed_senders: []
@@ -134,6 +149,7 @@ subscribers: ["alice@example.com"]
 ```
 
 **Scenario 4: Open group (anyone can send)**
+
 ```
 only_subscribers_send: false
 
@@ -148,6 +164,7 @@ only_subscribers_send: false
 When a sender successfully authenticates using `sender_auth`, the password suffix is automatically removed from the `To` header before the message is distributed to subscribers. This ensures subscribers don't see the authentication password.
 
 Example:
+
 - Sender sends to: `list+secret123@example.com`
 - Subscribers receive with To: `list@example.com`
 
@@ -162,12 +179,14 @@ Messages that contain the `X-CastMail2List-Domain` header matching this instance
 ## Security Recommendations
 
 ### Broadcast Mode
+
 - **Always configure** at least `allowed_senders` or `sender_auth` for broadcast lists
 - Without either, anyone can send announcements on your behalf
 - Use `allowed_senders` for a small number of known senders
 - Use `sender_auth` for temporary or rotating authorized senders
 
 ### Group Mode
+
 - Enable `only_subscribers_send` for private discussion groups
 - Use `allowed_senders` to grant moderator privileges (can send without subscribing)
 - Use `sender_auth` for guest posting with a temporary password
@@ -178,6 +197,6 @@ Messages that contain the `X-CastMail2List-Domain` header matching this instance
 When authorization fails, the message is marked with one of these status codes:
 
 - `sender-not-allowed` - Sender failed all authorization checks
-- `sender-auth-failed` - *(legacy, now unified with sender-not-allowed)*
+- `sender-auth-failed` - _(legacy, now unified with sender-not-allowed)_
 
 Messages with these statuses are moved to the `IMAP_FOLDER_DENIED` folder.

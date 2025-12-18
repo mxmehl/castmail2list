@@ -1,3 +1,8 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 This file instructs an automated coding agent (Copilot coding agent) how to work
 effectively with the castmail2list repository. Keep changes conservative and run the
 validation steps exactly as written before creating a pull request.

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
 #
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: CC0-1.0
 
 [tool.poetry]
 name = "castmail2list"
@@ -9,8 +9,17 @@ description = "Simple mailing list software with IMAP mailbox backend, web inter
 repository = "https://github.com/mxmehl/castmail2list"
 authors = ["Max Mehl <mail@mehl.mx>"]
 readme = "README.md"
-keywords = []
-license = "GPL-3.0-only"
+keywords = [
+    "mailinglist",
+    "flask",
+    "imap",
+    "newsletter",
+    "mailman",
+    "distribution",
+    "smtp",
+    "email",
+]
+license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -18,13 +27,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Framework :: Flask",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Topic :: Communications :: Email",
     "Topic :: Communications :: Email :: Mailing List Servers",
     "Topic :: Communications :: Email :: Post-Office :: IMAP",
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
-    "Topic :: Software Development :: Libraries :: Application Frameworks"
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
 # Add ignored files to the package
 include = ["castmail2list/translations/**/*.mo"]

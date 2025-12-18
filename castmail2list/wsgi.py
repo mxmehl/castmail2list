@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """WSGI entry point for production servers like gunicorn"""
 
 # pylint: disable=duplicate-code

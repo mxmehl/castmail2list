@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: 2024 Max Mehl <https://mehl.mx>
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
 #
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: Apache-2.0
 
 name: Publish release on PyPI
 on:
