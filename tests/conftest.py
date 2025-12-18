@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Pytest fixtures for testing the CastMail2List Flask application.
 
 Provides application/client fixtures plus IMAP worker related helpers.

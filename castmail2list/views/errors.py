@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Error handlers for CastMail2List"""
 
 from flask import Flask, jsonify, render_template, request

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Messages blueprint for CastMail2List application"""
 
 from flask import Blueprint, flash, render_template

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for the utils module"""
 
 from __future__ import annotations

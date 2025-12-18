@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for route responses in the Castmail2List application"""
 
 from .conftest import add_subscriber

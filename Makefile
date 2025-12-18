@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+# SPDX-License-Identifier: CC0-1.0
+
 .DEFAULT_GOAL := help
 .PHONY: help check-requirements setup pytest pylint formatting mypy reuse test-all
 

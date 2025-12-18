@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+// SPDX-License-Identifier: Apache-2.0
+
 // Import Pico CSS framework with custom theme color
 @use "pico" with ($theme-color: "amber");
 @use 'sass:list';

@@ -1,0 +1,6 @@
+version = 1
+
+[[annotations]]
+path = ["exceeds-size.eml", "mailbox-full.eml"]
+SPDX-FileCopyrightText = "2014-2025 azumakuniyuki"
+SPDX-License-Identifier = "BSD-2-Clause"

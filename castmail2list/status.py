@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Functions and operations to collect reports about different parts of Castmail2List"""
 
 from .models import MailingList

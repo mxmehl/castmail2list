@@ -1,3 +1,8 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Mailing-list Modes and Message Headers
 
 This document summarizes how the two mailing-list modes (`broadcast` and `group`) and
