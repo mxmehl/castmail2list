@@ -137,16 +137,9 @@ def test_sender_authentication_and_to_cleanup(mailing_list: MailingList, incomin
     assert passed is True
 
 
-def test_duplicate_detection_moves_to_duplicate(
-    incoming_message_factory, mailbox_stub: MailboxStub
-):
-    """Processing the same Message-ID twice should move the second copy to duplicate folder."""
-    # Ensure the app DOMAIN is non-empty so the "duplicate-from-same-instance" check
-    # does not trigger (an empty DOMAIN is contained in any header string).
-    incoming: IncomingEmail = incoming_message_factory(MailMessage.from_bytes(b"Subject: x\n\n\n"))
-    incoming_app = incoming.app
-    incoming_app.config["DOMAIN"] = "lists.example.com"
-
+def test_duplicate_detection_same_list(incoming_message_factory, mailbox_stub: MailboxStub):
+    """Processing the same Message-ID for the same list twice should move the second copy to
+    duplicate folder."""
     # Create a simple message with a deterministic Message-ID header
     raw = (
         b"Message-ID: <dup-test-1@example.com>\nSubject: Dup\n"
@@ -187,6 +180,78 @@ def test_duplicate_detection_moves_to_duplicate(
     ).all()
     assert len(duplicate_stored) == 1
     assert duplicate_stored[0].message_id.startswith("duplicate-")
+
+
+def test_duplicate_detection_different_list(client, mailbox_stub: MailboxStub):
+    """Processing the same Message-ID for different lists should work well."""
+    # Set DOMAIN to avoid "from same instance" check
+    client.application.config["DOMAIN"] = "lists.example.com"
+
+    # Create two different mailing lists
+    ml1 = MailingList(
+        id="list1",
+        display="First List",
+        address="list1@example.com",
+        mode="broadcast",
+        imap_host="ml.local",
+        imap_port=993,
+        imap_user="user1",
+        imap_pass="pass1",
+    )
+    ml2 = MailingList(
+        id="list2",
+        display="Second List",
+        address="list2@example.com",
+        mode="broadcast",
+        imap_host="ml.local",
+        imap_port=993,
+        imap_user="user2",
+        imap_pass="pass2",
+    )
+    db.session.add(ml1)
+    db.session.add(ml2)
+    db.session.commit()
+
+    # Create a message with the same Message-ID
+    raw = (
+        b"Message-ID: <shared-msg-1@example.com>\nSubject: Shared Message\n"
+        b"To: list1@example.com,list2@example.com\nFrom: sender@example.com\n\nBody"
+    )
+
+    # Process the message for the first list
+    msg1 = MailMessage.from_bytes(raw)
+    msg1.uid = "shared-1-list1"
+    incoming1 = IncomingEmail(
+        app=client.application, mailbox=mailbox_stub, msg=msg1, ml=ml1  # type: ignore[arg-type]
+    )
+    res1 = incoming1.process_incoming_msg()
+    assert res1 is True
+
+    # Process the same message for the second list
+    msg2 = MailMessage.from_bytes(raw)
+    msg2.uid = "shared-1-list2"
+    incoming2 = IncomingEmail(
+        app=client.application, mailbox=mailbox_stub, msg=msg2, ml=ml2  # type: ignore[arg-type]
+    )
+    res2 = incoming2.process_incoming_msg()
+    assert res2 is True
+
+    # Verify both messages were moved to processed folder (not duplicate)
+    assert (
+        mailbox_stub._moves.get("shared-1-list1")
+        == client.application.config["IMAP_FOLDER_PROCESSED"]
+    )
+    assert (
+        mailbox_stub._moves.get("shared-1-list2")
+        == client.application.config["IMAP_FOLDER_PROCESSED"]
+    )
+
+    # Verify DB has TWO EmailIn records with the same message_id but different list_ids
+    stored_msgs = EmailIn.query.filter_by(message_id="shared-msg-1@example.com").all()
+    assert len(stored_msgs) == 2
+    assert stored_msgs[0].list_id != stored_msgs[1].list_id
+    assert {stored_msgs[0].list_id, stored_msgs[1].list_id} == {"list1", "list2"}
+    assert all(msg.status == "ok" for msg in stored_msgs)
 
 
 def test_broadcast_sender_not_allowed(
