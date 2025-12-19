@@ -97,6 +97,7 @@ def seed_database(app: Flask, seed_file: str) -> None:
             new_user = User(
                 username=user_cfg.get("username"),
                 password=generate_password_hash(password=user_cfg.get("password", "")),
+                api_key=user_cfg.get("api_key"),
             )
             db.session.add(new_user)
 
