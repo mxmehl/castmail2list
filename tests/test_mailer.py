@@ -762,8 +762,12 @@ def test_send_rejection_notification_success(client, smtp_mock):
     assert call["from_addr"] == ""  # Empty Return-Path for auto-response
 
     # Parse message to check headers and content
-    msg_bytes = call["msg"]
-    parsed = email.message_from_bytes(msg_bytes)
+    msg_sent = call["msg"]
+    parsed = (
+        email.message_from_bytes(msg_sent)
+        if isinstance(msg_sent, bytes)
+        else email.message_from_string(msg_sent)
+    )
 
     assert parsed["To"] == "known@example.com"
     assert parsed["From"] == "noreply@lists.example.com"
@@ -801,7 +805,13 @@ def test_send_rejection_notification_with_reply_to(client, smtp_mock):
 
     # Parse message to check threading headers
     call = smtp_mock[0]
-    parsed = email.message_from_bytes(call["msg"])
+    # Parse message to check headers and content
+    msg_sent = call["msg"]
+    parsed = (
+        email.message_from_bytes(msg_sent)
+        if isinstance(msg_sent, bytes)
+        else email.message_from_string(msg_sent)
+    )
 
     assert parsed["In-Reply-To"] == original_msgid
     assert parsed["References"] == original_msgid
