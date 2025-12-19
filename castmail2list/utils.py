@@ -694,35 +694,53 @@ def get_all_messages_id_from_raw_email(raw_email: str) -> list[str]:
     return message_ids
 
 
-def get_message_id_in_db(message_ids: list[str], only: str = "") -> EmailIn | EmailOut | None:
+def get_message_id_in_db(
+    message_ids: list[str], only: str = "", list_id: str = ""
+) -> list[EmailIn | EmailOut]:
     """
     Check if any of the given Message-IDs exist in the database as either incoming or outgoing
-    messages. Can be filtered to only check incoming or outgoing messages.
+    messages. Returns all found messages.
+
+    Can be filtered to:
+    * only check incoming or outgoing messages or both
+    * connected list ID
 
     Args:
         message_ids (list[str]): A list of Message-IDs to check
-        only (str): "in" to check only incoming messages, "out" for outgoing, "" for both.
-            Searches in "in" first.
+        only (str): "in" to check only incoming messages, "out" for outgoing. Empty for both
+        list_id (str): If given, only check messages connected to this mailing list ID
+
     Returns:
-        EmailIn | EmailOut | None: The first matching message found, or None if none found
+        list: A list of found EmailIn or EmailOut objects matching any of the given Message-IDs.
+        Returns an empty list if none found.
     """
     if only not in ("", "in", "out"):
         logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", only)
         raise ValueError(f"Invalid 'filter' parameter: {only}")
 
+    found_messages: list[EmailIn | EmailOut] = []
+
     if only in ("", "in"):
         for msg_id in message_ids:
-            msg_in: EmailIn | None = EmailIn.query.filter_by(message_id=msg_id).first()
-            if msg_in:
-                return msg_in
+            msg_in: list[EmailIn] = EmailIn.query.filter_by(message_id=msg_id).all()
+            found_messages.extend(msg_in)
 
     if only in ("", "out"):
         for msg_id in message_ids:
-            msg_out: EmailOut | None = EmailOut.query.filter_by(message_id=msg_id).first()
-            if msg_out:
-                return msg_out
+            msg_out: list[EmailOut] = EmailOut.query.filter_by(message_id=msg_id).all()
+            found_messages.extend(msg_out)
 
-    return None
+    if list_id:
+        found_messages = [msg for msg in found_messages if getattr(msg, "list_id", "") == list_id]
+    if len(found_messages) > 1:
+        logging.warning(
+            "Multiple messages found in DB for Message-IDs %s and list ID %s. This may indicate a "
+            "serious DB issue as there is a composite primary key on (message_id, list_id).",
+            message_ids,
+            list_id,
+        )
+
+    return found_messages
 
 
 def get_message_id_from_incoming(msg: MailMessage) -> str:

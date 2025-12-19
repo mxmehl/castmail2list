@@ -5,6 +5,7 @@
 
 {%- include "flash.html" %} {# Show flash messages #}
 
+{%- if message %}
 <table class="striped fixed message">
     <tr>
         <th>{{ _('Subject') }}</th>
@@ -86,4 +87,18 @@
         </td>
     </tr>
 </table>
+{%- endif %}
+
+{%- if multiple_msgs %}
+<p>{{ _('Multiple messages found with the same Message-ID:') }}</p>
+<ul>
+    {%- for msg in multiple_msgs %}
+    <li>
+        <a href="{{ url_for('messages.show_unique', message_id=msg.message_id, list_id=msg.list_id) }}">{{ msg.subject }}</a>
+        ({{ msg.list.display }} &lt;{{msg.list.address}}&gt;)
+    </li>
+    {%- endfor %}
+</ul>
+{%- endif %}
+
 {% endblock %}

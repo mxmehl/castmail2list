@@ -55,13 +55,42 @@ def sent() -> str:
 
 @messages.route("/<message_id>")
 def show(message_id: str) -> str:
-    """Show a specific message"""
-    message = get_message_id_in_db([message_id])
-    if message:
-        msg_type = "out" if isinstance(message, EmailOut) else "in"
-        bounce = getattr(message, "status", "") == "bounce-msg"
+    """Show a specific message, without list context"""
+    msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id])
+
+    if len(msgs) == 1:
+        msg = msgs[0]
+        msg_type = "out" if isinstance(msg, EmailOut) else "in"
+        bounce = getattr(msg, "status", "") == "bounce-msg"
         return render_template(
-            "messages/detail.html", message=message, msg_type=msg_type, bounce=bounce
+            "messages/detail.html", message=msg, msg_type=msg_type, bounce=bounce
         )
+
+    if len(msgs) > 1:
+        flash(
+            _("Multiple messages found with the same Message-ID. Please choose from below."),
+            "warning",
+        )
+        return render_template("messages/detail.html", message=None, multiple_msgs=msgs)
+
+    # Fallback: Message not found
+    flash(_("Message not found"), "error")
+    return render_template("messages/detail.html", message=None)
+
+
+@messages.route("<message_id>/<list_id>")
+def show_unique(message_id: str, list_id: str) -> str:
+    """Show a specific message, with list context"""
+    msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id], list_id=list_id)
+
+    if msgs:
+        msg = msgs[0]
+        msg_type = "out" if isinstance(msg, EmailOut) else "in"
+        bounce = getattr(msg, "status", "") == "bounce-msg"
+        return render_template(
+            "messages/detail.html", message=msg, msg_type=msg_type, bounce=bounce
+        )
+
+    # Fallback: Message not found
     flash(_("Message not found"), "error")
     return render_template("messages/detail.html", message=None)

@@ -327,7 +327,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         bounced_recipients, bounced_mids = self._detect_bounce()
         if bounced_recipients:
             if _causing_msg := get_message_id_in_db(bounced_mids, only="out"):
-                causing_mid = _causing_msg.message_id
+                causing_mid = _causing_msg[0].message_id  # Take first found MID, should fit
             else:
                 causing_mid = "unknown"
             logging.info(
