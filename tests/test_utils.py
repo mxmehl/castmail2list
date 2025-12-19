@@ -628,12 +628,14 @@ def test_get_all_outgoing_messages(client) -> None:
         message_id="sent-1",
         subject="Sent 1",
         email_in_mid="in-1",
+        list_id="list1",
         sent_at=_days_ago(1),
     )
     sent2: EmailOut = EmailOut(
         message_id="sent-2",
         subject="Sent 2",
         email_in_mid="in-2",
+        list_id="list1",
         sent_at=_days_ago(10),
     )
 

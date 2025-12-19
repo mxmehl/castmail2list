@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
+from sqlalchemy import ForeignKeyConstraint, MetaData, PrimaryKeyConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, validates
 
 
@@ -233,7 +233,7 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
                 )
             setattr(self, key, value)
 
-    message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
+    message_id: str = db.Column(db.String, nullable=False)
     list_id: str = db.Column(
         db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=False
     )
@@ -247,14 +247,16 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
     )  # "ok", "bounce-msg", "sender-not-allowed", "sender-auth-failed", "duplicate"
     error_info: dict = db.Column(db.JSON, default=dict)
 
+    __table_args__ = (PrimaryKeyConstraint("message_id", "list_id", name="pk_email_in"),)
+
 
 class EmailOut(Model):  # pylint: disable=too-few-public-methods
     """An email message sent out to subscribers
 
     Attributes:
         message_id (str): Unique message ID of the outgoing email.
-        email_in_mid (str): Foreign key to the associated incoming email message.
-        list_id (str): Foreign key to the associated mailing list.
+        email_in_mid (str): Message ID of the associated incoming email.
+        list_id (str): Foreign key to the associated mailing list and part of compound FK to EmailIn
         subject (str): Subject of the outgoing email.
         recipients (list): List of recipient email addresses.
         raw (str): Full RFC822 text of the outgoing email.
@@ -275,14 +277,25 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
             setattr(self, key, value)
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
-    email_in_mid: str = db.Column(db.String, db.ForeignKey("email_in.message_id"), nullable=False)
-    list_id: str = db.Column(db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=True)
+    email_in_mid: str = db.Column(db.String, nullable=False)
+    list_id: str = db.Column(
+        db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=False
+    )
     subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
     raw: str = db.Column(db.Text)  # store full RFC822 text
     sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     sent_successful: list = db.Column(db.JSON, default=list)
     sent_failed: list = db.Column(db.JSON, default=list)
+
+    # Composite foreign key to EmailIn (message_id, list_id)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["email_in_mid", "list_id"],
+            ["email_in.message_id", "email_in.list_id"],
+            name="fk_email_out_email_in",
+        ),
+    )
 
 
 class Logs(Model):  # pylint: disable=too-few-public-methods

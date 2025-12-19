@@ -434,16 +434,18 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         Returns:
             bool: True if message was new and stored, False if it was a duplicate
         """
-        # Check if message already exists in database to avoid identity conflicts
+        # Check if message already exists in database for this list to avoid identity conflicts
         message_id = get_message_id_from_incoming(self.msg)
-        existing = db.session.get(EmailIn, message_id)
+        existing = EmailIn.query.filter_by(message_id=message_id, list_id=self.ml.id).first()
 
         if existing:
-            # Message is a duplicate. Log, set a random Message-ID to avoid conflicts, save in DB
-            # with status "duplicate" (which moves it to the duplicate folder later)
+            # Message is a duplicate for this list. Log, set a random Message-ID to avoid
+            # conflicts, save in DB with status "duplicate" (which moves it to the duplicate
+            # folder later)
             logging.warning(
-                "Message %s already processed (Message-ID %s exists in DB), skipping",
+                "Message %s already processed for list %s (Message-ID %s exists in DB), skipping",
                 self.msg.uid,
+                self.ml.id,
                 message_id,
             )
             create_log_entry(
