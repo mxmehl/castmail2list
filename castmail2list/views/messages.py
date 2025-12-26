@@ -4,7 +4,7 @@
 
 """Messages blueprint for CastMail2List application"""
 
-from flask import Blueprint, flash, render_template
+from flask import Blueprint, flash, render_template, url_for
 from flask_babel import _
 from flask_login import login_required
 
@@ -81,16 +81,28 @@ def show(message_id: str) -> str:
 @messages.route("<message_id>/<list_id>")
 def show_unique(message_id: str, list_id: str) -> str:
     """Show a specific message, with list context"""
-    msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id], list_id=list_id)
+    msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id])
 
-    if msgs:
-        msg = msgs[0]
-        msg_type = "out" if isinstance(msg, EmailOut) else "in"
-        bounce = getattr(msg, "status", "") == "bounce-msg"
-        return render_template(
-            "messages/detail.html", message=msg, msg_type=msg_type, bounce=bounce
+    msg_unique: EmailIn | EmailOut
+    if len(msgs) > 1:
+        msg_unique = get_message_id_in_db([message_id], list_id=list_id)[0]
+        flash(
+            _(
+                "Multiple messages found with the same Message-ID. Showing message for the "
+                "selected list. See <a href='%(link)s'>here</a> for the other messages.",
+                link=url_for("messages.show", message_id=message_id),
+            ),
+            "message",
         )
+    elif len(msgs) == 1:
+        msg_unique = msgs[0]
+    else:
+        # Message not found
+        flash(_("Message not found"), "error")
+        return render_template("messages/detail.html", message=None)
 
-    # Fallback: Message not found
-    flash(_("Message not found"), "error")
-    return render_template("messages/detail.html", message=None)
+    msg_type = "out" if isinstance(msg_unique, EmailOut) else "in"
+    bounce = getattr(msg_unique, "status", "") == "bounce-msg"
+    return render_template(
+        "messages/detail.html", message=msg_unique, msg_type=msg_type, bounce=bounce
+    )
