@@ -61,6 +61,10 @@
         <td>{{ message.sent_at.strftime("%Y-%m-%d %H:%M:%S UTC") }}</td>
     </tr>
     <tr>
+        <th>{{ _('Related Incoming Message') }}</th>
+        <td><a href="{{ url_for('messages.show_unique', message_id=message.email_in_mid, list_id=message.list_id) }}">{{ message.email_in_mid }}</a></td>
+    </tr>
+    <tr>
         <th>{{ _('Successful Recipients') }}</th>
         <td>
             {%- for rec in message.sent_successful %}
