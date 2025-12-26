@@ -63,17 +63,33 @@ def status_complete() -> dict:
         },
         "email_in": {
             "count": len(email_in_all),
-            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_days_7],
-            "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in email_in_all[:5]],
+            "days_7": [
+                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                for msg in email_in_days_7
+            ],
+            "last_5": [
+                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                for msg in email_in_all[:5]
+            ],
         },
         "email_in_failures": {
             "count": len(email_in_fail_all),
             "days_7": [
-                {"mid": msg.message_id, "subject": msg.subject, "status": msg.status}
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "status": msg.status,
+                }
                 for msg in email_in_fail_days_7
             ],
             "last_5": [
-                {"mid": msg.message_id, "subject": msg.subject, "status": msg.status}
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "status": msg.status,
+                }
                 for msg in email_in_fail_all[:5]
             ],
         },

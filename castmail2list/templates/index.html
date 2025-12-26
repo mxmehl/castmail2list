@@ -18,7 +18,7 @@
       <ul>
         {%- for msg in stats.email_in.last_5 %}
         <li>
-          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+          <a href="{{ url_for('messages.show_unique', message_id=msg.mid, list_id=msg.list_id) }}">{{ msg.subject }}</a>
         </li>
         {%- endfor %}
       </ul>
