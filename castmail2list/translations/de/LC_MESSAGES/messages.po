@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-12-15 16:38+0100\n"
+"POT-Creation-Date: 2026-01-06 14:05+0100\n"
 "PO-Revision-Date: 2025-12-12 17:08+0100\n"
 "Last-Translator: \n"
 "Language: de\n"
@@ -18,42 +18,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: castmail2list/forms.py:51 castmail2list/templates/login.html:3
+#: castmail2list/forms.py:55 castmail2list/templates/login.html:3
 #: castmail2list/templates/login.html:6
 msgid "Login"
 msgstr "Login"
 
-#: castmail2list/forms.py:79 castmail2list/templates/lists/deactivated.html:14
+#: castmail2list/forms.py:83 castmail2list/templates/lists/deactivated.html:14
 #: castmail2list/templates/lists/index.html:23
 #: castmail2list/templates/subscribers/by_email.html:20
 msgid "List Name"
 msgstr "Listenname"
 
-#: castmail2list/forms.py:80
+#: castmail2list/forms.py:84
 msgid "Domain"
 msgstr "Domain"
 
-#: castmail2list/forms.py:81
+#: castmail2list/forms.py:85
 msgid "Display Name"
 msgstr "Anzeigename"
 
-#: castmail2list/forms.py:85
+#: castmail2list/forms.py:89
 msgid "Mode of the Mailing List"
 msgstr "Modus der Mailingliste"
 
-#: castmail2list/forms.py:87
+#: castmail2list/forms.py:91
 msgid "Broadcast List: One-to-many communication, distribution list"
 msgstr "Verteiler-Liste: Eins-zu-Viele-Kommunikation"
 
-#: castmail2list/forms.py:88
+#: castmail2list/forms.py:92
 msgid "Group List: Many-to-many communication, discussion group"
 msgstr "Gruppenliste: Viele-zu-viele-Kommunikation, Diskussionsgruppe"
 
-#: castmail2list/forms.py:93
+#: castmail2list/forms.py:97
 msgid "From Address"
 msgstr "Absenderadresse"
 
-#: castmail2list/forms.py:96
+#: castmail2list/forms.py:100
 msgid ""
 "Optional 'From' address for emails sent by the list. If left empty, the "
 "list address will be used. Only relevant in Broadcast mode."
@@ -62,11 +62,11 @@ msgstr ""
 "werden. Wenn dieses Feld leer bleibt, wird die Adresse der Liste "
 "verwendet. Nur im Verteiler-Modus relevant."
 
-#: castmail2list/forms.py:103
+#: castmail2list/forms.py:107
 msgid "Only allow subscribers to send messages to this group list"
 msgstr "Erlaubte nur Abonnenten, Nachrichten an die Liste zu senden."
 
-#: castmail2list/forms.py:105
+#: castmail2list/forms.py:109
 msgid ""
 "This may be overridden by sender authentication and allowed senders. Only"
 " relevant in Group mode."
@@ -74,11 +74,11 @@ msgstr ""
 "Dies kann durch Passwörter und zugelassene Absender außer Kraft gesetzt "
 "werden. Nur im Gruppenmodus relevant."
 
-#: castmail2list/forms.py:111
+#: castmail2list/forms.py:115
 msgid "Allowed Senders"
 msgstr "Erlaubte Absender"
 
-#: castmail2list/forms.py:114
+#: castmail2list/forms.py:118
 msgid ""
 "Email addresses that are always allowed to send emails to the list. In "
 "Broadcast mode, only they are allowed to send to the list. In Group mode,"
@@ -90,11 +90,11 @@ msgstr ""
 "Gruppenmodus können sie auch an die Liste senden, wenn “Nur Abonnenten "
 "dürfen senden” aktiviert ist. Getrennt mit Kommata."
 
-#: castmail2list/forms.py:121
+#: castmail2list/forms.py:125
 msgid "Sender Authentication Passwords"
 msgstr "Absender-Passwörter"
 
-#: castmail2list/forms.py:124
+#: castmail2list/forms.py:128
 msgid ""
 "Comma-separated list of passwords that senders can provide to send emails"
 " to this list. When this is set in Broadcast mode, one of these passwords"
@@ -111,11 +111,11 @@ msgstr ""
 "ist. Dies kann über „adresse+password1@example.com” übergeben werden. "
 "Lasse das Feld leer, um die Absender-Passwörter zu deaktivieren."
 
-#: castmail2list/forms.py:134
+#: castmail2list/forms.py:138
 msgid "Avoid duplicate copies of messages for subscribers"
 msgstr "Vermeide doppelte Kopien von Nachrichten an Abonnenten"
 
-#: castmail2list/forms.py:136
+#: castmail2list/forms.py:140
 msgid ""
 "If enabled, subscribers will not receive a copy of a message they sent "
 "themselves."
@@ -123,76 +123,76 @@ msgstr ""
 "Wenn aktiviert, werden Abonnenten keine Kopie einer Nachricht erhalten, "
 "die sie selbst gesendet haben."
 
-#: castmail2list/forms.py:142
+#: castmail2list/forms.py:146
 msgid "IMAP Server"
 msgstr "IMAP-Server"
 
-#: castmail2list/forms.py:143
+#: castmail2list/forms.py:147
 msgid "IMAP Port"
 msgstr "IMAP-Port"
 
-#: castmail2list/forms.py:144
+#: castmail2list/forms.py:148
 msgid "IMAP Username"
 msgstr "IMAP-Benutzername"
 
-#: castmail2list/forms.py:145
+#: castmail2list/forms.py:149
 msgid "IMAP Password"
 msgstr "IMAP-Passwort"
 
-#: castmail2list/forms.py:146 castmail2list/templates/macros.html:86
+#: castmail2list/forms.py:150 castmail2list/templates/macros.html:86
 msgid "Save List"
 msgstr "Liste speichern"
 
-#: castmail2list/forms.py:152
+#: castmail2list/forms.py:156
 #: castmail2list/templates/lists/subscribers_manage.html:36
 #: castmail2list/templates/lists/subscribers_manage.html:72
 msgid "Name"
 msgstr "Name"
 
-#: castmail2list/forms.py:153
+#: castmail2list/forms.py:157
 #: castmail2list/templates/subscribers/by_email.html:8
 msgid "Email Address"
 msgstr "E-Mail-Adresse"
 
-#: castmail2list/forms.py:154
+#: castmail2list/forms.py:158
 #: castmail2list/templates/lists/subscribers_manage.html:38
 #: castmail2list/templates/subscribers/by_email.html:22
 msgid "Comment"
 msgstr "Kommentar"
 
-#: castmail2list/forms.py:155
+#: castmail2list/forms.py:159
 msgid "Save Subscriber"
 msgstr "Abonnenten speichern"
 
-#: castmail2list/forms.py:162
+#: castmail2list/forms.py:166
 msgid "New Password"
 msgstr "Neues Passwort"
 
-#: castmail2list/forms.py:164
+#: castmail2list/forms.py:168
 msgid "Enter a new password with at least 6 characters."
 msgstr "Vergebe ein Passwort mit mindestens 6 Buchstaben."
 
-#: castmail2list/forms.py:167
+#: castmail2list/forms.py:171
 msgid "Retype Password"
 msgstr "Wiederhole Passwort"
 
-#: castmail2list/forms.py:169
+#: castmail2list/forms.py:173
 msgid "Retype the new password for confirmation."
 msgstr "Wiederhole das neue Passwort als Bestätigung."
 
-#: castmail2list/forms.py:171
+#: castmail2list/forms.py:175
 msgid "API Key"
 msgstr "API-Schlüssel"
 
-#: castmail2list/forms.py:172
+#: castmail2list/forms.py:176
 msgid "Regenerate API Key"
 msgstr "Regeneriere API-Schlüssel"
 
-#: castmail2list/forms.py:173
+#: castmail2list/forms.py:177
 msgid "Update Your Account"
 msgstr "Aktualisiere dein Konto"
 
-#: castmail2list/imap_worker.py:364
+#: castmail2list/imap_worker.py:353
 #, python-format
 msgid ""
 "This is a broadcast list. Only authorized senders can send messages to "
@@ -201,7 +201,7 @@ msgstr ""
 "Das ist eine Verteiler-Liste. Nur autorisierte Absender können "
 "Nachrichten an %(address)s senden."
 
-#: castmail2list/imap_worker.py:396
+#: castmail2list/imap_worker.py:385
 #, python-format
 msgid ""
 "This is a group list that only accepts messages from subscribers of "
@@ -210,17 +210,17 @@ msgstr ""
 "Das ist eine Gruppenliste, die ausschließlich Nachrichten von Abonnenten "
 "von %(address)s akzeptiert."
 
-#: castmail2list/mailer.py:533
+#: castmail2list/mailer.py:545
 #, python-format
 msgid "Message to %(recipient)s not delivered"
 msgstr "Nachricht an %(recipient)s nicht zugestellt"
 
-#: castmail2list/services.py:103 castmail2list/services.py:181
-#: castmail2list/services.py:221
+#: castmail2list/services.py:107 castmail2list/services.py:185
+#: castmail2list/services.py:225
 msgid "Database error: "
 msgstr "Datenbankfehler: "
 
-#: castmail2list/utils.py:572
+#: castmail2list/utils.py:597
 msgid ""
 "In Broadcast mode, it is recommended to set Allowed Senders and/or Sender"
 " Authentication Passwords!"
@@ -320,7 +320,7 @@ msgstr ""
 "Mailinglisten und ihre Abonnenten zu verwalten."
 
 #: castmail2list/templates/index.html:10
-#: castmail2list/templates/messages/detail.html:28
+#: castmail2list/templates/messages/detail.html:29
 #: castmail2list/templates/messages/failures.html:15
 #: castmail2list/templates/messages/index.html:21
 msgid "Status"
@@ -556,7 +556,7 @@ msgstr "E-Mail"
 #: castmail2list/templates/logs/detail.html:28
 #: castmail2list/templates/logs/index.html:32
 #: castmail2list/templates/messages/bounces.html:13
-#: castmail2list/templates/messages/detail.html:14
+#: castmail2list/templates/messages/detail.html:15
 #: castmail2list/templates/messages/failures.html:14
 #: castmail2list/templates/messages/index.html:20
 #: castmail2list/templates/messages/sent.html:13
@@ -647,7 +647,7 @@ msgid "Bounce Messages"
 msgstr "Bounce-Nachrichten"
 
 #: castmail2list/templates/messages/bounces.html:11
-#: castmail2list/templates/messages/detail.html:10
+#: castmail2list/templates/messages/detail.html:11
 #: castmail2list/templates/messages/failures.html:11
 #: castmail2list/templates/messages/index.html:17
 #: castmail2list/templates/messages/sent.html:11
@@ -655,14 +655,14 @@ msgid "Subject"
 msgstr "Betreff"
 
 #: castmail2list/templates/messages/bounces.html:12
-#: castmail2list/templates/messages/detail.html:24
+#: castmail2list/templates/messages/detail.html:25
 #: castmail2list/templates/messages/failures.html:13
 #: castmail2list/templates/messages/index.html:19
 msgid "Received At"
 msgstr "Empfangen am"
 
 #: castmail2list/templates/messages/bounces.html:14
-#: castmail2list/templates/messages/detail.html:33
+#: castmail2list/templates/messages/detail.html:34
 msgid "Bounced Recipients"
 msgstr "Gebouncte Empfänger"
 
@@ -671,36 +671,44 @@ msgstr "Gebouncte Empfänger"
 msgid "Message detail"
 msgstr "Nachrichten-Details"
 
-#: castmail2list/templates/messages/detail.html:20
+#: castmail2list/templates/messages/detail.html:21
 #: castmail2list/templates/messages/failures.html:12
 #: castmail2list/templates/messages/index.html:18
 msgid "From"
 msgstr "Von"
 
-#: castmail2list/templates/messages/detail.html:42
+#: castmail2list/templates/messages/detail.html:43
 msgid "Causing Message ID"
 msgstr "Verursachende Nachrichten-ID"
 
-#: castmail2list/templates/messages/detail.html:52
+#: castmail2list/templates/messages/detail.html:53
 msgid "Error Info"
 msgstr "Fehlerinfo"
 
-#: castmail2list/templates/messages/detail.html:59
+#: castmail2list/templates/messages/detail.html:60
 #: castmail2list/templates/messages/sent.html:12
 msgid "Sent At"
 msgstr "Gesendet am"
 
-#: castmail2list/templates/messages/detail.html:63
+#: castmail2list/templates/messages/detail.html:64
+msgid "Related Incoming Message"
+msgstr "Zugehörige eingehende Nachricht"
+
+#: castmail2list/templates/messages/detail.html:68
 msgid "Successful Recipients"
 msgstr "Erfolgreiche Empfänger"
 
-#: castmail2list/templates/messages/detail.html:72
+#: castmail2list/templates/messages/detail.html:77
 msgid "Failed Recipients"
 msgstr "Fehlerhafte Empfänger"
 
-#: castmail2list/templates/messages/detail.html:83
+#: castmail2list/templates/messages/detail.html:88
 msgid "Raw"
 msgstr "Rohdaten"
+
+#: castmail2list/templates/messages/detail.html:97
+msgid "Multiple messages found with the same Message-ID:"
+msgstr "Mehrere Nachrichten mit derselben Message-ID gefunden:"
 
 #: castmail2list/templates/messages/index.html:2
 #: castmail2list/templates/messages/index.html:4
@@ -767,28 +775,28 @@ msgstr "Abonnierte Listen"
 msgid "There are no subscribers anywhere."
 msgstr "Noch keine Abonnenten vorhanden."
 
-#: castmail2list/views/general.py:35
+#: castmail2list/views/general.py:39
 msgid "You must be logged in to access account settings."
 msgstr "Du musst eingeloggt sein, um Kontoeinstellungen zu sehen."
 
-#: castmail2list/views/general.py:47
+#: castmail2list/views/general.py:51
 msgid "A new API key has been generated."
 msgstr "Ein neue API-Schlüssel wurde erstellt."
 
-#: castmail2list/views/general.py:53
+#: castmail2list/views/general.py:57
 msgid "The passwords do not match."
 msgstr "Die Passwörter stimmen nicht überein."
 
-#: castmail2list/views/general.py:56
+#: castmail2list/views/general.py:60
 msgid "Your password has been updated."
 msgstr "Dein Passwort wurde aktualisiert."
 
-#: castmail2list/views/lists.py:96 castmail2list/views/lists.py:183
+#: castmail2list/views/lists.py:100 castmail2list/views/lists.py:187
 #, python-format
 msgid "A mailing list with the name \"%(name)s\" (%(status)s) already exists."
 msgstr "Eine Mailingliste mit dem Namen “%(name)s” (%(status)s) existiert bereits."
 
-#: castmail2list/views/lists.py:128
+#: castmail2list/views/lists.py:132
 msgid ""
 "Could not connect to the IMAP server with the provided credentials. "
 "Creation of the email account with this data also failed. Check the logs "
@@ -798,7 +806,7 @@ msgstr ""
 "verbinden. Die Erstellung des E-Mail-Kontos mit diesen Daten ist "
 "ebenfalls fehlgeschlagen. Prüfe die Logs für Details."
 
-#: castmail2list/views/lists.py:141
+#: castmail2list/views/lists.py:145
 msgid ""
 "Could not connect to the IMAP server with the provided credentials. "
 "Automatic creation of email accounts is disabled. Please check and try "
@@ -808,20 +816,20 @@ msgstr ""
 "verbinden. Die automatische Erstellung von E-Mail-Konten ist deaktiviert."
 " Prüfe und versuche nochmal."
 
-#: castmail2list/views/lists.py:152
+#: castmail2list/views/lists.py:156
 #, python-format
 msgid "Mailing list \"%(name)s\" created successfully!"
 msgstr "Mailingliste \"%(name)s\" erfolgreich erstellt!"
 
-#: castmail2list/views/lists.py:180
+#: castmail2list/views/lists.py:184
 msgid "deactivated"
 msgstr "deaktiviert"
 
-#: castmail2list/views/lists.py:180
+#: castmail2list/views/lists.py:184
 msgid "active"
 msgstr "aktiv"
 
-#: castmail2list/views/lists.py:203
+#: castmail2list/views/lists.py:207
 msgid ""
 "You changed the name of the mailing list. However, this did not change "
 "the IMAP data automatically, so it still fetches from the same mail box."
@@ -830,7 +838,7 @@ msgstr ""
 " IMAP-Daten automatisch geändert, also wird immer noch dieselbe Mailbox "
 "abgerufen."
 
-#: castmail2list/views/lists.py:227
+#: castmail2list/views/lists.py:231
 msgid ""
 "Could not connect to the IMAP server with the provided credentials. "
 "Please check and try again."
@@ -838,12 +846,12 @@ msgstr ""
 "Konnte nicht mit dem IMAP-Server mit den bereitgestellten Daten "
 "verbinden. Bitte prüfe und versuche nochmal."
 
-#: castmail2list/views/lists.py:250
+#: castmail2list/views/lists.py:254
 #, python-format
 msgid "List \"%(name)s\" updated successfully!"
-msgstr "Liste “%(name)s” erfolgreich aktualisiert!"
+msgstr "Liste \"%(name)s\" erfolgreich aktualisiert!"
 
-#: castmail2list/views/lists.py:266 castmail2list/views/lists.py:335
+#: castmail2list/views/lists.py:270 castmail2list/views/lists.py:339
 msgid ""
 "This mailing list is deactivated. Reactivate it to process incoming "
 "emails."
@@ -851,32 +859,32 @@ msgstr ""
 "Diese Mailingliste ist deaktiviert. Reaktiviere sie, um eingehende "
 "Nachrichten zu verarbeiten."
 
-#: castmail2list/views/lists.py:286
+#: castmail2list/views/lists.py:290
 #, python-format
 msgid "List \"%(name)s\" deactivated successfully!"
-msgstr "Liste “%(name)s” erfolgreich deaktiviert!"
+msgstr "Liste \"%(name)s\" erfolgreich deaktiviert!"
 
-#: castmail2list/views/lists.py:297
+#: castmail2list/views/lists.py:301
 #, python-format
 msgid "List \"%(name)s\" reactivated successfully!"
-msgstr "Liste “%(name)s” erfolgreich reaktiviert!"
+msgstr "Liste \"%(name)s\" erfolgreich reaktiviert!"
 
-#: castmail2list/views/lists.py:324
+#: castmail2list/views/lists.py:328
 #, python-format
 msgid "Successfully added \"%(email)s\" to the list!"
-msgstr "\"%(email)s” erfolgreich der Liste hinzugefügt!"
+msgstr "\"%(email)s\" erfolgreich der Liste hinzugefügt!"
 
-#: castmail2list/views/lists.py:360
+#: castmail2list/views/lists.py:364
 #, python-format
 msgid "Successfully removed \"%(email)s\" from the list!"
 msgstr "\"%(email)s\" erfolgreich aus der Liste entfernt!"
 
-#: castmail2list/views/lists.py:392
+#: castmail2list/views/lists.py:396
 #, python-format
 msgid "Subscriber \"%(email)s\" updated successfully!"
 msgstr "Abonnent \"%(email)s\" wurde erfolgreich aktualisiert!"
 
-#: castmail2list/views/lists.py:405
+#: castmail2list/views/lists.py:409
 msgid ""
 "This mailing list is deactivated. The subscriber won't receive any emails"
 " until you reactivate it."
@@ -884,24 +892,42 @@ msgstr ""
 "Diese Mailingliste ist deaktiviert. Der Abonnent wird keine E-Mails "
 "erhalten bis du sie nicht reaktivierst."
 
-#: castmail2list/views/lists.py:413
+#: castmail2list/views/lists.py:417
 msgid "Note: This subscriber is itself a mailing list."
 msgstr "Hinweis: Dieser Abonnent ist selbst eine Mailingliste."
 
-#: castmail2list/views/logs.py:52
+#: castmail2list/views/logs.py:56
 msgid "Log entry not found."
 msgstr "Logeintrag nicht gefunden."
 
-#: castmail2list/views/messages.py:62
+#: castmail2list/views/messages.py:71
+msgid ""
+"Multiple messages found with the same Message-ID. Please choose from "
+"below."
+msgstr ""
+"Mehrere Nachrichten mit derselben Message-ID gefunden. Bitte wähle unten "
+"aus."
+
+#: castmail2list/views/messages.py:77 castmail2list/views/messages.py:101
 msgid "Message not found"
 msgstr "Nachricht nicht gefunden"
 
-#: castmail2list/views/subscribers.py:35
+#: castmail2list/views/messages.py:91
+#, python-format
+msgid ""
+"Multiple messages found with the same Message-ID. Showing message for the"
+" selected list. See <a href='%(link)s'>here</a> for the other messages."
+msgstr ""
+"Mehrere Nachrichten mit derselben Message-ID gefunden. Zeige Nachricht"
+" für die ausgewählte Liste. Siehe <a href='%(link)s'>hier</a> für die anderen "
+"Nachrichten."
+
+#: castmail2list/views/subscribers.py:39
 #, python-format
 msgid "No subscriptions found for \"%(email)s\""
-msgstr "Keine Abonnements von “%(email)s” gefunden"
+msgstr "Keine Abonnements von \"%(email)s\" gefunden"
 
-#: castmail2list/views/subscribers.py:47
+#: castmail2list/views/subscribers.py:51
 msgid "Note: This subscriber is a mailing list."
 msgstr "Hinweis: Dieser Abonnent ist eine Mailingliste."
 
