@@ -35,22 +35,28 @@ def lists_count() -> dict:
     return list_stats
 
 
-def status_complete() -> dict:
+def status_complete() -> dict:  # pylint: disable=too-many-locals
     """Collects overall status information about Castmail2List.
 
     Returns:
         dict: A dictionary containing overall status information.
     """
     email_in_all = get_all_incoming_messages(only="ok")
+    email_in_hours_24 = get_all_incoming_messages(only="ok", days=1)
     email_in_days_7 = get_all_incoming_messages(only="ok", days=7)
+    bounce_hours_24 = get_all_incoming_messages(only="bounces", days=1)
     bounce_days_7 = get_all_incoming_messages(only="bounces", days=7)
     bounce_last_5 = get_all_incoming_messages(only="bounces")[:5]
     email_in_fail_all = get_all_incoming_messages(only="failures")
+    email_in_fail_hours_24 = get_all_incoming_messages(only="failures", days=1)
     email_in_fail_days_7 = get_all_incoming_messages(only="failures", days=7)
     email_out_all = get_all_outgoing_messages()
+    email_out_hours_24 = get_all_outgoing_messages(days=1)
     email_out_days_7 = get_all_outgoing_messages(days=7)
+    errors_hours_24 = get_log_entries(exact=True, days=1, level="error")
     errors_days_7 = get_log_entries(exact=True, days=7, level="error")
     errors_last_5 = get_log_entries(exact=True, level="error")[:5]
+    warnings_hours_24 = get_log_entries(exact=True, days=1, level="warning")
     warnings_days_7 = get_log_entries(exact=True, days=7, level="warning")
     warnings_last_5 = get_log_entries(exact=True, level="warning")[:5]
 
@@ -63,6 +69,10 @@ def status_complete() -> dict:
         },
         "email_in": {
             "count": len(email_in_all),
+            "hours_24": [
+                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                for msg in email_in_hours_24
+            ],
             "days_7": [
                 {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
                 for msg in email_in_days_7
@@ -74,6 +84,15 @@ def status_complete() -> dict:
         },
         "email_in_failures": {
             "count": len(email_in_fail_all),
+            "hours_24": [
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "status": msg.status,
+                }
+                for msg in email_in_fail_hours_24
+            ],
             "days_7": [
                 {
                     "mid": msg.message_id,
@@ -94,11 +113,23 @@ def status_complete() -> dict:
             ],
         },
         "bounces": {
+            "hours_24": [
+                {"mid": msg.message_id, "subject": msg.subject} for msg in bounce_hours_24
+            ],
             "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_days_7],
             "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_last_5],
         },
         "email_out": {
             "count": len(email_out_all),
+            "hours_24": [
+                {
+                    "mid": msg.message_id,
+                    "subject": msg.subject,
+                    "sent_successful": len(msg.sent_successful),
+                    "sent_failed": len(msg.sent_failed),
+                }
+                for msg in email_out_hours_24
+            ],
             "days_7": [
                 {
                     "mid": msg.message_id,
@@ -119,6 +150,7 @@ def status_complete() -> dict:
             ],
         },
         "errors": {
+            "hours_24": [log.id for log in errors_hours_24],
             "days_7": [log.id for log in errors_days_7],
             "last_5": [
                 {
@@ -131,6 +163,7 @@ def status_complete() -> dict:
             ],
         },
         "warnings": {
+            "hours_24": [log.id for log in warnings_hours_24],
             "days_7": [log.id for log in warnings_days_7],
             "last_5": [
                 {
