@@ -10,6 +10,7 @@ import subprocess
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
+from email.utils import formataddr
 from pathlib import Path
 
 import email_validator  # dependency for WTForms email validator
@@ -183,12 +184,13 @@ def generate_via_from_header(
         ml_display (str): The display name of the mailing list
 
     Returns:
-        str: Formatted From header string
+        str: Formatted From header string with proper encoding
     """
     if not from_values:
         logging.error("No valid From header, cannot generate via header")
         return ""
-    return f"{from_values.name or from_values.email} " f"via {ml_display} <{ml_address}>"
+    display_name = f"{from_values.name or from_values.email} via {ml_display}"
+    return formataddr((display_name, ml_address))
 
 
 def reply_to_from_email_and_name(email: str, name: str | None = None) -> str:
@@ -200,10 +202,10 @@ def reply_to_from_email_and_name(email: str, name: str | None = None) -> str:
         email (str): The email address
         name (str | None): The display name
     Returns:
-        str: Formatted Reply-To header string
+        str: Formatted Reply-To header string with proper encoding
     """
     if name:
-        return f"{name} <{email}>"
+        return formataddr((name, email))
     return email
 
 

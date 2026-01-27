@@ -268,7 +268,8 @@ def test_group_from_with_no_name(client, group_list):
     )
 
     # Should use email when name is missing
-    assert "sender@example.com via Group List <group@example.com>" in mail.from_header
+    # formataddr quotes the display name when it contains special chars like @
+    assert mail.from_header == '"sender@example.com via Group List" <group@example.com>'
 
 
 def test_group_reply_to_when_sender_not_subscriber(client, group_list):
@@ -834,3 +835,44 @@ def test_send_rejection_notification_dry_mode(client, smtp_mock):
 
     assert result is True  # Function returns True in DRY mode
     assert len(smtp_mock) == 0  # But no actual email sent
+
+
+def test_umlaut_in_display_name_encoding(client, broadcast_list: MailingList):
+    """Test that umlaut in list name is properly encoded in From header.
+
+    Regression test for issue where display names with non-ASCII characters
+    caused the entire From header (including email address) to be encoded.
+    Email addresses should never be encoded, only display names.
+    """
+    # Update list to have umlaut in display name
+    broadcast_list.display = "Elternböirat"
+    db.session.commit()
+
+    msg = create_test_message(
+        from_email="info@waldorfkindergarten-konstanz.de",
+        from_name="Test User",
+        to_addrs=("broadcast@example.com",),
+    )
+
+    mail = OutgoingEmail(
+        app=client.application,
+        ml=broadcast_list,
+        msg=msg,
+        message_id="new-msg-id@example.com",
+    )
+
+    # The From header should be properly formatted
+    # formataddr will quote the display name and handle encoding internally
+    expected_email = "broadcast@example.com"
+
+    # Check that the email address is present and unencoded
+    assert expected_email in mail.from_header
+    # Check the display name is present (may be encoded by formataddr)
+    assert "Elternb" in mail.from_header  # Partial match to handle encoding
+
+    # Most importantly: verify the composed message header doesn't encode the email
+    from_header = mail.composed_msg["From"]
+    # Email address should appear unencoded in angle brackets
+    assert f"<{expected_email}>" in from_header
+    # The @ in email should not be encoded (would be =40 if encoded)
+    assert "=40" not in from_header or "broadcast@example.com" in from_header
