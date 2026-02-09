@@ -57,7 +57,7 @@ flask-login = "^0.6.3"
 wtforms = { extras = ["email"], version = "^3.2.1" }
 pyyaml = "^6.0.1"
 jsonschema = "^4.25.1"
-gunicorn = "^24.0.0"
+gunicorn = "^25.0.0"
 platformdirs = "^4.5.0"
 
 [tool.poetry.group.dev.dependencies]
