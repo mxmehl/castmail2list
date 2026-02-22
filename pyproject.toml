@@ -61,7 +61,7 @@ gunicorn = "^25.0.0"
 platformdirs = "^4.5.0"
 
 [tool.poetry.group.dev.dependencies]
-isort = "^7.0.0"
+isort = "^8.0.0"
 pylint = "^4.0.0"
 black = "^26.0.0"
 mypy = "^1.18.2"
