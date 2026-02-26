@@ -340,14 +340,21 @@ def subscribers_manage(list_id):
             "warning",
         )
 
+    # Get recipients that are direct subscribers (not via nested lists)
+    subscribers_direct = get_list_subscribers(list_id=list_id)
     # Get recipients that are exclusively indirect
     recipients_indirect = get_list_recipients_recursive(list_id=list_id, only_indirect=True)
+
+    # Pre-fetch all lists to avoid N+1 queries in the template
+    all_lists = MailingList.query.all()
+    lists_by_id = {ml.id: ml for ml in all_lists}
 
     return render_template(
         "lists/subscribers_manage.html",
         mailing_list=mailing_list,
-        subscribers_direct=get_list_subscribers(list_id=list_id),
+        subscribers_direct=subscribers_direct,
         recipients_indirect=recipients_indirect,
+        lists_by_id=lists_by_id,
         form=form,
     )
 

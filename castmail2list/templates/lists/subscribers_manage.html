@@ -41,7 +41,7 @@
     </thead>
     <tbody>
         {%- for _email, subscriber in subscribers_direct.items() %}
-        {%- if subscriber.subscriber_type == "list" %}{% set list = is_email_a_list(subscriber.email) %}{% endif %}
+        {%- if subscriber.subscriber_type == "list" %}{% set list = lists_by_id.get(subscriber.email.split('@')[0].lower()) %}{% endif %}
         <tr>
             <td>{{ subscriber.name if subscriber.name }}</td>
             <td>
@@ -84,7 +84,7 @@
             <td>
                 {%- for listid in rec.source %}
                 <a href="{{ url_for('lists.subscribers_manage', list_id=listid) }}">
-                    {{- get_list_by_id(listid).display -}}
+                    {{- lists_by_id[listid].display -}}
                 </a>
                 {%- if not loop.last %}, {% endif %}
                 {%- endfor %}
