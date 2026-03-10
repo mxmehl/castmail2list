@@ -43,14 +43,41 @@ REQUIRED_FOLDERS_ENVS = [
 ]
 
 
+def _rss_mb() -> float:
+    """Return current process RSS in MiB using the stdlib resource module."""
+    # ru_maxrss is in kilobytes on Linux, bytes on macOS
+    import resource  # pylint: disable=import-outside-toplevel
+    import sys  # pylint: disable=import-outside-toplevel
+
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return rss / 1024 if sys.platform != "darwin" else rss / (1024 * 1024)
+
+
 def _poll_imap(app):
     """Runs forever in a thread, polling once per minute."""
+    if app.debug:
+        import tracemalloc  # pylint: disable=import-outside-toplevel
+
+        tracemalloc.start()
     with app.app_context():
         while run_only_once(app):
+            rss_before = _rss_mb() if app.debug else 0.0
             try:
                 check_all_lists_for_messages(app)
             except Exception as e:  # pylint: disable=broad-except
                 logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
+            if app.debug:
+                rss_after = _rss_mb()
+                py_mb = tracemalloc.get_traced_memory()[0] / 1024 / 1024
+                c_mb = rss_after - py_mb
+                logging.debug(
+                    "IMAP poll done. RSS: %.1f MiB (Δ %+.1f MiB) | "
+                    "Python heap: %.1f MiB | C-heap (est.): %.1f MiB",
+                    rss_after,
+                    rss_after - rss_before,
+                    py_mb,
+                    c_mb,
+                )
             time.sleep(app.config["POLL_INTERVAL_SECONDS"])
 
 

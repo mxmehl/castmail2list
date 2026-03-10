@@ -125,13 +125,13 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
 
     # Subscribers and messages relationships
     subscribers = db.relationship(
-        "Subscriber", backref="list", lazy="joined", cascade="all, delete-orphan"
+        "Subscriber", backref="list", lazy="select", cascade="all, delete-orphan"
     )
     emailin = db.relationship(
-        "EmailIn", backref="list", lazy="joined", cascade="all, delete-orphan"
+        "EmailIn", backref="list", lazy="select", cascade="all, delete-orphan"
     )
     emailout = db.relationship(
-        "EmailOut", backref="list", lazy="joined", cascade="all, delete-orphan"
+        "EmailOut", backref="list", lazy="select", cascade="all, delete-orphan"
     )
 
     # Soft-delete flag: mark list as deleted instead of removing row from DB

@@ -21,8 +21,9 @@ from .utils import get_app_bin_dir, get_user_config_path
 def main() -> Flask | None:
     """Entrypoint for WSGI servers. Loading relevant configuration from environment variables.
     Returns the Flask app instance"""
-    # Get debug flag from environment variable
+    # Get debug and dry flags from environment variable
     debug = os.environ.get("DEBUG", "false").lower() == "true"
+    dry = os.environ.get("DRY", "false").lower() == "true"
 
     # Get config path from environment variable
     config_path = os.environ.get("CONFIG_FILE", None)
@@ -37,7 +38,7 @@ def main() -> Flask | None:
     config_path = os.path.abspath(config_path)
     logging.info("Using configuration file: %s", config_path)
 
-    app = create_app_wrapper(app_config_path=config_path, debug=debug, one_off=False)
+    app = create_app_wrapper(app_config_path=config_path, debug=debug, dry=dry, one_off=False)
 
     return app
 
@@ -75,6 +76,9 @@ def gunicorn():
     parser.add_argument(
         "--debug", action="store_true", help="Run in debug mode (may leak sensitive information)"
     )
+    parser.add_argument(
+        "--dry", action="store_true", help="Run in dry mode (no changes to emails or DB)"
+    )
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     args = parser.parse_args()
 
@@ -99,6 +103,8 @@ def gunicorn():
             f"CONFIG_FILE={args.app_config}",
             "-e",
             f"DEBUG={args.debug}",
+            "-e",
+            f"DRY={args.dry}",
         ],
         check=True,
     )
