@@ -99,6 +99,7 @@ def create_app(  # pylint: disable=too-many-statements
     yaml_config_path: str | None = None,
     one_off_call: bool = False,
     debug: bool = False,
+    dry: bool = False,
 ) -> Flask:
     """Create Flask app
 
@@ -107,6 +108,7 @@ def create_app(  # pylint: disable=too-many-statements
         yaml_config_path (str): optional path to YAML configuration file
         one_off_call (bool): if True, indicates this is a one-off call (e.g. for CLI commands)
         debug (bool): if True, enable debug mode
+        dry (bool): if True, enable dry mode (no changes to emails or DB)
 
     Returns:
         Flask: the Flask application
@@ -125,6 +127,11 @@ def create_app(  # pylint: disable=too-many-statements
     # Enable debug mode if requested
     app.debug = debug
     app.config["DEBUG"] = debug
+
+    # Enable dry mode if requested
+    app.config["DRY"] = dry
+    if dry:
+        logging.warning("Running in DRY mode: no changes to emails or database will be made.")
 
     # apply overrides early so DB and other setup use them
     if config_overrides:
@@ -234,13 +241,13 @@ def create_app(  # pylint: disable=too-many-statements
     return app
 
 
-def create_app_wrapper(app_config_path: str, debug: bool, one_off: bool) -> Flask:
+def create_app_wrapper(app_config_path: str, debug: bool, dry: bool, one_off: bool) -> Flask:
     """Wrapper to create app from arguments. Both for direct Flask app and WSGI (gunicorn)"""
     # Configure logging
     configure_logging(debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug)
+    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug, dry=dry)
 
     return app
 
@@ -347,17 +354,14 @@ def main():
     if args.db or args.create_admin or args.db_seed or args.db_migrate:
         # one-off call for most CLI commands
         one_off = True
-    app = create_app_wrapper(app_config_path=args.app_config, debug=args.debug, one_off=one_off)
+    app = create_app_wrapper(
+        app_config_path=args.app_config, debug=args.debug, dry=args.dry, one_off=one_off
+    )
 
     # Run one-off commands if any
     if one_off:
         run_one_off_commands(app, args)
         return
-
-    # Insert modes into config
-    if args.dry:
-        app.config["DRY"] = True
-        logging.warning("Running in DRY mode: no changes to emails or database will be made.")
 
     # Identify and abort if database seems to be empty
     with app.app_context():
