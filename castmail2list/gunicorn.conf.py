@@ -13,6 +13,9 @@ bind = "0.0.0.0:2278"
 workers = 1
 worker_class = "sync"
 timeout = 30
+# Restart workers after handling this many requests to prevent memory leaks
+max_requests = 500
+max_requests_jitter = 50
 
 # Logging
 accesslog = "-"  # Log to stdout
