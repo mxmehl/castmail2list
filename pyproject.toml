@@ -69,6 +69,7 @@ dev = [
     "beautifulsoup4>=4.14.2,<5",
     "pytest-cov>=7.0.0,<8",
     "requests>=2.32.5,<3",
+    "reuse>=6.2.0",
 ]
 
 [tool.uv]

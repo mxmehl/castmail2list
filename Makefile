@@ -31,8 +31,10 @@ setup: check-requirements ## Install dependencies: install dependencies via uv
 pytest: ## Run pytest: unit tests
 	$(UV) run pytest --cov=$(APPDIR)
 
-ruff: ## Run ruff: lint and format check
+ruff-lint: ## Run ruff: lint check
 	$(UV) run ruff check
+
+ruff-format: ## Run ruff: format check
 	$(UV) run ruff format --check
 
 ty: ## Run ty: type checking
@@ -41,7 +43,7 @@ ty: ## Run ty: type checking
 reuse: ## Run reuse: license and copyright best practices
 	$(UV) run reuse lint
 
-test-all: setup pytest ruff ty reuse ## Run all tests
+test-all: setup pytest ruff-lint ruff-format ty reuse ## Run all tests
 	@echo
 	@echo "--------------------------------"
 	@echo "All tests passed!"
@@ -49,9 +51,9 @@ test-all: setup pytest ruff ty reuse ## Run all tests
 # -----------------------------------
 # Translation targets
 # -----------------------------------
-translations-update: ## Update translation template and .po files
+translations-update: setup ## Update translation template and .po files
 	@$(UV) run pybabel extract -F $(APPDIR)/babel.cfg -o $(APPDIR)/messages.pot $(APPDIR)
 	@$(UV) run pybabel update -i $(APPDIR)/messages.pot -d $(APPDIR)/translations
 
-translations-compile: ## Compile .po files to .mo files
+translations-compile: setup ## Compile .po files to .mo files
 	@$(UV) run pybabel compile -d $(APPDIR)/translations
