@@ -5,6 +5,11 @@
 
 # CastMail2List
 
+[![Test suites](https://github.com/mxmehl/castmail2list/actions/workflows/test.yaml/badge.svg)](https://github.com/mxmehl/castmail2list/actions/workflows/test.yaml)
+[![REUSE status](https://api.reuse.software/badge/github.com/mxmehl/castmail2list)](https://api.reuse.software/info/github.com/mxmehl/castmail2list)
+[![The latest version can be found on PyPI.](https://img.shields.io/pypi/v/castmail2list.svg)](https://pypi.org/project/castmail2list/)
+[![Information on what versions of Python are supported can be found on PyPI.](https://img.shields.io/pypi/pyversions/castmail2list.svg)](https://pypi.org/project/castmail2list/)
+
 ## Usage
 
 For production use (using gunicorn as WSGI):
