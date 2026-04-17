@@ -2,26 +2,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for the utils module"""
+"""Tests for the utils module."""
 
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, NoReturn
 
 from flask import Flask
-from pytest import MonkeyPatch
 
 from castmail2list import utils
 from castmail2list.models import EmailIn, EmailOut, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address, parse_bounce_address
 
-# pylint: disable=protected-access,too-few-public-methods
+if TYPE_CHECKING:
+    from pytest import MonkeyPatch
 
 
 def test_create_bounce_address_normal() -> None:
-    """Test the create_bounce_address function: normal case"""
+    """Test the create_bounce_address function: normal case."""
     original_email = "jane.doe@gmail.com"
     list_address = "list1@list.example.com"
 
@@ -30,7 +31,7 @@ def test_create_bounce_address_normal() -> None:
 
 
 def test_create_bounce_address_plus() -> None:
-    """Test the create_bounce_address function: handling plus sign in email"""
+    """Test the create_bounce_address function: handling plus sign in email."""
     original_email = "jane.doe+test@gmail.com"
     list_address = "list1@list.example.com"
 
@@ -39,7 +40,7 @@ def test_create_bounce_address_plus() -> None:
 
 
 def test_create_bounce_address_hyphen() -> None:
-    """Test the create_bounce_address function: handling hyphen sign in email"""
+    """Test the create_bounce_address function: handling hyphen sign in email."""
     original_email = "jane-doe@gmail.com"
     list_address = "list1@list.example.com"
 
@@ -48,7 +49,7 @@ def test_create_bounce_address_hyphen() -> None:
 
 
 def test_create_bounce_address_special_chars() -> None:
-    """Test the create_bounce_address function: handling special characters in email"""
+    """Test the create_bounce_address function: handling special characters in email."""
     original_email = "jane.doe@wäb.de"
     list_address = "list1@list.example.com"
 
@@ -57,7 +58,7 @@ def test_create_bounce_address_special_chars() -> None:
 
 
 def test_parse_bounce_address_normal() -> None:
-    """Test the parse_bounce_address function: normal case"""
+    """Test the parse_bounce_address function: normal case."""
     bounce_address = "list1+bounces--jane.doe=gmail.com@list.example.com"
     original_email = parse_bounce_address(bounce_address)
 
@@ -65,7 +66,7 @@ def test_parse_bounce_address_normal() -> None:
 
 
 def test_parse_bounce_address_plus() -> None:
-    """Test the parse_bounce_address function: handling plus sign in email"""
+    """Test the parse_bounce_address function: handling plus sign in email."""
     bounce_address = "list1+bounces--jane.doe---plus---test=gmail.com@list.example.com"
     original_email = parse_bounce_address(bounce_address)
 
@@ -73,7 +74,7 @@ def test_parse_bounce_address_plus() -> None:
 
 
 def test_parse_bounce_address_hyphen() -> None:
-    """Test the parse_bounce_address function: handling hyphen sign in email"""
+    """Test the parse_bounce_address function: handling hyphen sign in email."""
     bounce_address = "list1+bounces--jane-test=gmail.com@list.example.com"
     original_email = parse_bounce_address(bounce_address)
 
@@ -148,7 +149,7 @@ def test_create_email_account_subprocess(monkeypatch) -> None:
     # Simulate subprocess.run success
     calls = {}
 
-    def fake_run(cmd, check=True):  # pylint: disable=unused-argument
+    def fake_run(cmd, check=True) -> None:
         calls["cmd"] = cmd
         # subprocess.run has no meaningful return value in our tests
 
@@ -161,7 +162,7 @@ def test_create_email_account_subprocess(monkeypatch) -> None:
     assert utils.create_email_account("unknown", "user@example.com", "pw") is False
 
     # Simulate CalledProcessError
-    def fake_run_fail(cmd, check=True):
+    def fake_run_fail(cmd, check=True) -> NoReturn:
         raise subprocess.CalledProcessError(returncode=1, cmd=cmd)
 
     monkeypatch.setattr(subprocess, "run", fake_run_fail)
@@ -181,13 +182,14 @@ def test_check_email_account_works_login_error(monkeypatch) -> None:
     class DummyMailbox:
         """Stub MailBox that raises on login."""
 
-        def __init__(self, host, port):
+        def __init__(self, host, port) -> None:
             """Initialize with host and port."""
             # no-op: constructor present to match MailBox signature
 
-        def login(self, user, password):
+        def login(self, user, password) -> NoReturn:
             """Simulate login failure by raising the patched MailboxLoginError."""
-            raise CustomLoginError("authentication failed")
+            msg = "authentication failed"
+            raise CustomLoginError(msg)
 
     monkeypatch.setattr(utils, "MailBox", DummyMailbox)
     assert utils.check_email_account_works("h", 993, "u", "p") is False
@@ -195,7 +197,8 @@ def test_check_email_account_works_login_error(monkeypatch) -> None:
 
 def test_is_email_a_list_and_get_list_subscribers(client):
     """is_email_a_list and get_list_recipients_recursive() work with DB-backed
-    lists/subscribers."""
+    lists/subscribers.
+    """
     del client  # ensure app and DB fixtures are active
 
     ml = MailingList(
@@ -250,7 +253,8 @@ def test_get_list_recipients_recursive_no_subs(client):
 
 def test_get_list_recipients_recursive_deduplicates(client):
     """get_list_recipients_recursive() deduplicates subscribers with same email and with list as
-    subscriber"""
+    subscriber.
+    """
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -318,7 +322,7 @@ def test_get_list_recipients_recursive_deduplicates(client):
 
 
 def test_get_list_recipients_recursive_circular_reference(client):
-    """get_list_recipients_recursive() handles circular list subscriptions without infinite loop"""
+    """get_list_recipients_recursive() handles circular list subscriptions without infinite loop."""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -360,7 +364,7 @@ def test_get_list_recipients_recursive_circular_reference(client):
 
 
 def test_get_list_recipients_recursive_deep(client):
-    """get_list_recipients_recursive() handles lists subscribing to lists multiple levels deep"""
+    """get_list_recipients_recursive() handles lists subscribing to lists multiple levels deep."""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -425,7 +429,7 @@ def test_get_list_recipients_recursive_deep(client):
 
 
 def test_get_list_recipients_recursive_direct_indirect(client):
-    """get_list_recipients_recursive() handles only_direct and only_indirect flags correctly"""
+    """get_list_recipients_recursive() handles only_direct and only_indirect flags correctly."""
     del client  # ensure app and DB fixtures are active
 
     ml1: MailingList = MailingList(
@@ -474,7 +478,6 @@ def test_get_list_recipients_recursive_direct_indirect(client):
 
 def test_list_subscribers(client) -> None:
     """list_subscribers returns direct subscribers of a mailing list, optionally excluding lists."""
-
     del client  # ensure app and DB fixtures are active
 
     ml1 = MailingList(
@@ -515,8 +518,8 @@ def test_list_subscribers(client) -> None:
 
 def test_check_recommended_list_setting() -> None:
     """check_recommended_list_setting returns warnings for broadcast lists missing security
-    settings."""
-
+    settings.
+    """
     ml = MailingList(
         id="rec",
         address="rec@example.com",
@@ -530,7 +533,8 @@ def test_check_recommended_list_setting() -> None:
     ml.sender_auth = []
 
     findings = utils.check_recommended_list_setting(ml)
-    assert findings and findings[0][1] == "warning"
+    assert findings
+    assert findings[0][1] == "warning"
 
     ml.allowed_senders = ["foo@example.com"]
     assert not utils.check_recommended_list_setting(ml)
@@ -541,11 +545,11 @@ def test_check_recommended_list_setting() -> None:
 
 
 def test_get_all_incoming_messages(client) -> None:
-    """Check that get_all_incoming_messages retrieves messages with filters correctly"""
+    """Check that get_all_incoming_messages retrieves messages with filters correctly."""
     del client  # ensure app and DB fixtures are active
 
     def _days_ago(days: int) -> datetime:
-        return datetime.now() - timedelta(days=days)
+        return datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     bounce1: EmailIn = EmailIn(
         message_id="bounce-1",
@@ -618,11 +622,11 @@ def test_get_all_incoming_messages(client) -> None:
 
 
 def test_get_all_outgoing_messages(client) -> None:
-    """Check that get_all_outgoing_messages retrieves outgoing messages correctly"""
+    """Check that get_all_outgoing_messages retrieves outgoing messages correctly."""
     del client  # ensure app and DB fixtures are active
 
     def _days_ago(days: int) -> datetime:
-        return datetime.now() - timedelta(days=days)
+        return datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
 
     sent1: EmailOut = EmailOut(
         message_id="sent-1",

@@ -2,24 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Authentication blueprint for CastMail2List application"""
+"""Authentication blueprint for CastMail2List application."""
 
 import logging
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
 from werkzeug.security import check_password_hash
+from werkzeug.wrappers import Response
 
-from ..forms import LoginForm
-from ..models import User
-from ..utils import create_log_entry
+from castmail2list.forms import LoginForm
+from castmail2list.models import User
+from castmail2list.utils import create_log_entry
 
 auth = Blueprint("auth", __name__)
 
 
 @auth.route("/login", methods=["GET", "POST"])
-def login():
-    """Handle user login requests"""
+def login() -> str | Response:
+    """Handle user login requests."""
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -55,7 +56,7 @@ def login():
 
 @auth.route("/logout")
 @login_required
-def logout():
-    """Handle user logout requests"""
+def logout() -> Response:
+    """Handle user logout requests."""
     logout_user()
     return redirect(url_for("general.index"))

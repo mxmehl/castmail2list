@@ -12,8 +12,8 @@ Summary
 - Purpose: CastMail2List is a small Flask-based mailing-list application that polls
   IMAP mailboxes, stores messages in a SQLAlchemy-backed database, and serves a web
   interface. It includes an IMAP worker, bounce handling, and basic list/group modes.
-- Languages / frameworks: Python 3.10+ (project declares ^3.10), Flask, SQLAlchemy,
-  imap-tools. Project uses Poetry for dependency management and packaging.
+- Languages / frameworks: Python 3.10+ (project declares >=3.10,<4), Flask, SQLAlchemy,
+  imap-tools. Project uses uv for dependency management and packaging.
 - Size: small-to-medium Python web app (top-level package `castmail2list/`, `tests/`,
   `  static/`, `templates/`). Tests exist under `tests/` and use `pytest`.
 
@@ -32,13 +32,13 @@ High-level guidance for an agent
 
 Bootstrap / dev environment
 
-- This repo uses Poetry. Always use Poetry-managed virtual environments when running
+- This repo uses uv. Always use uv-managed virtual environments when running
   commands. Typical bootstrap steps (macOS / Linux / CI):
 
   - Install a recent Python interpreter 3.10-3.14. The project CI tests 3.10..3.14.
-  - Install Poetry (if not present): `pip install poetry`.
+  - Install uv (if not present): see https://docs.astral.sh/uv/getting-started/installation/
   - Create/activate virtualenv and install dependencies (inside repo root):
-    `poetry install --with dev` (or `poetry install` then `poetry install --with dev`)
+    `uv sync`
 
 - Notes: The project expects `sass` to be available on PATH when the app starts
   because SCSS is compiled at startup via a simple `sass` command. For tests this is
@@ -49,36 +49,36 @@ Build / test / run / lint (validated commands)
 
 - Install dependencies (required):
 
-  - `poetry install --with dev`
+  - `uv sync`
 
 - Run unit tests with coverage (recommended before PR):
 
-  - `poetry run pytest --cov=castmail2list`
+  - `uv run pytest --cov=castmail2list`
 
 - Run the app locally (development):
 
   - Prepare a config: `cp config.example.yaml config.yaml` and edit `config.yaml` as needed.
-  - Run debug server: `poetry run castmail2list-cli --config config.yaml --debug`.
-  - For production-style run, use: `poetry run castmail2list --config config.yaml` or
-    use the `wsgi.gunicorn()` wrapper: `poetry run python -m castmail2list.wsgi gunicorn`.
+  - Run debug server: `uv run castmail2list-cli --config config.yaml --debug`.
+  - For production-style run, use: `uv run castmail2list --config config.yaml` or
+    use the `wsgi.gunicorn()` wrapper: `uv run python -m castmail2list.wsgi gunicorn`.
 
 - Packaging / build (used by CI):
 
-  - `poetry build` produces `dist/` artifacts.
+  - `uv build` produces `dist/` artifacts.
 
 - Formatting & static checks (CI mirrors these):
-  - Lint: `poetry run pylint --disable=fixme castmail2list/`
-  - Formatting checks: `poetry run isort --check castmail2list/` then `poetry run black --check .`
-  - Typing: `poetry run mypy`
+  - Lint: `uv run ruff check`
+  - Formatting checks: `uv run ruff format --check`
+  - Typing: `uv run ty check`
 
 Known CI and checks
 
 - GitHub Actions workflows are in `.github/workflows/`.
   - `test.yaml` runs multiple jobs: matrix with Python 3.10–3.14, `pytest`, packaging,
-    `pylint`, `isort`/`black`, and `mypy`.
-  - The actions use a local `.github/actions/poetrybuild` helper to install dependencies
-    (you do not need to replicate that exactly; using `poetry install` locally is fine).
-- Functions and classes need proper docstrings. We use `pylint` to enforce this. It should follow
+    `ruff`, and `ty`.
+  - The actions use a local `.github/actions/uvbuild` helper to install dependencies
+    (you do not need to replicate that exactly; using `uv sync` locally is fine).
+- Functions and classes need proper docstrings. We use `ruff` to enforce this. It should follow
   the Google style.
 
 Project layout and where to make changes
@@ -115,18 +115,18 @@ Tips for safe edits and common pitfalls
 Validation checklist before creating a PR
 
 - Run these locally in the workspace root and confirm they pass in sequence:
-  1. `poetry install --with dev`
-  2. `poetry run pytest --cov=castmail2list`
-  3. `poetry run pylint --disable=fixme castmail2list/ tests/` (address new warnings only)
-  4. `poetry run isort --check castmail2list/ tests/` and `poetry run black --check .`
-  5. `poetry run mypy`
-  6. `poetry build` (optional for packaging changes)
+  1. `uv sync`
+  2. `uv run pytest --cov=castmail2list`
+  3. `uv run ruff check`
+  4. `uv run ruff format --check`
+  5. `uv run ty check`
+  6. `uv build` (optional for packaging changes)
 
 If CI fails after a PR is opened
 
 - Reproduce the failure locally with the same Python version as the failing matrix job
-  (CI shows matrix entry). Run the failing job steps locally with `poetry env use <py>`
-  and `poetry install`, then re-run the failing commands.
+  (CI shows matrix entry). Run the failing job steps locally with
+  `uv python install <version>` and `uv sync`, then re-run the failing commands.
 
 Search guidance for the agent
 

@@ -2,23 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Lists blueprint for CastMail2List application"""
+"""Lists blueprint for CastMail2List application."""
 
 import logging
 
 from flask import Blueprint, current_app, flash, redirect, render_template, url_for
 from flask_babel import _
 from flask_login import login_required
+from werkzeug.wrappers import Response
 
-from ..config import AppConfig
-from ..forms import MailingListForm, SubscriberAddForm
-from ..models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
-from ..services import (
+from castmail2list.config import AppConfig
+from castmail2list.forms import MailingListForm, SubscriberAddForm
+from castmail2list.models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
+from castmail2list.services import (
     add_subscriber_to_list,
     delete_subscriber_from_list,
     update_subscriber_in_list,
 )
-from ..utils import (
+from castmail2list.utils import (
     check_email_account_works,
     check_recommended_list_setting,
     create_email_account,
@@ -36,7 +37,7 @@ lists = Blueprint("lists", __name__, url_prefix="/lists")
 @lists.before_request
 @login_required
 def before_request() -> None:
-    """Require login for all routes"""
+    """Require login for all routes."""
 
 
 # -----------------------------------------------------------------
@@ -45,8 +46,8 @@ def before_request() -> None:
 
 
 @lists.route("/", methods=["GET"])
-def index():
-    """Show all active mailing lists"""
+def index() -> str:
+    """Show all active mailing lists."""
     active_lists: list[MailingList] = (
         MailingList.query.order_by(MailingList.id).filter_by(deleted=False).all()
     )
@@ -54,8 +55,8 @@ def index():
 
 
 @lists.route("/deactivated", methods=["GET"])
-def deactivated():
-    """Show all deactivated mailing lists"""
+def deactivated() -> str:
+    """Show all deactivated mailing lists."""
     deactivated_lists: list[MailingList] = (
         MailingList.query.order_by(MailingList.id).filter_by(deleted=True).all()
     )
@@ -68,8 +69,8 @@ def deactivated():
 
 
 @lists.route("/add", methods=["GET", "POST"])
-def add():
-    """Add a new mailing list"""
+def add() -> str | Response:
+    """Add a new mailing list."""
     form = MailingListForm()
 
     if form.validate_on_submit():
@@ -79,7 +80,7 @@ def add():
             id=form.id.data.strip().lower(),
             address=address,
             display=form.display.data,
-            mode=form.mode.data,
+            mode=str(form.mode.data),
             from_addr=form.from_addr.data or "",
             # Mode settings
             only_subscribers_send=form.only_subscribers_send.data,
@@ -170,8 +171,8 @@ def add():
 
 
 @lists.route("/<list_id>/edit", methods=["GET", "POST"])
-def edit(list_id: str):
-    """Edit a mailing list"""
+def edit(list_id: str) -> str | Response:  # noqa: C901
+    """Edit a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     form = MailingListForm(obj=mailing_list)
 
@@ -280,8 +281,8 @@ def edit(list_id: str):
 
 
 @lists.route("/<list_id>/deactivate", methods=["GET"])
-def deactivate(list_id: str):
-    """Deactivate a mailing list"""
+def deactivate(list_id: str) -> Response:
+    """Deactivate a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(
         id=list_id, deleted=False
     ).first_or_404()
@@ -293,8 +294,8 @@ def deactivate(list_id: str):
 
 
 @lists.route("/<list_id>/reactivate", methods=["GET"])
-def reactivate(list_id: str):
-    """Reactivate a mailing list"""
+def reactivate(list_id: str) -> Response:
+    """Reactivate a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
     mailing_list.reactivate()  # Use the reactivate method from the model
     db.session.commit()
@@ -309,8 +310,8 @@ def reactivate(list_id: str):
 
 
 @lists.route("/<list_id>/subscribers", methods=["GET", "POST"])
-def subscribers_manage(list_id):
-    """Manage subscribers of a mailing list"""
+def subscribers_manage(list_id: str) -> str | Response:
+    """Manage subscribers of a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     form = SubscriberAddForm()
 
@@ -360,8 +361,8 @@ def subscribers_manage(list_id):
 
 
 @lists.route("/<list_id>/subscribers/<subscriber_email>/delete", methods=["GET"])
-def subscriber_delete(list_id: str, subscriber_email: str):
-    """Delete a subscriber from a mailing list"""
+def subscriber_delete(list_id: str, subscriber_email: str) -> Response:
+    """Delete a subscriber from a mailing list."""
     # Use service layer to delete subscriber
     error = delete_subscriber_from_list(list_id, subscriber_email)
     if error:
@@ -374,8 +375,8 @@ def subscriber_delete(list_id: str, subscriber_email: str):
 
 
 @lists.route("/<list_id>/subscribers/<subscriber_email>/edit", methods=["GET", "POST"])
-def subscriber_edit(list_id: str, subscriber_email: str):
-    """Edit a subscriber of a mailing list"""
+def subscriber_edit(list_id: str, subscriber_email: str) -> str | Response:
+    """Edit a subscriber of a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id).first_or_404()
     subscriber: Subscriber = Subscriber.query.filter_by(
         list_id=list_id, email=subscriber_email

@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Tests for IMAP worker bounce detection and scaffolding for future message handling.
-"""
+"""Tests for IMAP worker bounce detection and scaffolding for future message handling."""
+
+from typing import NoReturn
 
 from flask import Flask
 from imap_tools import MailboxLoginError, MailMessage
@@ -16,8 +16,6 @@ from castmail2list.models import EmailIn, Logs, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
 from .conftest import MailboxStub
-
-# pylint: disable=protected-access,too-few-public-methods
 
 
 def _call_detect_bounce(incoming: IncomingEmail) -> tuple[str, list[str]]:
@@ -139,7 +137,8 @@ def test_sender_authentication_and_to_cleanup(mailing_list: MailingList, incomin
 
 def test_duplicate_detection_same_list(incoming_message_factory, mailbox_stub: MailboxStub):
     """Processing the same Message-ID for the same list twice should move the second copy to
-    duplicate folder."""
+    duplicate folder.
+    """
     # Create a simple message with a deterministic Message-ID header
     raw = (
         b"Message-ID: <dup-test-1@example.com>\nSubject: Dup\n"
@@ -222,7 +221,10 @@ def test_duplicate_detection_different_list(client, mailbox_stub: MailboxStub):
     msg1 = MailMessage.from_bytes(raw)
     msg1.uid = "shared-1-list1"
     incoming1 = IncomingEmail(
-        app=client.application, mailbox=mailbox_stub, msg=msg1, ml=ml1  # type: ignore[arg-type]
+        app=client.application,
+        mailbox=mailbox_stub,
+        msg=msg1,
+        ml=ml1,  # type: ignore[arg-type]
     )
     res1 = incoming1.process_incoming_msg()
     assert res1 is True
@@ -231,7 +233,10 @@ def test_duplicate_detection_different_list(client, mailbox_stub: MailboxStub):
     msg2 = MailMessage.from_bytes(raw)
     msg2.uid = "shared-1-list2"
     incoming2 = IncomingEmail(
-        app=client.application, mailbox=mailbox_stub, msg=msg2, ml=ml2  # type: ignore[arg-type]
+        app=client.application,
+        mailbox=mailbox_stub,
+        msg=msg2,
+        ml=ml2,  # type: ignore[arg-type]
     )
     res2 = incoming2.process_incoming_msg()
     assert res2 is True
@@ -351,8 +356,9 @@ def test_broadcast_no_restrictions(mailing_list: MailingList, incoming_message_f
 def test_group_mode_subscriber_restrictions(
     mailing_list: MailingList, incoming_message_factory, mailbox_stub: MailboxStub
 ):
-    """
-    Group mode should only allow messages from subscribers when `only_subscribers_send` is set.
+    """Group mode should only allow messages from subscribers.
+
+    This checks the `only_subscribers_send` setting.
     """
     # Set up a group list with one subscriber
     mailing_list.mode = "group"
@@ -575,7 +581,7 @@ def test_send_msg_to_subscribers_called_for_ok_message(
     db.session.commit()
 
     # Patch Mail.send_email_to_recipient to avoid SMTP
-    def _fake_send(_self, _recipient):
+    def _fake_send(_self, _recipient) -> bytes:
         return b"OK"
 
     monkeypatch.setattr(mailer.OutgoingEmail, "send_email_to_recipient", _fake_send, raising=True)
@@ -613,14 +619,14 @@ def test_create_required_folders_calls_create(client):
     class FakeFolder:
         """Fake folder object used to verify create() is called."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.created = False
 
-        def exists(self, _name):
+        def exists(self, _name) -> bool:
             """Return False to simulate missing folder."""
             return False
 
-        def create(self, folder=None):
+        def create(self, folder=None) -> None:
             """Create the folder (test stub)."""
             # accept and ignore the folder parameter to satisfy signature
             del folder
@@ -629,7 +635,7 @@ def test_create_required_folders_calls_create(client):
     class FakeMailbox:
         """Fake MailBox exposing a `folder` attribute like imap_tools.MailBox."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.folder = FakeFolder()
 
     mb = FakeMailbox()
@@ -644,13 +650,13 @@ def test_initialize_imap_polling_starts_thread(monkeypatch):
     class FakeThread:
         """Thread-like fake used to verify thread start is invoked."""
 
-        def __init__(self, target=None, args=None, daemon=None):
+        def __init__(self, target=None, args=None, daemon=None) -> None:
             """Initialize fake thread (no-op)."""
             # accept parameters and ignore them to satisfy signature
             del target, args, daemon
             started["created"] = True
 
-        def start(self):
+        def start(self) -> None:
             """Simulate starting the thread by recording state."""
             started["started"] = True
 
@@ -670,11 +676,11 @@ def test_check_all_lists_handles_imap_errors(monkeypatch, client):
     class FakeMailBoxLoginFail:
         """Fake MailBox that raises `MailboxLoginError` on login."""
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             """Initialize fake mailbox that will raise on login."""
             del args, kwargs
 
-        def login(self, username=None, password=None):
+        def login(self, username=None, password=None) -> NoReturn:
             """Raise a mailbox login error when login is attempted."""
             # accept and ignore username/password to satisfy signature
             del username, password
@@ -691,33 +697,34 @@ def test_check_all_lists_handles_imap_errors(monkeypatch, client):
     class FakeCM:
         """Context manager used to simulate a mailbox fetch raising an error."""
 
-        def __enter__(self):
-            class MB:
-                """Fake MailBox whose fetch raises a runtime error"""
+        def __enter__(self):  # noqa: ANN204
+            class FakeMB:
+                """Fake MailBox whose fetch raises a runtime error."""
 
-                def __init__(self):
+                def __init__(self) -> None:
                     class Folder:
-                        """Simulate folder handler for MailBox"""
+                        """Simulate folder handler for MailBox."""
 
-                        def set(self, _):
+                        def set(self, _) -> None:
                             """Simulate folder.set call."""
                             del _
 
                     self.folder = Folder()
 
-                def fetch(self):
+                def fetch(self) -> NoReturn:
                     """Simulate fetch raising an error."""
-                    raise RuntimeError("fetch error")
+                    msg = "fetch error"
+                    raise RuntimeError(msg)
 
-            return MB()
+            return FakeMB()
 
-        def __exit__(self, exc_type, exc, tb):
+        def __exit__(self, exc_type, exc, tb) -> bool:
             return False
 
     class FakeMailBoxFetchFail:
         """Fake MailBox whose fetch raises a runtime error inside the context manager."""
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             """Init fake mailbox fetch fail (no-op)."""
             del args, kwargs
 
@@ -824,7 +831,7 @@ def test_store_msg_generates_message_id_when_missing(incoming_message_factory):
 def test_rejection_notification_integration_known_sender(
     mailing_list: MailingList, incoming_message_factory, smtp_mock
 ):
-    """Integration test: rejection notification sent to known sender via full workflow"""
+    """Integration test: rejection notification sent to known sender via full workflow."""
     mailing_list.mode = "broadcast"
     mailing_list.allowed_senders = ["allowed@example.com"]
 
@@ -857,7 +864,7 @@ def test_rejection_notification_integration_known_sender(
 def test_rejection_notification_integration_unknown_sender(
     mailing_list: MailingList, incoming_message_factory, smtp_mock
 ):
-    """Integration test: no notification for unknown sender via full workflow"""
+    """Integration test: no notification for unknown sender via full workflow."""
     mailing_list.mode = "broadcast"
     mailing_list.allowed_senders = ["allowed@example.com"]
 

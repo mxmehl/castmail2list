@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Messages blueprint for CastMail2List application"""
+"""Messages blueprint for CastMail2List application."""
 
 from flask import Blueprint, flash, render_template, url_for
 from flask_babel import _
 from flask_login import login_required
 
-from ..models import EmailIn, EmailOut
-from ..utils import (
+from castmail2list.models import EmailIn, EmailOut
+from castmail2list.utils import (
     get_all_incoming_messages,
     get_all_outgoing_messages,
     get_message_id_in_db,
@@ -21,19 +21,19 @@ messages = Blueprint("messages", __name__, url_prefix="/messages")
 @messages.before_request
 @login_required
 def before_request() -> None:
-    """Require login for all routes"""
+    """Require login for all routes."""
 
 
 @messages.route("/")
 def index() -> str:
-    """Show all normal incoming messages"""
+    """Show all normal incoming messages."""
     msgs: list[EmailIn] = get_all_incoming_messages(only="ok")
     return render_template("messages/index.html", messages=msgs)
 
 
 @messages.route("/bounces")
 def bounces() -> str:
-    """Show only bounced messages"""
+    """Show only bounced messages."""
     return render_template(
         "messages/bounces.html", messages=get_all_incoming_messages(only="bounces")
     )
@@ -41,7 +41,7 @@ def bounces() -> str:
 
 @messages.route("/failures")
 def failures() -> str:
-    """Show only failure messages (except bounces)"""
+    """Show only failure messages (except bounces)."""
     return render_template(
         "messages/failures.html", messages=get_all_incoming_messages(only="failures")
     )
@@ -49,13 +49,13 @@ def failures() -> str:
 
 @messages.route("/sent")
 def sent() -> str:
-    """Show all outgoing messages"""
+    """Show all outgoing messages."""
     return render_template("messages/sent.html", messages=get_all_outgoing_messages())
 
 
 @messages.route("/<message_id>")
 def show(message_id: str) -> str:
-    """Show a specific message, without list context"""
+    """Show a specific message, without list context."""
     msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id])
 
     if len(msgs) == 1:
@@ -80,7 +80,7 @@ def show(message_id: str) -> str:
 
 @messages.route("<message_id>/<list_id>")
 def show_unique(message_id: str, list_id: str) -> str:
-    """Show a specific message, with list context"""
+    """Show a specific message, with list context."""
     msgs: list[EmailIn | EmailOut] = get_message_id_in_db([message_id])
 
     msg_unique: EmailIn | EmailOut

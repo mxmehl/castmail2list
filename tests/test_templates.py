@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for template rendering and content verification"""
+"""Tests for template rendering and content verification."""
 
 from bs4 import BeautifulSoup
 
 
 def test_template_root(client):
-    """Ensure that the base template renders correctly with navigation and footer"""
+    """Ensure that the base template renders correctly with navigation and footer."""
     response = client.get("/")
     soup = BeautifulSoup(response.data, "html.parser")
 
@@ -28,7 +28,7 @@ def test_template_root(client):
 
 
 def test_template_root_unauthed(client_unauthed):
-    """Ensure that the base template renders correctly for unauthenticated users"""
+    """Ensure that the base template renders correctly for unauthenticated users."""
     response = client_unauthed.get("/")
 
     assert response.status_code == 302  # Redirect to login

@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Configuration for CastMail2List"""
+"""Configuration for CastMail2List."""
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 from jsonschema import FormatChecker, validate
@@ -48,7 +48,7 @@ CONFIG_SCHEMA = {
 
 
 class AppConfig:  # pylint: disable=too-few-public-methods
-    """Flask configuration from YAML file with some defaults"""
+    """Flask configuration from YAML file with some defaults."""
 
     # App settings
     DATABASE_URI: str = ""
@@ -86,11 +86,11 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     # Sender notification settings
     NOTIFY_REJECTED_SENDERS: bool = False
     NOTIFY_REJECTED_KNOWN_ONLY: bool = True
-    NOTIFY_REJECTED_TRUSTED_DOMAINS: list[str] = []
+    NOTIFY_REJECTED_TRUSTED_DOMAINS: ClassVar[list[str]] = []
 
     @classmethod
     def validate_config_schema(cls, cfg: dict, schema: dict) -> None:
-        """Validate the config against a JSON schema"""
+        """Validate the config against a JSON schema."""
         try:
             validate(instance=cfg, schema=schema, format_checker=FormatChecker())
         except ValidationError as e:
@@ -110,20 +110,20 @@ class AppConfig:  # pylint: disable=too-few-public-methods
         """
         logging.debug("Loading configuration from YAML file: %s", yaml_path)
         try:
-            with open(yaml_path, encoding="utf-8") as f:
+            with Path(yaml_path).open(encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
                 cls.validate_config_schema(data, CONFIG_SCHEMA)
                 return data
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             logging.critical("Configuration file not found: %s", yaml_path)
-            raise e
+            raise
         except yaml.YAMLError as e:
             logging.critical("Error parsing YAML configuration file: %s", e)
-            raise e
+            raise
 
     @classmethod
     def from_yaml_and_env(cls, yaml_path: str | Path) -> "AppConfig":
-        """Create Config instance from YAML file, overriding class defaults
+        """Create Config instance from YAML file, overriding class defaults.
 
         Args:
             yaml_path (str | Path): Path to YAML configuration file

@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-[tool.poetry]
+[project]
 name = "castmail2list"
 version = "0.6.6"
 description = "Simple mailing list software with IMAP mailbox backend, web interface, and multiple list modes."
-repository = "https://github.com/mxmehl/castmail2list"
-authors = ["Max Mehl <mail@mehl.mx>"]
+authors = [{ name = "Max Mehl", email = "mail@mehl.mx" }]
+requires-python = ">=3.10,<4"
 readme = "README.md"
+license = "Apache-2.0"
 keywords = [
     "mailinglist",
     "flask",
@@ -19,7 +20,6 @@ keywords = [
     "smtp",
     "email",
 ]
-license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -27,68 +27,98 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Framework :: Flask",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Topic :: Communications :: Email",
     "Topic :: Communications :: Email :: Mailing List Servers",
     "Topic :: Communications :: Email :: Post-Office :: IMAP",
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Programming Language :: Python :: 3",
 ]
-# Add ignored files to the package
-include = ["castmail2list/translations/**/*.mo"]
+dependencies = [
+    "flask>=3.1.2,<4",
+    "flask-sqlalchemy>=3.1.1,<4",
+    "imap-tools>=1.11.0,<2",
+    "flask-migrate>=4.1.0,<5",
+    "flask-wtf>=1.2.2,<2",
+    "email-validator>=2.3.0,<3",
+    "flask-babel>=4.0.0,<5",
+    "flufl-bounce>=4.0,<5",
+    "flask-limiter>=4.0.0,<5",
+    "flask-login>=0.6.3,<0.7",
+    "wtforms[email]>=3.2.1,<4",
+    "pyyaml>=6.0.1,<7",
+    "jsonschema>=4.25.1,<5",
+    "gunicorn>=25.0.0,<26",
+    "platformdirs>=4.5.0,<5",
+]
 
-[tool.poetry.scripts]
+[project.urls]
+Repository = "https://github.com/mxmehl/castmail2list"
+
+[project.scripts]
 castmail2list-cli = "castmail2list.app:main"
 castmail2list = "castmail2list.wsgi:gunicorn"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-flask = "^3.1.2"
-flask-sqlalchemy = "^3.1.1"
-imap-tools = "^1.11.0"
-flask-migrate = "^4.1.0"
-flask-wtf = "^1.2.2"
-email-validator = "^2.3.0"
-flask-babel = "^4.0.0"
-flufl-bounce = "^4.0"
-flask-limiter = "^4.0.0"
-flask-login = "^0.6.3"
-wtforms = { extras = ["email"], version = "^3.2.1" }
-pyyaml = "^6.0.1"
-jsonschema = "^4.25.1"
-gunicorn = "^25.0.0"
-platformdirs = "^4.5.0"
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
+    "bump-my-version>=1.2.4,<2",
+    "pytest>=9.0.0,<10",
+    "beautifulsoup4>=4.14.2,<5",
+    "pytest-cov>=7.0.0,<8",
+    "requests>=2.32.5,<3",
+    "reuse>=6.2.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-isort = "^8.0.0"
-pylint = "^4.0.0"
-black = "^26.0.0"
-mypy = "^1.18.2"
-bump-my-version = "^1.2.4"
-pytest = "^9.0.0"
-beautifulsoup4 = "^4.14.2"
-pytest-cov = "^7.0.0"
-requests = "^2.32.5"
+[tool.uv]
+default-groups = "all"
+
+[tool.uv.build-backend]
+module-root = ""
+source-include = ["castmail2list/translations/**/*.mo"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.6,<0.12.0"]
+build-backend = "uv_build"
 
-# FORMATTING settings
-[tool.isort]
-profile = "black"
-skip = ["migrations"]
+# PYTEST settings
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
-[tool.black]
+# FORMATTING and LINTING settings
+[tool.ruff]
 line-length = 100
-extend-exclude = "/migrations/"
 
-# MYPY settings
-[tool.mypy]
-files = ["castmail2list/*.py", "tests/*.py"]
-disable_error_code = ["import-untyped"]
-check_untyped_defs = true
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "T",
+    "FBT",
+    "LOG015",
+    "COM812",
+    "ERA001",
+    "S310",
+    "D205",
+    "D212",
+    "TD002",
+    "TD003",
+    "FIX002",
+]
+[tool.ruff.lint.extend-per-file-ignores]
+"castmail2list/migrations/*" = ["ALL"]
+"castmail2list/gunicorn.conf.py" = ["N999"]
+"tests/*" = ["S101", "S105", "S106", "S108", "SLF001", "PLR", "PT011", "PT013", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ARG001", "ARG002", "ARG005", "PLC0415", "PTH"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+[tool.ruff.format]
+exclude = ["castmail2list/migrations/**"]
+
+# TY settings
+[tool.ty.src]
+include = ["castmail2list"]
+exclude = ["castmail2list/migrations"]
 
 # Bump-My-Version
 [tool.bumpversion]
@@ -102,3 +132,16 @@ filename = "pyproject.toml"
 regex = true
 search = "^version = \"{current_version}\""
 replace = "version = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = """
+[[package]]
+name = "castmail2list"
+version = "{current_version}"
+"""
+replace = """
+[[package]]
+name = "castmail2list"
+version = "{new_version}"
+"""

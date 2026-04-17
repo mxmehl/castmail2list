@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Flask-WTF forms for castmail2list application"""
+"""Flask-WTF forms for castmail2list application."""
 
 from email.utils import parseaddr
+from typing import Any
 
 from flask_babel import lazy_gettext as _  # Using lazy_gettext for form field labels
 from flask_wtf import FlaskForm
@@ -22,21 +23,21 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Optiona
 
 
 class CM2LBaseForm(FlaskForm):
-    """Base form class for CastMail2List forms"""
+    """Base form class for CastMail2List forms."""
 
     class Meta:  # pylint: disable=too-few-public-methods
-        """Customize form field binding to add stripping filter"""
+        """Customize form field binding to add stripping filter."""
 
-        def bind_field(self, form, unbound_field, options):
-            """Add custom filter to strip whitespace from string fields"""
+        def bind_field(self, form: Any, unbound_field: Any, options: Any) -> Any:  # noqa: ANN401
+            """Add custom filter to strip whitespace from string fields."""
             filters = unbound_field.kwargs.get("filters", [])
             filters.append(my_strip_filter)
             return unbound_field.bind(form=form, filters=filters, **options)
 
 
-def my_strip_filter(value: str | int):
-    """Custom filter to strip leading/trailing whitespace from string fields"""
-    if value is not None and hasattr(value, "strip"):
+def my_strip_filter(value: str | int) -> str | int:
+    """Custom filter to strip leading/trailing whitespace from string fields."""
+    if isinstance(value, str):
         return value.strip()
     return value
 
@@ -55,8 +56,8 @@ class LoginForm(CM2LBaseForm):
     submit = SubmitField(_("Login"))
 
 
-def email_with_opt_display_name(form, field):
-    """Custom validator for multiple ways of providing email addresses:
+def email_with_opt_display_name(form: Any, field: Any) -> None:  # noqa: ANN401
+    """Custom validator for multiple ways of providing email addresses.
 
     foo@bar.com
     John Doe <foo@bar.com>
@@ -64,7 +65,8 @@ def email_with_opt_display_name(form, field):
     """
     _, addr = parseaddr(field.data or "")
     if not addr:
-        raise ValidationError("Invalid email format")
+        msg = "Invalid email format"
+        raise ValidationError(msg)
 
     # Temporarily replace field.data with the bare address
     original = field.data
@@ -77,7 +79,7 @@ def email_with_opt_display_name(form, field):
 
 
 class MailingListForm(CM2LBaseForm):
-    """Form for creating and editing mailing lists"""
+    """Form for creating and editing mailing lists."""
 
     # Basics
     id = StringField(_("List Name"), validators=[DataRequired(), Length(min=1, max=50)])
@@ -151,7 +153,7 @@ class MailingListForm(CM2LBaseForm):
 
 
 class SubscriberAddForm(CM2LBaseForm):
-    """Form for adding new subscribers"""
+    """Form for adding new subscribers."""
 
     name = StringField(_("Name"), validators=[Optional(), Length(max=100)])
     email = EmailField(_("Email Address"), validators=[DataRequired(), Email()])
@@ -160,7 +162,7 @@ class SubscriberAddForm(CM2LBaseForm):
 
 
 class UserDetailsForm(CM2LBaseForm):
-    """Form for changing user password"""
+    """Form for changing user password."""
 
     password = PasswordField(
         _("New Password"),

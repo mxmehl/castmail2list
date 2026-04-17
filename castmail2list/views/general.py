@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Flask routes for castmail2list application"""
+"""Flask routes for castmail2list application."""
 
 from secrets import token_urlsafe
 
@@ -10,11 +10,12 @@ from flask import Blueprint, flash, redirect, render_template, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
+from werkzeug.wrappers import Response
 
-from ..config import AppConfig
-from ..forms import UserDetailsForm
-from ..models import db
-from ..status import status_complete
+from castmail2list.config import AppConfig
+from castmail2list.forms import UserDetailsForm
+from castmail2list.models import db
+from castmail2list.status import status_complete
 
 general = Blueprint("general", __name__)
 
@@ -22,19 +23,19 @@ general = Blueprint("general", __name__)
 @general.before_request
 @login_required
 def before_request() -> None:
-    """Require login for all routes"""
+    """Require login for all routes."""
 
 
 @general.route("/")
-def index():
-    """Show dashboard"""
+def index() -> str:
+    """Show dashboard."""
     stats = status_complete()
     return render_template("index.html", stats=stats)
 
 
 @general.route("/account", methods=["GET", "POST"])
-def account():
-    """Show account settings page"""
+def account() -> str | Response:
+    """Show account settings page."""
     if current_user is None:
         flash(_("You must be logged in to access account settings."), "error")
         return redirect(url_for("general.index"))
@@ -66,7 +67,6 @@ def account():
 
 
 @general.route("/settings", methods=["GET", "POST"])
-def settings():
-    """Manage application settings"""
-
+def settings() -> str:
+    """Manage application settings."""
     return render_template("settings.html", config=AppConfig)

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""WSGI entry point for production servers like gunicorn"""
+"""WSGI entry point for production servers like gunicorn."""
 
 # pylint: disable=duplicate-code
 
@@ -10,6 +10,7 @@ import argparse
 import logging
 import os
 import subprocess
+from pathlib import Path
 
 from flask import Flask
 
@@ -20,7 +21,8 @@ from .utils import get_app_bin_dir, get_user_config_path
 
 def main() -> Flask | None:
     """Entrypoint for WSGI servers. Loading relevant configuration from environment variables.
-    Returns the Flask app instance"""
+    Returns the Flask app instance.
+    """
     # Get debug and dry flags from environment variable
     debug = os.environ.get("DEBUG", "false").lower() == "true"
     dry = os.environ.get("DRY", "false").lower() == "true"
@@ -31,20 +33,18 @@ def main() -> Flask | None:
         logging.critical("CONFIG_FILE environment variable is not set")
         return None
     # Test if config file exists
-    if not os.path.exists(config_path):
+    if not Path(config_path).exists():
         logging.critical("Configuration file %s does not exist", config_path)
         return None
     # Get absolute path for logging
-    config_path = os.path.abspath(config_path)
+    config_path = str(Path(config_path).resolve())
     logging.info("Using configuration file: %s", config_path)
 
-    app = create_app_wrapper(app_config_path=config_path, debug=debug, dry=dry, one_off=False)
-
-    return app
+    return create_app_wrapper(app_config_path=config_path, debug=debug, dry=dry, one_off=False)
 
 
-def gunicorn():
-    """Run Gunicorn server with the specified configuration"""
+def gunicorn() -> None:
+    """Run Gunicorn server with the specified configuration."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -82,18 +82,11 @@ def gunicorn():
     parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     args = parser.parse_args()
 
-    if args.gunicorn_config:
-        gunicorn_config_path = args.gunicorn_config
-    else:
-        # Get path of this file to define location of the default gunicorn config
-        gunicorn_config_path = os.path.join(os.path.dirname(__file__), "gunicorn.conf.py")
+    gunicorn_config_path = args.gunicorn_config or str(Path(__file__).parent / "gunicorn.conf.py")
 
-    if args.gunicorn_exec:
-        gunicorn_exec = args.gunicorn_exec
-    else:
-        gunicorn_exec = str(get_app_bin_dir() / "gunicorn")
+    gunicorn_exec = args.gunicorn_exec or str(get_app_bin_dir() / "gunicorn")
 
-    subprocess.run(
+    subprocess.run(  # noqa: S603
         [
             gunicorn_exec,
             "-c",

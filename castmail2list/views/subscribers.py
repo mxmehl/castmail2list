@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Flask routes for subscriber details"""
+"""Flask routes for subscriber details."""
 
 from flask import Blueprint, flash, render_template
 from flask_babel import _
 from flask_login import login_required
 
-from ..models import MailingList, Subscriber, db
-from ..utils import get_all_subscribers, is_email_a_list
+from castmail2list.models import MailingList, Subscriber, db
+from castmail2list.utils import get_all_subscribers, is_email_a_list
 
 subscribers = Blueprint("subscribers", __name__, url_prefix="/subscribers")
 
@@ -17,18 +17,18 @@ subscribers = Blueprint("subscribers", __name__, url_prefix="/subscribers")
 @subscribers.before_request
 @login_required
 def before_request() -> None:
-    """Require login for all routes"""
+    """Require login for all routes."""
 
 
 @subscribers.route("/")
-def index():
-    """Show all subscribers across all lists"""
+def index() -> str:
+    """Show all subscribers across all lists."""
     return render_template("subscribers/index.html", subscribers=get_all_subscribers())
 
 
 @subscribers.route("/<email>")
-def by_email(email: str):
-    """Show which lists a subscriber is part of"""
+def by_email(email: str) -> str | tuple[str, int]:
+    """Show which lists a subscriber is part of."""
     # Find all subscriptions for this email address
     email_norm = email.strip().lower()
     subscriptions: list[Subscriber] = (

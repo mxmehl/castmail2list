@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for form input handling and validation"""
+"""Tests for form input handling and validation."""
 
 from flask import current_app
 
@@ -13,11 +13,9 @@ from castmail2list.forms import (
     UserDetailsForm,
 )
 
-# pylint: disable=unused-argument
-
 
 def test_login_form_strips_whitespace(client):
-    """Test that LoginForm strips leading/trailing whitespace from username"""
+    """Test that LoginForm strips leading/trailing whitespace from username."""
     with current_app.test_request_context():
         form = LoginForm(data={"username": "  testuser  ", "password": "password123"})
         assert form.username.data == "testuser"
@@ -25,7 +23,7 @@ def test_login_form_strips_whitespace(client):
 
 
 def test_mailing_list_form_strips_whitespace(client):
-    """Test that MailingListForm strips whitespace from string fields"""
+    """Test that MailingListForm strips whitespace from string fields."""
     with current_app.test_request_context():
         form = MailingListForm(
             data={
@@ -47,7 +45,7 @@ def test_mailing_list_form_strips_whitespace(client):
 
 
 def test_subscriber_add_form_strips_whitespace(client):
-    """Test that SubscriberAddForm strips whitespace from fields"""
+    """Test that SubscriberAddForm strips whitespace from fields."""
     with current_app.test_request_context():
         form = SubscriberAddForm(
             data={
@@ -62,7 +60,7 @@ def test_subscriber_add_form_strips_whitespace(client):
 
 
 def test_user_details_form_strips_whitespace(client):
-    """Test that UserDetailsForm strips whitespace from password fields"""
+    """Test that UserDetailsForm strips whitespace from password fields."""
     with current_app.test_request_context():
         form = UserDetailsForm(
             data={
@@ -75,7 +73,7 @@ def test_user_details_form_strips_whitespace(client):
 
 
 def test_form_preserves_integer_fields(client):
-    """Test that integer fields are not affected by stripping filter"""
+    """Test that integer fields are not affected by stripping filter."""
     with current_app.test_request_context():
         form = MailingListForm(
             data={

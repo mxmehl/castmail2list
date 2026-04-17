@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Utility functions for Castmail2List application"""
+"""Utility functions for Castmail2List application."""
 
 import logging
 import os
@@ -21,15 +21,17 @@ from imap_tools.message import MailMessage
 from platformdirs import user_config_path
 from sqlalchemy import func
 
+from castmail2list.forms import MailingListForm, SubscriberAddForm
+
 from . import __version__
 from .models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
 
 
 def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
-    """Compile SCSS files to CSS using an external compiler"""
+    """Compile SCSS files to CSS using an external compiler."""
     try:
         logging.info("Compiling %s to %s", scss_input, css_output)
-        subprocess.run([compiler, scss_input, css_output], check=True)
+        subprocess.run([compiler, scss_input, css_output], check=True)  # noqa: S603
     except subprocess.CalledProcessError as e:
         logging.critical("Error compiling %s: %s", scss_input, e)
         sys.exit(1)
@@ -58,8 +60,8 @@ def compile_scss_on_startup(scss_files: list[tuple[str, str]]) -> list[tuple[str
     return compiled_files
 
 
-def flash_form_errors(form):
-    """Flash all errors from a Flask-WTF form"""
+def flash_form_errors(form: MailingListForm | SubscriberAddForm) -> None:
+    """Flash all errors from a Flask-WTF form."""
     for field, errors in form.errors.items():
         for error in errors:
             flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
@@ -81,8 +83,8 @@ def get_version_info(debug: bool = False) -> str:
         return __version__
     # Get short git commit hash if available
     try:
-        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()
-    except Exception:  # pylint: disable=broad-exception-caught
+        commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()  # noqa: S607
+    except Exception:  # noqa: BLE001
         logging.debug("Failed to get git commit hash.", exc_info=True)
         commit = "unknown commit"
 
@@ -90,7 +92,7 @@ def get_version_info(debug: bool = False) -> str:
 
 
 def normalize_email_list(input_str: str) -> str:
-    """Normalize a string of emails into a comma-separated list"""
+    """Normalize a string of emails into a comma-separated list."""
     # Accepts either comma or newline separated, returns comma-separated
     if not input_str:
         return ""
@@ -100,7 +102,7 @@ def normalize_email_list(input_str: str) -> str:
 
 
 def list_to_string(listobj: list[str]) -> str:
-    """Convert a list to a comma-separated string"""
+    """Convert a list to a comma-separated string."""
     if isinstance(listobj, list):
         return ", ".join(listobj)
     logging.warning("Input is not a list: %s", listobj)
@@ -138,6 +140,7 @@ def create_bounce_address(ml_address: str, recipient: str) -> str:
     the return will be `list1+bounces--jane.doe=gmail.com@list.example.com`
 
     Args:
+        ml_address (str): The mailing list email address
         recipient (str): The recipient email address
     Returns:
         str: The constructed Envelope From address
@@ -166,8 +169,7 @@ def parse_bounce_address(bounce_address: str) -> str | None:
             logging.debug("No bounce marker in address: %s", bounce_address)
             return None
         _, sanitized_recipient = local_part.split("+bounces--", 1)
-        recipient = sanitized_recipient.replace("=", "@").replace("---plus---", "+")
-        return recipient
+        return sanitized_recipient.replace("=", "@").replace("---plus---", "+")
     except ValueError:
         logging.warning("Failed to parse bounce address: %s", bounce_address)
         return None
@@ -241,7 +243,7 @@ def get_list_by_id(list_id: str) -> MailingList | None:
     return MailingList.query.filter_by(id=list_id).first()
 
 
-def get_list_recipients_recursive(
+def get_list_recipients_recursive(  # noqa: C901
     list_id: str, only_direct: bool = False, only_indirect: bool = False
 ) -> dict[str, dict]:
     """
@@ -272,8 +274,8 @@ def get_list_recipients_recursive(
         logging.warning("Mailing list with ID %s not found.", list_id)
         return recipients_dict
 
-    def _collect_recipients(list_obj: MailingList, is_direct: bool = False):
-        """Recursively collect subscribers from the given mailing list and nested lists"""
+    def _collect_recipients(list_obj: MailingList, is_direct: bool = False) -> None:
+        """Recursively collect subscribers from the given mailing list and nested lists."""
         if list_obj.id in visited_list_ids:  # list already visited, avoid recursion
             return
         visited_list_ids.add(list_obj.id)  # Mark this list as visited
@@ -293,21 +295,19 @@ def get_list_recipients_recursive(
                     "email": rec.email,
                     "source": ["direct"] if is_direct else [list_obj.id],
                 }
-            else:
-                # Update source list
-                if is_direct:
-                    if "direct" not in recipients_dict[rec.email]["source"]:
-                        recipients_dict[rec.email]["source"].append("direct")
-                else:
-                    if list_obj.id not in recipients_dict[rec.email]["source"]:
-                        recipients_dict[rec.email]["source"].append(list_obj.id)
+            # Update source list
+            elif is_direct:
+                if "direct" not in recipients_dict[rec.email]["source"]:
+                    recipients_dict[rec.email]["source"].append("direct")
+            elif list_obj.id not in recipients_dict[rec.email]["source"]:
+                recipients_dict[rec.email]["source"].append(list_obj.id)
 
         # Iterate over direct recipients. If any is a list, recurse into it
         for rec in direct_subs:
-            if nested_list := is_email_a_list(rec.email):
-                # Only recurse if the nested list hasn't been visited yet
-                if nested_list.id not in visited_list_ids:
-                    _collect_recipients(nested_list, is_direct=False)
+            if (
+                nested_list := is_email_a_list(rec.email)
+            ) and nested_list.id not in visited_list_ids:
+                _collect_recipients(nested_list, is_direct=False)
 
     # Start collecting from the given mailing list
     _collect_recipients(ml, is_direct=True)
@@ -354,7 +354,6 @@ def get_list_subscribers(list_id: str, exclude_lists: bool = False) -> dict[str,
     their details.
 
     Notes:
-
     * A subscriber is always a direct subscription to the mailing list, and may be either a real
       person or a list. This is different from recipients, which are always real people and may be
       direct or indirect by being subscribed via nested lists.
@@ -423,9 +422,7 @@ def get_all_subscribers() -> dict[str, dict[str, list[MailingList] | int]]:
             subscriber_map[sub.email]["bounces"] += sub.bounces
 
     # sort subscriber_map by email
-    subscriber_map = dict(sorted(subscriber_map.items(), key=lambda item: item[0]))
-
-    return subscriber_map
+    return dict(sorted(subscriber_map.items(), key=lambda item: item[0]))
 
 
 def get_plus_suffix(email: str) -> str | None:
@@ -439,8 +436,7 @@ def get_plus_suffix(email: str) -> str | None:
     """
     local_part, _ = email.split("@", 1)
     if "+" in local_part:
-        suffix = local_part.split("+", 1)[1]
-        return suffix
+        return local_part.split("+", 1)[1]
     return None
 
 
@@ -483,16 +479,15 @@ def is_expanded_address_the_mailing_list(to_address: str, list_address: str) -> 
     return to_local_part_no_suffix == list_local_part.lower()
 
 
-def run_only_once(app: Flask):
+def run_only_once(app: Flask) -> bool:
     """Ensure that something is only run once if Flask is run in Debug mode. Check if Flask is run
-    in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is"""
+    in Debug mode and what the value of env variable WERKZEUG_RUN_MAIN is.
+    """
     logging.debug("FLASK_DEBUG=%s, WERKZEUG_RUN_MAIN=%s", app.debug, os.getenv("WERKZEUG_RUN_MAIN"))
 
     if not app.debug:
         return True
-    if app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true":
-        return True
-    return False
+    return bool(app.debug and os.getenv("WERKZEUG_RUN_MAIN") == "true")
 
 
 def check_email_account_works(
@@ -502,8 +497,10 @@ def check_email_account_works(
     Check if an email account exists on the IMAP server.
 
     Args:
-        app (Flask): The Flask application instance for accessing configuration
-        email (str): The email address to check
+        imap_host (str): The IMAP server hostname
+        imap_port (int): The IMAP server port
+        imap_user (str): The IMAP username
+        imap_password (str): The IMAP password
     Returns:
         bool: True if the email account exists, False otherwise
     """
@@ -514,12 +511,11 @@ def check_email_account_works(
     except MailboxLoginError:
         logging.warning("Failed to log in to IMAP server %s as %s", imap_host, imap_user)
         return False
-    except Exception as e:  # pylint: disable=broad-exception-caught
-        logging.error(
-            "Error while checking email account on IMAP server %s as %s: %s",
+    except Exception:
+        logging.exception(
+            "Error while checking email account on IMAP server %s as %s",
             imap_host,
             imap_user,
-            e,
         )
         return False
 
@@ -566,18 +562,18 @@ def create_email_account(host_type: str, email: str, password: str) -> bool:
             logging.error("Unsupported host type for email account creation: %s", host_type)
             return False
 
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)  # noqa: S603
         logging.info("Successfully created email account: %s", email)
-        return True
-    except subprocess.CalledProcessError as e:
-        logging.error("Failed to create email account %s: %s", email, e)
+    except subprocess.CalledProcessError:
+        logging.exception("Failed to create email account %s", email)
         return False
-    except FileNotFoundError as e:
-        logging.error(
-            "Uberspace command not found. Ensure application actually runs on Uberspace host: %s",
-            e,
+    except FileNotFoundError:
+        logging.exception(
+            "Uberspace command not found. Ensure application actually runs on Uberspace host"
         )
         return False
+    else:
+        return True
 
 
 def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
@@ -591,25 +587,22 @@ def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
     """
     findings = []
 
-    if ml.mode == "broadcast":
-        if not ml.allowed_senders and not ml.sender_auth:
-            findings.append(
-                (
-                    _(
-                        "In Broadcast mode, it is recommended to set Allowed Senders and/or "
-                        "Sender Authentication Passwords!"
-                    ),
-                    "warning",
-                )
+    if ml.mode == "broadcast" and not ml.allowed_senders and not ml.sender_auth:
+        findings.append(
+            (
+                _(
+                    "In Broadcast mode, it is recommended to set Allowed Senders and/or "
+                    "Sender Authentication Passwords!"
+                ),
+                "warning",
             )
+        )
 
     return findings
 
 
 def get_app_bin_dir() -> Path:
-    """
-    Get the directory where this app's executable resides in the current Python environment.
-    """
+    """Get the directory where this app's executable resides in the current Python environment."""
     return Path(sys.executable).parent
 
 
@@ -618,7 +611,7 @@ def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     Get the user configuration directory for the application.
 
     Args:
-        app_name (str): The name of the application
+        name (str): The name of the application
         file (str): Optional filename to append to the config directory
     Returns:
         str: The path to the user configuration directory
@@ -647,7 +640,8 @@ def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     """
     if only not in ("", "bounces", "failures", "ok"):
         logging.critical("Invalid 'only' parameter for get_all_messages: %s", only)
-        raise ValueError(f"Invalid 'only' parameter: {only}")
+        msg = f"Invalid 'only' parameter: {only}"
+        raise ValueError(msg)
     all_messages: list[EmailIn] = EmailIn.query.order_by(EmailIn.received_at.desc()).all()
     if only == "bounces":
         all_messages = [msg for msg in all_messages if msg.status == "bounce-msg"]
@@ -656,7 +650,7 @@ def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     if only == "ok":
         all_messages = [msg for msg in all_messages if msg.status == "ok"]
     if days > 0:
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
     return all_messages
 
@@ -672,7 +666,7 @@ def get_all_outgoing_messages(days: int = 0) -> list[EmailOut]:
     """
     all_messages: list[EmailOut] = EmailOut.query.order_by(EmailOut.sent_at.desc()).all()
     if days > 0:
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.sent_at >= cutoff_date]
     return all_messages
 
@@ -718,7 +712,8 @@ def get_message_id_in_db(
     """
     if only not in ("", "in", "out"):
         logging.critical("Invalid 'filter' parameter for get_message_id_in_db: %s", only)
-        raise ValueError(f"Invalid 'filter' parameter: {only}")
+        msg = f"Invalid 'filter' parameter: {only}"
+        raise ValueError(msg)
 
     found_messages: list[EmailIn | EmailOut] = []
 
@@ -758,7 +753,7 @@ def get_message_id_from_incoming(msg: MailMessage) -> str:
     return next(iter(msg.headers.get("message-id", ())), str(uuid.uuid4())).strip("<>")
 
 
-def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+def create_log_entry(
     level: str,
     event: str,
     message: str,
@@ -778,7 +773,6 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
     Returns:
         Logs: The created and persisted log entry
     """
-
     log_entry = Logs(
         level=level.lower(),
         event=event.lower(),
@@ -794,7 +788,7 @@ def create_log_entry(  # pylint: disable=too-many-arguments, too-many-positional
     return log_entry
 
 
-def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
+def get_log_entries(exact: bool = False, days: int = 0, **kwargs: str) -> list[Logs]:
     """
     Retrieve log entries from the database based on provided filters.
 
@@ -802,6 +796,7 @@ def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
         exact (bool): If True, use exact matching; if False, use partial matching
         days (int): Only return log entries from the last given number of days. If 0, return all
         **kwargs: Filter criteria for querying logs (e.g., level='error', list_id=1)
+
     Returns:
         list[Logs]: A list of log entries matching the filter criteria
     """
@@ -819,7 +814,7 @@ def get_log_entries(exact: bool = False, days: int = 0, **kwargs) -> list[Logs]:
 
     log_entries: list[Logs] = query.order_by(Logs.timestamp.desc()).all()
     if days > 0:
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         log_entries = [log for log in log_entries if log.timestamp >= cutoff_date]
     return log_entries
 
@@ -836,7 +831,8 @@ def validate_email(email: str, allow_smtputf8: bool = True) -> bool:
     """
     try:
         email_validator.validate_email(email, allow_smtputf8=allow_smtputf8)
-        return True
     except email_validator.EmailNotValidError as e:
         logging.debug("Email validation failed for %s: %s", email, e)
         return False
+    else:
+        return True

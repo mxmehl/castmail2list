@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Flask app and CLI for CastMail2List"""
+"""Flask app and CLI for CastMail2List."""
 
 import argparse
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from logging.config import dictConfig
 from pathlib import Path
 from shutil import copy2
@@ -49,7 +49,7 @@ SCSS_FILES = [("static/scss/main.scss", "static/css/main.scss.css")]
 
 
 def configure_logging(debug: bool) -> None:
-    """Configure logging"""
+    """Configure logging."""
     dictConfig(
         {
             "version": 1,
@@ -71,7 +71,7 @@ def configure_logging(debug: bool) -> None:
 
 
 def backup_sqlite_database(config_database_uri: str) -> None:
-    """Backup the existing database file if it's SQLite"""
+    """Backup the existing database file if it's SQLite."""
     if not config_database_uri.startswith("sqlite:///"):
         logging.warning("Database is not SQLite, skipping backup")
         return
@@ -83,7 +83,7 @@ def backup_sqlite_database(config_database_uri: str) -> None:
         db_path = (app_path / db_path).resolve()
 
     # Create backup file path with timestamp
-    date = datetime.now().strftime("%Y%m%d_%H%M%S")
+    date = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
     backup_path = f"{db_path}.backup-{date}"
 
     # Copy database file to backup location
@@ -94,14 +94,14 @@ def backup_sqlite_database(config_database_uri: str) -> None:
         logging.warning("Database file not found, skipping backup")
 
 
-def create_app(  # pylint: disable=too-many-statements
+def create_app(  # noqa: PLR0915
     config_overrides: dict | None = None,
     yaml_config_path: str | None = None,
     one_off_call: bool = False,
     debug: bool = False,
     dry: bool = False,
 ) -> Flask:
-    """Create Flask app
+    """Create Flask app.
 
     Args:
         config_overrides (dict): optional dict to update app.config before DB init (e.g. for tests)
@@ -117,10 +117,7 @@ def create_app(  # pylint: disable=too-many-statements
     logging.debug("Executable bin path: %s", get_app_bin_dir())
 
     # Load config from YAML, if provided
-    if yaml_config_path:
-        appconfig = AppConfig.from_yaml_and_env(yaml_config_path)
-    else:
-        appconfig = AppConfig()  # default config
+    appconfig = AppConfig.from_yaml_and_env(yaml_config_path) if yaml_config_path else AppConfig()
 
     app.config.from_object(appconfig)
 
@@ -154,7 +151,7 @@ def create_app(  # pylint: disable=too-many-statements
     Migrate(app=app, db=db, directory=migrations_dir)
 
     # Trust headers from reverse proxy (1 layer by default)
-    app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
+    app.wsgi_app = ProxyFix(  # type: ignore[ty:invalid-assignment]
         app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
     )
 
@@ -175,7 +172,7 @@ def create_app(  # pylint: disable=too-many-statements
 
     # User loader function for Flask-Login
     @login_manager.user_loader
-    def load_user(user_id):
+    def load_user(user_id: str) -> User | None:
         return db.session.get(User, int(user_id))
 
     # Register views and routes
@@ -189,16 +186,19 @@ def create_app(  # pylint: disable=too-many-statements
 
     # Inject variables and functions into templates
     @app.context_processor
-    def inject_vars():
+    def inject_vars() -> dict:
         return {
             "version_info": get_version_info(debug=app.debug),
         }
 
     app.jinja_env.globals.update(
-        get_list_recipients_recursive=get_list_recipients_recursive,
-        is_email_a_list=is_email_a_list,
-        get_list_by_id=get_list_by_id,
+        get_list_recipients_recursive=get_list_recipients_recursive,  # type: ignore[ty:invalid-argument-type]
+        is_email_a_list=is_email_a_list,  # type: ignore[ty:invalid-argument-type]
+        get_list_by_id=get_list_by_id,  # type: ignore[ty:invalid-argument-type]
     )
+
+    # Register error handlers
+    register_error_handlers(app)
 
     # ---------------
     # From here on, only for permanently running app, not one-off calls
@@ -232,9 +232,6 @@ def create_app(  # pylint: disable=too-many-statements
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
 
-    # Register error handlers
-    register_error_handlers(app)
-
     # Debug logging of config
     logging.debug("App configuration:\n%s", app.config)
 
@@ -242,19 +239,17 @@ def create_app(  # pylint: disable=too-many-statements
 
 
 def create_app_wrapper(app_config_path: str, debug: bool, dry: bool, one_off: bool) -> Flask:
-    """Wrapper to create app from arguments. Both for direct Flask app and WSGI (gunicorn)"""
+    """Wrapper to create app from arguments. Both for direct Flask app and WSGI (gunicorn)."""
     # Configure logging
     configure_logging(debug)
 
     # Create Flask app
-    app = create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug, dry=dry)
-
-    return app
+    return create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug, dry=dry)
 
 
 def run_one_off_commands(app: Flask, args: argparse.Namespace) -> None:
     """
-    Run one-off commands like DB migrations or admin user creation
+    Run one-off commands like DB migrations or admin user creation.
 
     Args:
         app (Flask): the Flask application
@@ -307,8 +302,8 @@ def run_one_off_commands(app: Flask, args: argparse.Namespace) -> None:
         return
 
 
-def main():
-    """Run the app"""
+def main() -> None:
+    """Run the app."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
