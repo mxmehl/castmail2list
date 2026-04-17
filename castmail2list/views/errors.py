@@ -7,17 +7,22 @@
 import contextlib
 
 from flask import Flask, jsonify, render_template, request
+from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
 
 def _generic_error_handler(e: Exception) -> tuple[str | Response, int]:
     """Handle HTTP errors - JSON for API routes, HTML for web routes."""
-    status = e.code if hasattr(e, "code") else 500
-    message = str(e.description) if hasattr(e, "description") else str(e)
+    if isinstance(e, HTTPException):
+        status = e.code or 500
+        message = str(e.description)
+    else:
+        status = 500
+        message = str(e)
 
     if request.path.startswith("/api/"):
-        return jsonify({"status": status, "message": message}), status  # type: ignore[ty:invalid-return-type]
-    return render_template("error.html", status=status, message=message), status  # type: ignore[ty:invalid-return-type]
+        return jsonify({"status": status, "message": message}), status
+    return render_template("error.html", status=status, message=message), status
 
 
 def register_error_handlers(app: Flask) -> None:

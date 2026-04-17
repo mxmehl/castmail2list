@@ -197,6 +197,9 @@ def create_app(  # noqa: PLR0915
         get_list_by_id=get_list_by_id,  # type: ignore[ty:invalid-argument-type]
     )
 
+    # Register error handlers
+    register_error_handlers(app)
+
     # ---------------
     # From here on, only for permanently running app, not one-off calls
     if one_off_call:
@@ -228,9 +231,6 @@ def create_app(  # noqa: PLR0915
 
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
-
-    # Register error handlers
-    register_error_handlers(app)
 
     # Debug logging of config
     logging.debug("App configuration:\n%s", app.config)

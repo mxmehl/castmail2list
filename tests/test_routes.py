@@ -31,3 +31,40 @@ def test_template_lists_unauthed(client_unauthed):
     response = client_unauthed.get("/lists/")
     assert response.status_code == 302  # Redirect to login
     assert response.location.endswith("/login?next=%2Flists%2F")
+
+
+# ---------- Error handler tests ----------
+
+
+def test_404_html_response(client):
+    """A request to a non-existent web route should return HTML with 404 status."""
+    response = client.get("/nonexistent-page")
+    assert response.status_code == 404
+    assert response.content_type.startswith("text/html")
+    assert b"404" in response.data
+
+
+def test_404_api_json_response(client):
+    """A request to a non-existent API route should return JSON with 404 status."""
+    response = client.get("/api/v1/nonexistent-endpoint")
+    assert response.status_code == 404
+    assert response.content_type == "application/json"
+    data = response.get_json()
+    assert data["status"] == 404
+    assert "message" in data
+
+
+def test_405_html_response(client):
+    """A method-not-allowed request to a web route should return HTML with 405 status."""
+    response = client.delete("/")
+    assert response.status_code == 405
+    assert response.content_type.startswith("text/html")
+
+
+def test_405_api_json_response(client):
+    """A method-not-allowed request to an API route should return JSON with 405 status."""
+    response = client.delete("/api/v1/status")
+    assert response.status_code == 405
+    assert response.content_type == "application/json"
+    data = response.get_json()
+    assert data["status"] == 405
