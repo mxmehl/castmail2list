@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""IMAP worker for CastMail2List"""
+"""IMAP worker for CastMail2List."""
 
 import logging
 import threading
 import time
-import traceback
 import uuid
 from datetime import datetime, timezone
 from email.utils import make_msgid
@@ -46,17 +45,17 @@ REQUIRED_FOLDERS_ENVS = [
 def _rss_mb() -> float:
     """Return current process RSS in MiB using the stdlib resource module."""
     # ru_maxrss is in kilobytes on Linux, bytes on macOS
-    import resource  # pylint: disable=import-outside-toplevel
-    import sys  # pylint: disable=import-outside-toplevel
+    import resource  # noqa: PLC0415
+    import sys  # noqa: PLC0415
 
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return rss / 1024 if sys.platform != "darwin" else rss / (1024 * 1024)
 
 
-def _poll_imap(app):
+def _poll_imap(app: Flask) -> None:
     """Runs forever in a thread, polling once per minute."""
     if app.debug:
-        import tracemalloc  # pylint: disable=import-outside-toplevel
+        import tracemalloc  # noqa: PLC0415
 
         tracemalloc.start()
     with app.app_context():
@@ -64,8 +63,8 @@ def _poll_imap(app):
             rss_before = _rss_mb() if app.debug else 0.0
             try:
                 check_all_lists_for_messages(app)
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error("IMAP worker error: %s\nTraceback: %s", e, traceback.format_exc())
+            except Exception:
+                logging.exception("IMAP worker error")
             if app.debug:
                 rss_after = _rss_mb()
                 py_mb = tracemalloc.get_traced_memory()[0] / 1024 / 1024
@@ -81,8 +80,8 @@ def _poll_imap(app):
             time.sleep(app.config["POLL_INTERVAL_SECONDS"])
 
 
-def initialize_imap_polling(app: Flask):
-    """Start IMAP polling thread if not in testing mode"""
+def initialize_imap_polling(app: Flask) -> None:
+    """Start IMAP polling thread if not in testing mode."""
     if not app.config.get("TESTING", True):
         logging.info("Starting IMAP polling thread...")
         t = threading.Thread(target=_poll_imap, args=(app,), daemon=True)
@@ -97,10 +96,11 @@ def create_required_folders(app: Flask, mailbox: MailBox) -> None:
             logging.info("Created IMAP folder: %s", folder)
 
 
-class IncomingEmail:  # pylint: disable=too-few-public-methods
-    """Class representing an incoming message and its handling"""
+class IncomingEmail:
+    """Class representing an incoming message and its handling."""
 
     def __init__(self, app: Flask, mailbox: MailBox, msg: MailMessage, ml: MailingList) -> None:
+        """Initialize ImapWorker."""
         self.app: Flask = app
         self.mailbox: MailBox = mailbox
         self.msg: MailMessage = msg
@@ -109,7 +109,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
     def _detect_bounce(self) -> tuple[str, list[str]]:
         """Detect whether the message is a bounce message. This is detected by two methods:
         1. If the To address contains "+bounces--"
-        2. If the message is detected as a bounce by flufl.bounce
+        2. If the message is detected as a bounce by flufl.bounce.
 
         Returns:
             tuple: A Tuple containing
@@ -128,7 +128,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
                 bounced_recipient = recipient
 
         # Use flufl.bounce to scan message
-        bounced_recipients_flufl: set[bytes] = scan_message(self.msg.obj)  # type: ignore
+        bounced_recipients_flufl: set[bytes] = scan_message(self.msg.obj)  # type: ignore[arg-type]
         if bounced_recipients_flufl:
             logging.debug(
                 "Bounce detected by flufl.bounce.scan_message() for message %s, recipients: %s",
@@ -335,7 +335,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             * Bounce detection
             * Allowed sender (both modes: required in broadcast, bypass in group)
             * Sender authentication (both modes: required in broadcast, bypass in group)
-            * Subscriber check (group mode)
+            * Subscriber check (group mode).
 
         Returns:
             tuple (str, dict): Status of the message processing and error information
@@ -405,7 +405,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
                     list_id=self.ml.id,
                 )
                 return status, error_info
-        elif self.ml.mode == "group":
+        elif self.ml.mode == "group":  # noqa: SIM102
             if not self._check_group_sender_authorization():
                 status = "sender-not-allowed"
                 reason = _(
@@ -510,7 +510,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         db.session.commit()
 
         # Mark message as seen
-        self.mailbox.flag(uid_list=self.msg.uid, flag_set=["\\Seen"], value=True)  # type: ignore
+        self.mailbox.flag(uid_list=self.msg.uid, flag_set=["\\Seen"], value=True)  # type: ignore[arg-type, ty:invalid-argument-type]
 
         # Move message to appropriate folder based on status
         if status == "ok":
@@ -521,7 +521,7 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
             target_folder = self.app.config["IMAP_FOLDER_DUPLICATE"]
         else:
             target_folder = self.app.config["IMAP_FOLDER_DENIED"]
-        self.mailbox.move(uid_list=self.msg.uid, destination_folder=target_folder)  # type: ignore
+        self.mailbox.move(uid_list=self.msg.uid, destination_folder=target_folder)  # type: ignore[arg-type, ty:invalid-argument-type]
 
         logging.debug(
             "Marked message %s as seen and moved to folder '%s'", self.msg.uid, target_folder
@@ -549,12 +549,8 @@ class IncomingEmail:  # pylint: disable=too-few-public-methods
         # Remove all plus suffixes from To addresses to avoid leaking passwords to subscribers
         self._remove_suffixes_in_to_addresses()
 
-        # If status is not "ok" or message is duplicate, signal to skip sending
-        if status != "ok" or not no_duplicate:
-            return False
-
-        # Message OK, can be sent to all subscribers of the list
-        return True
+        # Message OK if status is "ok" and not a duplicate, can be sent to subscribers
+        return status == "ok" and no_duplicate
 
 
 def check_all_lists_for_messages(app: Flask) -> None:
@@ -601,16 +597,13 @@ def check_all_lists_for_messages(app: Flask) -> None:
                             msg.uid,
                         )
                         return
-        except MailboxLoginError as e:
-            logging.error(
-                "IMAP login failed for list %s (%s): %s",
+        except MailboxLoginError:
+            logging.exception(
+                "IMAP login failed for list %s (%s)",
                 ml.display,
                 ml.address,
-                str(e),
             )
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(
-                "Error processing list %s: %s\nTraceback: %s", ml.display, e, traceback.format_exc()
-            )
+        except Exception:
+            logging.exception("Error processing list %s", ml.display)
 
     logging.debug("Finished checking for new messages")

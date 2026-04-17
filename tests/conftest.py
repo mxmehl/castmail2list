@@ -15,6 +15,7 @@ from flask import Flask
 from imap_tools import MailMessage
 from pytest import MonkeyPatch
 from sqlalchemy.exc import SQLAlchemyError
+from typing_extensions import Self
 from werkzeug.security import generate_password_hash
 
 from castmail2list.app import create_app
@@ -127,7 +128,7 @@ def fixture_client_unauthed():
 # ---------------------- Fixtures For IMAP Worker Tests ----------------------
 
 
-class MailboxStub:  # pylint: disable=too-few-public-methods
+class MailboxStub:
     """
     Minimal stub of imap_tools.MailBox for testing logic without network.
 
@@ -135,20 +136,21 @@ class MailboxStub:  # pylint: disable=too-few-public-methods
     Extend as needed for future tests (e.g., folder creation, message fetching).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize."""
         self._flags: dict[str, tuple[list[str], bool]] = {}
         self._moves: dict[str, str] = {}
 
-        class Folder:  # pylint: disable=too-few-public-methods
-            """Stub folder handler for MailboxStub"""
+        class Folder:
+            """Stub folder handler for MailboxStub."""
 
-            def exists(self, _name):  # always pretend folder exists
+            def exists(self, _name) -> bool:  # always pretend folder exists
                 """Pretend an IMAP folder exists."""
                 return True
 
-            def create(self, _folder):  # no-op
+            def create(self, _folder) -> None:  # no-op
                 """No-op folder creation for tests."""
-                return None
+                return
 
         self.folder = Folder()
 
@@ -198,7 +200,7 @@ def fixture_bounce_samples() -> dict[str, tuple[MailMessage, str, list[str]]]:
             msg = MailMessage.from_bytes(fh.read())
             # Ensure a uid attribute exists (normally added by imap_tools when fetching)
             msg.uid = path.name  # type: ignore[attr-defined]
-            result[path.name] = (msg,) + expected_map.get(path.name, ("", []))
+            result[path.name] = (msg, *expected_map.get(path.name, ("", [])))
     return result
 
 
@@ -207,7 +209,8 @@ def fixture_incoming_message_factory(client, mailing_list, mailbox_stub):
     """
     Factory for creating IncomingMessage instances for tests.
 
-    Keeps test code terse and centralizes construction details."""
+    Keeps test code terse and centralizes construction details.
+    """
 
     def _factory(mail_msg: MailMessage) -> IncomingEmail:
         # Ensure a non-empty DOMAIN to avoid duplicate-from-same-instance matches in tests
@@ -255,7 +258,7 @@ def fixture_mailing_list(client) -> MailingList:  # depends on authenticated cli
 
 @pytest.fixture(name="broadcast_list")
 def fixture_broadcast_list(client) -> MailingList:
-    """Create a broadcast mode mailing list"""
+    """Create a broadcast mode mailing list."""
     del client  # ensure app context is available
     ml = MailingList(
         id="broadcast",
@@ -275,7 +278,7 @@ def fixture_broadcast_list(client) -> MailingList:
 
 @pytest.fixture(name="broadcast_list_with_from")
 def fixture_broadcast_list_with_from(client) -> MailingList:
-    """Create a broadcast mode mailing list with custom from_addr"""
+    """Create a broadcast mode mailing list with custom from_addr."""
     del client
     ml = MailingList(
         id="broadcast-from",
@@ -296,7 +299,7 @@ def fixture_broadcast_list_with_from(client) -> MailingList:
 
 @pytest.fixture(name="broadcast_list_no_avoid_dup")
 def fixture_broadcast_list_no_avoid_dup(client) -> MailingList:
-    """Create a broadcast mode mailing list without avoid_duplicates"""
+    """Create a broadcast mode mailing list without avoid_duplicates."""
     del client
     ml = MailingList(
         id="broadcast-nodup",
@@ -316,7 +319,7 @@ def fixture_broadcast_list_no_avoid_dup(client) -> MailingList:
 
 @pytest.fixture(name="group_list")
 def fixture_group_list(client) -> MailingList:
-    """Create a group mode mailing list"""
+    """Create a group mode mailing list."""
     del client
     ml = MailingList(
         id="group",
@@ -349,28 +352,28 @@ def fixture_smtp_mock(monkeypatch: MonkeyPatch):
     """
     smtp_calls = []
 
-    class MockSMTP:  # pylint: disable=too-few-public-methods
+    class MockSMTP:
         """Mock SMTP class that records calls instead of sending emails."""
 
-        def __init__(self, host, port, local_hostname=None):
+        def __init__(self, host, port, local_hostname=None) -> None:
             self.host = host
             self.port = port
             self.local_hostname = local_hostname
 
-        def __enter__(self):
+        def __enter__(self) -> Self:
             return self
 
-        def __exit__(self, *args):
+        def __exit__(self, *args) -> None:
             pass
 
-        def starttls(self):
-            """Mock starttls"""
+        def starttls(self) -> None:
+            """Mock starttls."""
 
-        def login(self, user, password):
-            """Mock login"""
+        def login(self, user, password) -> None:
+            """Mock login."""
 
-        def sendmail(self, from_addr, to_addrs, msg):
-            """Record sendmail call"""
+        def sendmail(self, from_addr, to_addrs, msg) -> None:
+            """Record sendmail call."""
             smtp_calls.append(
                 {"from_addr": from_addr, "to_addrs": to_addrs, "msg": msg, "msg_parsed": msg}
             )

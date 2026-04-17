@@ -2,32 +2,34 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""API blueprint for CastMail2List application"""
+"""API blueprint for CastMail2List application."""
 
+from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, Response, abort, jsonify, request
 from flask_login import current_user
 
-from ..models import User
-from ..services import (
+from castmail2list.models import User
+from castmail2list.services import (
     add_subscriber_to_list,
     delete_subscriber_from_list,
     get_lists,
     get_subscriber_by_email,
     update_subscriber_in_list,
 )
-from ..status import status_complete
-from ..utils import get_list_by_id, get_list_recipients_recursive, get_list_subscribers
+from castmail2list.status import status_complete
+from castmail2list.utils import get_list_by_id, get_list_recipients_recursive, get_list_subscribers
 
 api1 = Blueprint("api1", __name__, url_prefix="/api/v1")
 
 
-def api_auth_required(f):
-    """Decorator to require either Flask-Login session or API key authentication"""
+def api_auth_required(f: Callable) -> Callable:
+    """Decorator to require either Flask-Login session or API key authentication."""
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         # Check if user is already authenticated via Flask-Login session
         if current_user.is_authenticated:
             return f(*args, **kwargs)
@@ -43,11 +45,12 @@ def api_auth_required(f):
 
         # No valid authentication found
         abort(401, description="Authentication required")
+        return None
 
     return decorated_function
 
 
-def api_require_list(f):
+def api_require_list(f: Callable) -> Callable:
     """Decorator to verify mailing list exists before proceeding.
 
     Checks if the mailing list with the given list_id exists and returns 404 if not.
@@ -55,7 +58,7 @@ def api_require_list(f):
     """
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         if list_id := kwargs.get("list_id"):
             ml = get_list_by_id(list_id)
             if not ml:
@@ -65,7 +68,7 @@ def api_require_list(f):
     return decorated_function
 
 
-def api_require_list_and_subscriber(f):
+def api_require_list_and_subscriber(f: Callable) -> Callable:
     """Decorator to verify both mailing list and subscriber exist before proceeding.
 
     Checks if both the mailing list and the subscriber exist and returns 404 if either is missing.
@@ -73,7 +76,7 @@ def api_require_list_and_subscriber(f):
     """
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         list_id = kwargs.get("list_id")
         email = kwargs.get("email")
 
@@ -94,16 +97,16 @@ def api_require_list_and_subscriber(f):
 
 @api1.route("/status", methods=["GET"])
 @api_auth_required
-def status_get():
-    """Provide overall status information as JSON"""
+def status_get() -> Response:
+    """Provide overall status information as JSON."""
     stats = status_complete()
     return jsonify(stats)
 
 
 @api1.route("/lists", methods=["GET"])
 @api_auth_required
-def lists_get():
-    """Provide a list of all mailing lists as JSON"""
+def lists_get() -> Response:
+    """Provide a list of all mailing lists as JSON."""
     # Get query parameters
     show_deactivated = request.args.get("show_deactivated", "false").lower() == "true"
 
@@ -114,8 +117,8 @@ def lists_get():
 @api1.route("/lists/<list_id>/subscribers", methods=["GET"])
 @api_auth_required
 @api_require_list
-def list_subscribers_get(list_id: str):
-    """Provide a list of direct subscribers for a specific mailing list as JSON"""
+def list_subscribers_get(list_id: str) -> Response:
+    """Provide a list of direct subscribers for a specific mailing list as JSON."""
     # Get query parameters
     exclude_lists = request.args.get("exclude_lists", "false").lower() == "true"
 
@@ -127,8 +130,8 @@ def list_subscribers_get(list_id: str):
 @api1.route("/lists/<list_id>/subscribers", methods=["POST"])
 @api_auth_required
 @api_require_list
-def list_subscribers_post(list_id: str):
-    """Add a new subscriber to a specific mailing list via API"""
+def list_subscribers_post(list_id: str) -> Response | tuple[Response, int]:
+    """Add a new subscriber to a specific mailing list via API."""
     # Parse query parameters
     data: dict = request.get_json()
     if not data or "email" not in data:
@@ -150,8 +153,8 @@ def list_subscribers_post(list_id: str):
 @api1.route("/lists/<list_id>/subscribers/<email>", methods=["DELETE", "PATCH"])
 @api_auth_required
 @api_require_list_and_subscriber
-def list_subscribers_delete_patch(list_id: str, email: str):
-    """Delete or update an existing subscriber of a specific mailing list via API"""
+def list_subscribers_delete_patch(list_id: str, email: str) -> Response | tuple[Response, int]:
+    """Delete or update an existing subscriber of a specific mailing list via API."""
     if request.method == "DELETE":
         # Delete subscriber using service layer
         error_message = delete_subscriber_from_list(list_id=list_id, subscriber_email=email)
@@ -199,8 +202,8 @@ def list_subscribers_delete_patch(list_id: str, email: str):
 @api1.route("/lists/<list_id>/recipients", methods=["GET"])
 @api_auth_required
 @api_require_list
-def list_recipients_get(list_id):
-    """Provide a list of recipients for a specific mailing list as JSON"""
+def list_recipients_get(list_id: str) -> Response:
+    """Provide a list of recipients for a specific mailing list as JSON."""
     # Get query parameters
     only_direct = request.args.get("only_direct", "false").lower() == "true"
     only_indirect = request.args.get("only_indirect", "false").lower() == "true"

@@ -11,7 +11,8 @@ It may serve as setting up a demo instance, or allows to pre-seed productive dat
 import json
 import logging
 import sys
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
 
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
@@ -21,14 +22,11 @@ from werkzeug.security import generate_password_hash
 from .models import AlembicVersion, MailingList, Subscriber, User, db
 
 
-def _load_local_seed(seed_file: str) -> Dict[str, Any]:
-    """
-    Try to import from a JSON file; return empty dict if not present
-    """
+def _load_local_seed(seed_file: str) -> dict[str, Any]:
+    """Try to import from a JSON file; return empty dict if not present."""
     try:
-        with open(seed_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
+        with Path(seed_file).open(encoding="utf-8") as f:
+            return json.load(f)
     except FileNotFoundError:
         logging.critical("No local seed file found at %s.", seed_file)
         sys.exit(1)
@@ -76,17 +74,16 @@ def seed_database(app: Flask, seed_file: str) -> None:
                 only_subscribers_send=lst_cfg.get("only_subscribers_send", True),
             )
 
-            subs = []
-            cfg_subs: list[dict[str, str]] = lst_cfg.get("subscribers", [])  # type: ignore
-            for s in cfg_subs:
-                subs.append(
-                    Subscriber(
-                        name=s.get("name"),
-                        email=s.get("email"),
-                        subscriber_type=s.get("subscriber_type"),
-                        list=new_list,
-                    )
+            cfg_subs: list[dict[str, str]] = lst_cfg.get("subscribers", [])  # type: ignore[assignment]
+            subs = [
+                Subscriber(
+                    name=s.get("name"),
+                    email=s.get("email"),
+                    subscriber_type=s.get("subscriber_type"),
+                    list_id=new_list.id,
                 )
+                for s in cfg_subs
+            ]
 
             db.session.add(new_list)
             if subs:
@@ -108,15 +105,16 @@ def seed_database(app: Flask, seed_file: str) -> None:
             script = ScriptDirectory.from_config(alembic_cfg)
             head_revision = script.get_current_head()
             if not head_revision:
-                raise ValueError("No head revision found in Alembic scripts")
+                msg = "No head revision found in Alembic scripts"
+                raise ValueError(msg)  # noqa: TRY301
             logging.info("Latest Alembic revision: %s", head_revision)
             # Write into alembic_version table if needed
             if not AlembicVersion.query.first():
                 alembic_version = AlembicVersion(version_num=head_revision)
                 db.session.add(alembic_version)
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:
             logging.warning("Could not determine or add Alembic revision: %s", e)
-            raise e
+            raise
 
         db.session.commit()
         logging.info("✅ Seed data inserted.")

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for route responses in the Castmail2List application"""
+"""Tests for route responses in the Castmail2List application."""
 
 from .conftest import add_subscriber
 
@@ -27,7 +27,7 @@ def test_subscriber_exists(client):
 
 
 def test_template_lists_unauthed(client_unauthed):
-    """Ensure that the lists template redirects unauthenticated users to login"""
+    """Ensure that the lists template redirects unauthenticated users to login."""
     response = client_unauthed.get("/lists/")
     assert response.status_code == 302  # Redirect to login
     assert response.location.endswith("/login?next=%2Flists%2F")

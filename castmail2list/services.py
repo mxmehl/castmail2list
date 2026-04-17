@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Service layer for shared logic for both the API and web interface"""
+"""Service layer for shared logic for both the API and web interface."""
 
 import logging
 
@@ -21,7 +21,7 @@ def get_lists(show_deactivated: bool = False) -> dict[str, dict]:
     Retrieve all mailing lists.
 
     Returns:
-
+        dict[str, dict]: A mapping of list IDs to their details.
     """
     lists: list[MailingList] = MailingList.query.order_by(MailingList.id).all()
     if not show_deactivated:
@@ -100,15 +100,15 @@ def add_subscriber_to_list(list_id: str, email: str, name: str = "", comment: st
         db.session.add(new_subscriber)
         db.session.commit()
         logging.info('Subscriber "%s" added to mailing list %s', email, mailing_list.address)
-        return ""
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except Exception as e:
         db.session.rollback()
-        logging.error('Failed to add subscriber "%s" to list %s: %s', email, list_id, e)
+        logging.exception('Failed to add subscriber "%s" to list %s', email, list_id)
         return _("Database error: ") + str(e)
+    else:
+        return ""
 
 
-def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -> str:
-    # pylint: disable=too-many-return-statements
+def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -> str:  # noqa: C901, PLR0911, PLR0912
     """
     Update an existing subscriber in a mailing list.
 
@@ -178,11 +178,12 @@ def update_subscriber_in_list(list_id: str, subscriber_id: int, **kwargs: str) -
         logging.info(
             'Subscriber "%s" updated in mailing list %s', subscriber.email, mailing_list.address
         )
-        return ""
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except Exception as e:
         db.session.rollback()
-        logging.error("Failed to update subscriber %s in list %s: %s", subscriber_id, list_id, e)
+        logging.exception("Failed to update subscriber %s in list %s", subscriber_id, list_id)
         return _("Database error: ") + str(e)
+    else:
+        return ""
 
 
 def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
@@ -216,13 +217,12 @@ def delete_subscriber_from_list(list_id: str, subscriber_email: str) -> str:
         logging.info(
             'Subscriber "%s" removed from mailing list %s', subscriber_email, mailing_list.address
         )
-        return ""
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except Exception as e:
         db.session.rollback()
-        logging.error(
-            "Failed to delete subscriber %s from list %s: %s", subscriber_email, list_id, e
-        )
+        logging.exception("Failed to delete subscriber %s from list %s", subscriber_email, list_id)
         return _("Database error: ") + str(e)
+    else:
+        return ""
 
 
 def get_subscriber_by_id(list_id: str, subscriber_id: int) -> tuple[Subscriber | None, str | None]:

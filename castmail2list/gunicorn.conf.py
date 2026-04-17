@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Gunicorn configuration file"""
+"""Gunicorn configuration file."""
 
 # pylint: disable=invalid-name
 

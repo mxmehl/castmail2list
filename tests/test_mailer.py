@@ -9,8 +9,6 @@ Tests verify that different list modes (broadcast/group) and configurations
 produce correct email headers and behavior as documented in doc/modes_and_headers.md.
 """
 
-# mypy: disable-error-code="index"
-
 import email
 from unittest.mock import MagicMock
 
@@ -24,8 +22,6 @@ from castmail2list.mailer import (
 )
 from castmail2list.models import MailingList, Subscriber, db
 
-# pylint: disable=protected-access,too-many-arguments,too-many-positional-arguments
-
 
 def create_test_message(
     subject: str = "Test Subject",
@@ -34,10 +30,10 @@ def create_test_message(
     to_addrs: tuple[str, ...] = ("broadcast@example.com",),
     cc_addrs: tuple[str, ...] = (),
     body_text: str = "Test plain text body",
-    body_html: str = "",  # pylint: disable=unused-argument
+    body_html: str = "",
     message_id: str = "<test@example.com>",
 ) -> MailMessage:
-    """Helper to create test MailMessage objects"""
+    """Helper to create test MailMessage objects."""
     # Build raw email
     raw_parts = [
         f"From: {from_name} <{from_email}>" if from_name else f"From: {from_email}",
@@ -65,7 +61,7 @@ def create_test_message(
 
 
 def test_broadcast_basic_headers(client, broadcast_list: MailingList):
-    """Test basic header composition in broadcast mode"""
+    """Test basic header composition in broadcast mode."""
     msg = create_test_message()
 
     mail = OutgoingEmail(
@@ -98,7 +94,7 @@ def test_broadcast_basic_headers(client, broadcast_list: MailingList):
 
 
 def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingList):
-    """Test broadcast mode with custom from_addr"""
+    """Test broadcast mode with custom from_addr."""
     msg = create_test_message(to_addrs=("broadcast-from@example.com",))
 
     mail = OutgoingEmail(
@@ -120,7 +116,7 @@ def test_broadcast_with_custom_from(client, broadcast_list_with_from: MailingLis
 
 
 def test_broadcast_removes_list_from_to_cc(client, broadcast_list: MailingList):
-    """Test that list address is removed from To and Cc in broadcast mode"""
+    """Test that list address is removed from To and Cc in broadcast mode."""
     msg = create_test_message(
         to_addrs=("broadcast@example.com", "other@example.com"),
         cc_addrs=("broadcast@example.com", "cc@example.com"),
@@ -141,7 +137,7 @@ def test_broadcast_removes_list_from_to_cc(client, broadcast_list: MailingList):
 
 
 def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mock):
-    """Test avoid_duplicates in broadcast mode skips recipients in To/Cc"""
+    """Test avoid_duplicates in broadcast mode skips recipients in To/Cc."""
     dupe = "sub1@example.com"
     msg = create_test_message(to_addrs=("broadcast@example.com", dupe))
 
@@ -166,7 +162,7 @@ def test_broadcast_avoid_duplicates(client, broadcast_list: MailingList, smtp_mo
 
 
 def test_broadcast_no_avoid_duplicates(client, broadcast_list_no_avoid_dup: MailingList, smtp_mock):
-    """Test that without avoid_duplicates, recipients in To/Cc still receive mail"""
+    """Test that without avoid_duplicates, recipients in To/Cc still receive mail."""
     dupe = "sub1@example.com"
     msg = create_test_message(to_addrs=("broadcast@example.com", dupe))
 
@@ -190,9 +186,11 @@ def test_broadcast_no_avoid_duplicates(client, broadcast_list_no_avoid_dup: Mail
 
 
 def test_broadcast_recipient_appended_to_to(
-    client, broadcast_list: MailingList, smtp_mock  # pylint: disable=unused-argument
+    client,
+    broadcast_list: MailingList,
+    smtp_mock,
 ):
-    """Test that in broadcast mode, recipient is appended to To header"""
+    """Test that in broadcast mode, recipient is appended to To header."""
     msg = create_test_message(to_addrs=("broadcast@example.com", "other@example.net"))
 
     subscriber = Subscriber(list_id=broadcast_list.id, email="newrecipient@example.com")
@@ -222,7 +220,7 @@ def test_broadcast_recipient_appended_to_to(
 
 
 def test_group_basic_headers(client, group_list: MailingList):
-    """Test basic header composition in group mode"""
+    """Test basic header composition in group mode."""
     msg = create_test_message(
         to_addrs=("group@example.com",),
     )
@@ -255,7 +253,7 @@ def test_group_basic_headers(client, group_list: MailingList):
 
 
 def test_group_from_with_no_name(client, group_list):
-    """Test group mode From header when sender has no display name"""
+    """Test group mode From header when sender has no display name."""
     msg = create_test_message(
         from_email="sender@example.com", from_name="", to_addrs=("group@example.com",)
     )
@@ -273,7 +271,7 @@ def test_group_from_with_no_name(client, group_list):
 
 
 def test_group_reply_to_when_sender_not_subscriber(client, group_list):
-    """Test Reply-To includes sender when sender is not a subscriber"""
+    """Test Reply-To includes sender when sender is not a subscriber."""
     msg = create_test_message(
         from_email="external@example.com", from_name="External", to_addrs=("group@example.com",)
     )
@@ -294,7 +292,7 @@ def test_group_reply_to_when_sender_not_subscriber(client, group_list):
 
 
 def test_group_reply_to_when_sender_is_subscriber(client, group_list):
-    """Test Reply-To is just list address when sender is a subscriber"""
+    """Test Reply-To is just list address when sender is a subscriber."""
     sub_email = "sub1@example.com"
     subscriber = Subscriber(list_id=group_list.id, email=sub_email)
     db.session.add(subscriber)
@@ -317,7 +315,7 @@ def test_group_reply_to_when_sender_is_subscriber(client, group_list):
 
 
 def test_group_no_from_values_error(client, group_list: MailingList, caplog):
-    """Test that group mode logs error when from_values is missing"""
+    """Test that group mode logs error when from_values is missing."""
     # Create a message without proper From header
     raw = b"To: group@example.com\nSubject: No From\n\nBody"
     msg = MailMessage.from_bytes(raw)
@@ -335,9 +333,11 @@ def test_group_no_from_values_error(client, group_list: MailingList, caplog):
 
 
 def test_group_to_header_preserved(
-    client, group_list: MailingList, smtp_mock  # pylint: disable=unused-argument
+    client,
+    group_list: MailingList,
+    smtp_mock,
 ):
-    """Test that in group mode, original To/Cc are preserved without per-recipient mutation"""
+    """Test that in group mode, original To/Cc are preserved without per-recipient mutation."""
     msg = create_test_message(to_addrs=("original@example.com",), cc_addrs=("cc@example.com",))
 
     mail = OutgoingEmail(
@@ -362,7 +362,7 @@ def test_group_to_header_preserved(
 
 
 def test_threading_headers(client, broadcast_list: MailingList):
-    """Test that threading headers (In-Reply-To, References) are preserved"""
+    """Test that threading headers (In-Reply-To, References) are preserved."""
     raw = (
         b"From: sender@example.com\n"
         b"To: broadcast@example.com\n"
@@ -394,7 +394,7 @@ def test_threading_headers(client, broadcast_list: MailingList):
 
 
 def test_cc_header_preserved(client, broadcast_list: MailingList):
-    """Test that Cc header is preserved in outgoing message"""
+    """Test that Cc header is preserved in outgoing message."""
     msg = create_test_message(cc_addrs=("cc1@example.com", "cc2@example.com"))
 
     mail = OutgoingEmail(
@@ -408,10 +408,8 @@ def test_cc_header_preserved(client, broadcast_list: MailingList):
     assert "cc2@example.com" in mail.composed_msg["Cc"]
 
 
-def test_x_recipient_header(
-    client, broadcast_list: MailingList, smtp_mock
-):  # pylint: disable=unused-argument
-    """Test that X-Recipient header is set per recipient"""
+def test_x_recipient_header(client, broadcast_list: MailingList, smtp_mock):
+    """Test that X-Recipient header is set per recipient."""
     msg = create_test_message()
 
     recipient = "specific@example.com"
@@ -430,7 +428,7 @@ def test_x_recipient_header(
 
 
 def test_envelope_from_is_bounce_address(client, broadcast_list: MailingList, smtp_mock):
-    """Test that SMTP envelope-from uses bounce address format"""
+    """Test that SMTP envelope-from uses bounce address format."""
     msg = create_test_message()
 
     mail = OutgoingEmail(
@@ -454,7 +452,7 @@ def test_envelope_from_is_bounce_address(client, broadcast_list: MailingList, sm
 
 
 def test_multipart_alternative_text_and_html(client, broadcast_list: MailingList):
-    """Test that messages with both text and html use multipart/alternative"""
+    """Test that messages with both text and html use multipart/alternative."""
     raw = (
         b"From: sender@example.com\n"
         b"To: broadcast@example.com\n"
@@ -488,7 +486,7 @@ def test_multipart_alternative_text_and_html(client, broadcast_list: MailingList
 
 
 def test_simple_text_message(client, broadcast_list: MailingList):
-    """Test simple text-only message"""
+    """Test simple text-only message."""
     msg = create_test_message(body_text="Simple text body")
 
     mail = OutgoingEmail(
@@ -512,7 +510,7 @@ def test_simple_text_message(client, broadcast_list: MailingList):
 def test_send_msg_to_subscribers_success(
     client, broadcast_list: MailingList, mailbox_stub, smtp_mock
 ):
-    """Test full send_msg_to_subscribers workflow"""
+    """Test full send_msg_to_subscribers workflow."""
     msg = create_test_message()
 
     # Add subscribers
@@ -541,7 +539,7 @@ def test_send_msg_to_subscribers_success(
 def test_send_msg_deepcopy_prevents_cross_contamination(
     client, broadcast_list: MailingList, mailbox_stub, smtp_mock
 ):
-    """Test that deepcopy prevents header cross-contamination between recipients"""
+    """Test that deepcopy prevents header cross-contamination between recipients."""
     msg = create_test_message()
 
     # Add two subscribers
@@ -574,9 +572,12 @@ def test_send_msg_deepcopy_prevents_cross_contamination(
 
 
 def test_send_msg_stores_in_sent_folder(
-    client, broadcast_list: MailingList, mailbox_stub, smtp_mock  # pylint: disable=unused-argument
+    client,
+    broadcast_list: MailingList,
+    mailbox_stub,
+    smtp_mock,
 ):
-    """Test that successfully sent messages are stored in IMAP Sent folder"""
+    """Test that successfully sent messages are stored in IMAP Sent folder."""
     msg = create_test_message()
 
     sub1 = Subscriber(list_id=broadcast_list.id, email="sub1@example.com")
@@ -586,7 +587,7 @@ def test_send_msg_stores_in_sent_folder(
     # Mock mailbox.append
     append_calls = []
 
-    def mock_append(message, folder, flag_set):
+    def mock_append(message, folder, flag_set) -> None:
         append_calls.append({"message": message, "folder": folder, "flag_set": flag_set})
 
     mailbox_stub.append = mock_append
@@ -602,7 +603,7 @@ def test_send_msg_stores_in_sent_folder(
 
 
 def test_unknown_mode_logs_error(client, caplog, monkeypatch):
-    """Test that unknown list mode logs error"""
+    """Test that unknown list mode logs error."""
     # Create a valid list
     ml = MailingList(
         id="test2",
@@ -637,13 +638,13 @@ def test_unknown_mode_logs_error(client, caplog, monkeypatch):
 
 
 def test_should_notify_sender_disabled(client):
-    """should_notify_sender returns False when NOTIFY_REJECTED_SENDERS is False"""
+    """should_notify_sender returns False when NOTIFY_REJECTED_SENDERS is False."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = False
     assert should_notify_sender(client.application, "test@example.com") is False
 
 
 def test_should_notify_sender_known_only_not_in_db(client):
-    """should_notify_sender returns False when sender not in DB and KNOWN_ONLY is True"""
+    """should_notify_sender returns False when sender not in DB and KNOWN_ONLY is True."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
@@ -652,7 +653,7 @@ def test_should_notify_sender_known_only_not_in_db(client):
 
 
 def test_should_notify_sender_known_only_in_db(client):
-    """should_notify_sender returns True when sender in DB and KNOWN_ONLY is True"""
+    """should_notify_sender returns True when sender in DB and KNOWN_ONLY is True."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
@@ -670,7 +671,7 @@ def test_should_notify_sender_known_only_in_db(client):
 
 
 def test_should_notify_sender_case_insensitive(client):
-    """should_notify_sender is case-insensitive for email addresses"""
+    """should_notify_sender is case-insensitive for email addresses."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
@@ -690,7 +691,7 @@ def test_should_notify_sender_case_insensitive(client):
 
 
 def test_should_notify_sender_trusted_domain(client):
-    """should_notify_sender returns True for trusted domains even if not in DB"""
+    """should_notify_sender returns True for trusted domains even if not in DB."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = ["trusted.com", "internal.org"]
@@ -704,7 +705,7 @@ def test_should_notify_sender_trusted_domain(client):
 
 
 def test_should_notify_sender_no_restrictions(client):
-    """should_notify_sender returns True when KNOWN_ONLY is False and no trusted domains"""
+    """should_notify_sender returns True when KNOWN_ONLY is False and no trusted domains."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
@@ -714,7 +715,7 @@ def test_should_notify_sender_no_restrictions(client):
 
 
 def test_send_rejection_notification_disabled(client, smtp_mock):
-    """send_rejection_notification should not send when notifications are disabled"""
+    """send_rejection_notification should not send when notifications are disabled."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = False
     client.application.config["DOMAIN"] = "lists.example.com"
     client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
@@ -731,7 +732,7 @@ def test_send_rejection_notification_disabled(client, smtp_mock):
 
 
 def test_send_rejection_notification_success(client, smtp_mock):
-    """send_rejection_notification should send email to known sender"""
+    """send_rejection_notification should send email to known sender."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = True
     client.application.config["NOTIFY_REJECTED_TRUSTED_DOMAINS"] = []
@@ -785,7 +786,7 @@ def test_send_rejection_notification_success(client, smtp_mock):
 
 
 def test_send_rejection_notification_with_reply_to(client, smtp_mock):
-    """send_rejection_notification should set In-Reply-To when provided"""
+    """send_rejection_notification should set In-Reply-To when provided."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
     client.application.config["DOMAIN"] = "lists.example.com"
@@ -819,7 +820,7 @@ def test_send_rejection_notification_with_reply_to(client, smtp_mock):
 
 
 def test_send_rejection_notification_dry_mode(client, smtp_mock):
-    """send_rejection_notification should not send in DRY mode"""
+    """send_rejection_notification should not send in DRY mode."""
     client.application.config["NOTIFY_REJECTED_SENDERS"] = True
     client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
     client.application.config["DRY"] = True

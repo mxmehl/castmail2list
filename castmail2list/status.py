@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Functions and operations to collect reports about different parts of Castmail2List"""
+"""Functions and operations to collect reports about different parts of Castmail2List."""
 
 from .models import MailingList
 from .utils import (

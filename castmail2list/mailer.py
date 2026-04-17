@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Mailer utility for sending emails via SMTP"""
+"""Mailer utility for sending emails via SMTP."""
 
 import logging
 import smtplib
 import tempfile
-import traceback
 from copy import deepcopy
 from datetime import datetime, timezone
 from email import encoders
@@ -32,7 +31,7 @@ from .utils import (
 )
 
 
-def send_email_via_smtp(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def send_email_via_smtp(  # noqa: PLR0913
     smtp_host: str,
     smtp_port: int,
     smtp_user: str,
@@ -68,16 +67,17 @@ def send_email_via_smtp(  # pylint: disable=too-many-arguments,too-many-position
         server.sendmail(from_addr=from_addr, to_addrs=to_addrs, msg=message)
 
 
-class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
-    """Class for an email sent to multiple recipients via SMTP"""
+class OutgoingEmail:
+    """Class for an email sent to multiple recipients via SMTP."""
 
-    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    def __init__(
         self,
         app: Flask,
         ml: MailingList,
         msg: MailMessage,
         message_id: str,
     ) -> None:
+        """Initialize MailerMessage."""
         # Relevant settings from app config
         self.app_domain: str = app.config["DOMAIN"]
         self.smtp_server: str = app.config["SMTP_HOST"]
@@ -102,7 +102,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         self.prepare_common_headers()
         self.add_body_parts()
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict) -> "OutgoingEmail":
         """
         Custom deepcopy to avoid detaching SQLAlchemy objects from session.
 
@@ -133,7 +133,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
         return new_obj
 
     def choose_container_type(self) -> None:
-        """Choose the correct container type for the email based on its content"""
+        """Choose the correct container type for the email based on its content."""
         # If there are attachments, use multipart/mixed
         if self.msg.attachments:
             self.composed_msg = MIMEMultipart("mixed")
@@ -146,11 +146,12 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
                 self.msg.html or self.msg.text, "html" if self.msg.html else "plain"
             )
 
-    def prepare_common_headers(self) -> None:  # pylint: disable=too-many-branches
-        """Prepare common email headers, except To which is per-recipient"""
+    def prepare_common_headers(self) -> None:  # noqa: C901
+        """Prepare common email headers, except To which is per-recipient."""
         # --- Sanity checks ---
         if not self.composed_msg:
-            raise ValueError("Message container type not chosen yet")
+            msg = "Message container type not chosen yet"
+            raise ValueError(msg)
         if not self.msg.from_values:
             logging.error("No valid From header in message %s, cannot send", self.msg.uid)
             return
@@ -229,15 +230,16 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             else self.original_mid
         )
         self.composed_msg["References"] = " ".join(
-            self.msg.headers.get("references", ()) + (self.original_mid,)
+            (*self.msg.headers.get("references", ()), self.original_mid)
         )
         if self.reply_to:
             self.composed_msg["Reply-To"] = self.reply_to
 
     def add_body_parts(self) -> None:
-        """Add body parts to the email message container"""
+        """Add body parts to the email message container."""
         if not self.composed_msg:
-            raise ValueError("Message container type not chosen yet")
+            msg = "Message container type not chosen yet"
+            raise ValueError(msg)
 
         if isinstance(self.composed_msg, MIMEMultipart):
             if self.msg.text and self.msg.html:
@@ -275,6 +277,7 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
 
         Args:
             recipient (str): Recipient email address
+            dry (bool): If True, do not actually send the email
         Returns:
             bytes: Sent message as bytes
         """
@@ -284,14 +287,13 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
 
         # --- Add per-recipient headers ---
         # Deal with recipient as possible To/Cc of original message
-        if recipient in self.msg.to or recipient in self.msg.cc:
-            if self.ml.avoid_duplicates:
-                logging.info(
-                    "Recipient %s already in To/Cc of original message. Skipping as the list is "
-                    "configured to avoid duplicates.",
-                    recipient,
-                )
-                return b""
+        if (recipient in self.msg.to or recipient in self.msg.cc) and self.ml.avoid_duplicates:
+            logging.info(
+                "Recipient %s already in To/Cc of original message. Skipping as the list is "
+                "configured to avoid duplicates.",
+                recipient,
+            )
+            return b""
         # In Broadcast mode: add recipient to To header if not already present
         if self.ml.mode == "broadcast" and recipient not in self.msg.to:
             self.msg.to += (recipient,)
@@ -325,12 +327,12 @@ class OutgoingEmail:  # pylint: disable=too-many-instance-attributes
             )
             logging.info("Email sent to %s", recipient)
 
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            logging.error("Failed to send email: %s\nTraceback: %s", e, traceback.format_exc())
+        except Exception:
+            logging.exception("Failed to send email")
             create_log_entry(
                 level="error",
                 event="email_out",
-                message=f"Failed to send email to {recipient}: {e}",
+                message=f"Failed to send email to {recipient}",
                 details={"recipient": recipient, "message_id": self.message_id},
                 list_id=self.ml.id,
             )
@@ -423,13 +425,11 @@ def send_msg_to_subscribers(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
                     subscriber,
                 )
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # noqa: PERF203
             sent_failed.append(subscriber)
-            logging.error(
-                "Failed to send message to %s: %s\nTraceback: %s",
+            logging.exception(
+                "Failed to send message to %s",
                 subscriber,
-                e,
-                traceback.format_exc(),
             )
 
     # Unify sent email lists and log/return results
@@ -577,6 +577,13 @@ def send_rejection_notification(  # pylint: disable=too-many-arguments
             local_hostname=app.config["DOMAIN"],
         )
 
+    except Exception:
+        logging.exception(
+            "Failed to send rejection notification to %s",
+            sender_email,
+        )
+        return False
+    else:
         logging.info(
             "Sent rejection notification to %s for message to %s (reason: %s)",
             sender_email,
@@ -584,12 +591,3 @@ def send_rejection_notification(  # pylint: disable=too-many-arguments
             reason,
         )
         return True
-
-    except Exception as e:  # pylint: disable=broad-except
-        logging.error(
-            "Failed to send rejection notification to %s: %s\nTraceback: %s",
-            sender_email,
-            e,
-            traceback.format_exc(),
-        )
-        return False

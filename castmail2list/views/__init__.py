@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Global constants"""
+"""Global constants."""
 
 from importlib.metadata import version
 

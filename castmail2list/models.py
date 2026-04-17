@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Database models for CastMail2List"""
+"""Database models for CastMail2List."""
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
@@ -13,8 +13,8 @@ from sqlalchemy import ForeignKeyConstraint, MetaData, PrimaryKeyConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, validates
 
 
-class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
-    """Base class for all models with naming convention for constraints"""
+class Base(DeclarativeBase):
+    """Base class for all models with naming convention for constraints."""
 
     metadata = MetaData(
         naming_convention={
@@ -34,17 +34,18 @@ else:
     Model = db.Model
 
 
-class AlembicVersion(Model):  # pylint: disable=too-few-public-methods
-    """Alembic version table mapping"""
+class AlembicVersion(Model):
+    """Alembic version table mapping."""
 
-    def __init__(self, version_num: str):
+    def __init__(self, version_num: str) -> None:
+        """Initialize AlembicVersion."""
         self.version_num = version_num
 
     version_num: str = db.Column(db.String(32), primary_key=True, nullable=False)
 
 
-class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
-    """A user of the CastMail2List application
+class User(Model, UserMixin):
+    """A user of the CastMail2List application.
 
     Attributes:
         id (int): Primary key of the user.
@@ -54,24 +55,24 @@ class User(Model, UserMixin):  # pylint: disable=too-few-public-methods
         role (str): Role of the user, e.g., "admin".
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str | int) -> None:
+        """Initialize User."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False)
+    id: int = db.Column(db.Integer, primary_key=True)
+    username: str = db.Column(db.String(100), unique=True, nullable=False)
+    password: str = db.Column(db.String, nullable=False)
     api_key: str = db.Column(db.String, nullable=True)
-    role = db.Column(db.String, default="admin")
+    role: str = db.Column(db.String, default="admin")
 
 
-class MailingList(Model):  # pylint: disable=too-few-public-methods
-    """A mailing list
+class MailingList(Model):
+    """A mailing list.
 
     Attributes:
         id (str): Primary key of the mailing list.
@@ -96,13 +97,13 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "list"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str | int | bool | list) -> None:
+        """Initialize MailingList."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
     id: str = db.Column(db.String, primary_key=True)
@@ -138,33 +139,35 @@ class MailingList(Model):  # pylint: disable=too-few-public-methods
     deleted: bool = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    def deactivate(self):
-        """Mark the mailing list as deleted"""
+    def deactivate(self) -> None:
+        """Mark the mailing list as deleted."""
         self.deleted = True
         self.deleted_at = datetime.now(timezone.utc)
 
-    def reactivate(self):
-        """Reactivate a soft-deleted mailing list"""
+    def reactivate(self) -> None:
+        """Reactivate a soft-deleted mailing list."""
         self.deleted = False
         self.deleted_at = None
 
     @validates("address")
-    def _validate_address(self, _, value):
-        """Validate that the address is a valid email address"""
+    def _validate_address(self, _: str, value: str) -> str:
+        """Validate that the address is a valid email address."""
         if "@" not in value:
-            raise ValueError(f"Invalid email address: {value}")
+            msg = f"Invalid email address: {value}"
+            raise ValueError(msg)
         return value.lower()
 
     @validates("mode")
-    def _validate_mode(self, _, value):
-        """Validate that the mode is either 'broadcast' or 'group'"""
+    def _validate_mode(self, _: str, value: str) -> str:
+        """Validate that the mode is either 'broadcast' or 'group'."""
         if value not in {"broadcast", "group"}:
-            raise ValueError(f"Invalid mode: {value}")
+            msg = f"Invalid mode: {value}"
+            raise ValueError(msg)
         return value
 
 
-class Subscriber(Model):  # pylint: disable=too-few-public-methods
-    """A subscriber to a mailing list
+class Subscriber(Model):
+    """A subscriber to a mailing list.
 
     Attributes:
         id (int): Primary key of the subscriber.
@@ -175,16 +178,16 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
         subscriber_type (str): Type of subscriber, either "normal" or "list".
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str | int) -> None:
+        """Initialize Subscriber."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: int = db.Column(db.Integer, primary_key=True)
     list_id: str = db.Column(
         db.String, db.ForeignKey("list.id", onupdate="CASCADE"), nullable=False
     )
@@ -195,20 +198,22 @@ class Subscriber(Model):  # pylint: disable=too-few-public-methods
     bounces: int = db.Column(db.Integer, nullable=False, default=0)
 
     @validates("email")
-    def _validate_email(self, _, value):
+    def _validate_email(self, _: str, value: str) -> str:
         """Normalize email to lowercase on set so comparisons/queries are case-insensitive, and
-        validate format."""
+        validate format.
+        """
         if "@" not in value:
-            raise ValueError(f"Invalid email address: {value}")
+            msg = f"Invalid email address: {value}"
+            raise ValueError(msg)
         return value.lower() if isinstance(value, str) else value
 
-    def increase_bounce(self):
-        """Increase bounce count by 1"""
+    def increase_bounce(self) -> None:
+        """Increase bounce count by 1."""
         self.bounces += 1
 
 
-class EmailIn(Model):  # pylint: disable=too-few-public-methods
-    """An email message sent to a mailing list
+class EmailIn(Model):
+    """An email message sent to a mailing list.
 
     Attributes:
         message_id (str): Unique message ID of the email.
@@ -224,13 +229,13 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "email_in"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str) -> None:
+        """Initialize EmailIn."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
     message_id: str = db.Column(db.String, nullable=False)
@@ -250,8 +255,8 @@ class EmailIn(Model):  # pylint: disable=too-few-public-methods
     __table_args__ = (PrimaryKeyConstraint("message_id", "list_id", name="pk_email_in"),)
 
 
-class EmailOut(Model):  # pylint: disable=too-few-public-methods
-    """An email message sent out to subscribers
+class EmailOut(Model):
+    """An email message sent out to subscribers.
 
     Attributes:
         message_id (str): Unique message ID of the outgoing email.
@@ -267,13 +272,13 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "email_out"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: str | int | list | datetime) -> None:
+        """Initialize EmailOut."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
     message_id: str = db.Column(db.String, unique=True, nullable=False, primary_key=True)
@@ -298,8 +303,8 @@ class EmailOut(Model):  # pylint: disable=too-few-public-methods
     )
 
 
-class Logs(Model):  # pylint: disable=too-few-public-methods
-    """Application event log
+class Logs(Model):
+    """Application event log.
 
     Attributes:
         id (int): Primary key of the log entry.
@@ -311,13 +316,13 @@ class Logs(Model):  # pylint: disable=too-few-public-methods
         list_id (str): Foreign key to the associated mailing list, if applicable.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:  # noqa: ANN401
+        """Initialize Logs."""
         # Only set attributes that actually exist on the mapped class
         for key, value in kwargs.items():
             if not hasattr(self.__class__, key):
-                raise TypeError(
-                    f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
-                )
+                msg = f"Unexpected keyword argument {key!r} for {self.__class__.__name__}"
+                raise TypeError(msg)
             setattr(self, key, value)
 
     id: int = db.Column(db.Integer, primary_key=True)

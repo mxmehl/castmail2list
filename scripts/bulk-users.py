@@ -4,21 +4,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Read CSV file and manage users in bulk via API"""
-
-# pylint: disable=invalid-name
+"""Read CSV file and manage users in bulk via API."""
 
 import argparse
 import csv
 import json
 import logging
 import sys
+from pathlib import Path
 
 import requests
 
 
 def configure_logger(verbose: bool = False) -> logging.Logger:
-    """Set logging options"""
+    """Set logging options."""
     log = logging.getLogger()
     logging.basicConfig(
         encoding="utf-8",
@@ -33,17 +32,17 @@ def configure_logger(verbose: bool = False) -> logging.Logger:
     return log
 
 
-def load_users_from_file(
+def load_users_from_file(  # noqa: C901
     file_path: str, override_list_id: str = "", ignore_errors: bool = False
 ) -> dict[str, dict]:
-    """Load users from a CSV or JSON file"""
-    with open(file_path, newline="", encoding="utf-8") as inputfile:
+    """Load users from a CSV or JSON file."""
+    with Path(file_path).open(newline="", encoding="utf-8") as inputfile:
         # JSON format
         if file_path.lower().endswith(".json"):
             data: dict[str, dict] = json.load(inputfile)
             # If list_id argument is provided, set it for all entries
             if override_list_id:
-                for _, info in data.items():
+                for info in data.values():
                     info["list_id"] = override_list_id
             return data
 
@@ -82,8 +81,8 @@ def load_users_from_file(
         sys.exit(1)
 
 
-def main():
-    """Main function to read data files and create users via API"""
+def main() -> None:
+    """Main function to read data files and create users via API."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "-f",
@@ -128,7 +127,7 @@ def main():
     # Load users from file
     users = load_users_from_file(args.file, args.list_id)
 
-    for _, info in users.items():
+    for info in users.values():
         list_id = info.get("list_id")
         name = info.get("name", "")
         comment = info.get("comment", "")
