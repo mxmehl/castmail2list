@@ -64,7 +64,6 @@ castmail2list = "castmail2list.wsgi:gunicorn"
 dev = [
     "ruff>=0.15.10",
     "ty>=0.0.29",
-    "bump-my-version>=1.2.4,<2",
     "pytest>=9.0.0,<10",
     "beautifulsoup4>=4.14.2,<5",
     "pytest-cov>=7.0.0,<8",
@@ -109,7 +108,26 @@ ignore = [
 [tool.ruff.lint.extend-per-file-ignores]
 "castmail2list/migrations/*" = ["ALL"]
 "castmail2list/gunicorn.conf.py" = ["N999"]
-"tests/*" = ["S101", "S105", "S106", "S108", "SLF001", "PLR", "PT011", "PT013", "ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "ARG001", "ARG002", "ARG005", "PLC0415", "PTH"]
+"tests/*" = [
+    "S101",
+    "S105",
+    "S106",
+    "S108",
+    "SLF001",
+    "PLR",
+    "PT011",
+    "PT013",
+    "ANN001",
+    "ANN002",
+    "ANN003",
+    "ANN201",
+    "ANN202",
+    "ARG001",
+    "ARG002",
+    "ARG005",
+    "PLC0415",
+    "PTH",
+]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 [tool.ruff.format]
@@ -119,29 +137,3 @@ exclude = ["castmail2list/migrations/**"]
 [tool.ty.src]
 include = ["castmail2list"]
 exclude = ["castmail2list/migrations"]
-
-# Bump-My-Version
-[tool.bumpversion]
-commit = true
-tag = true
-allow_dirty = false
-tag_name = "v{new_version}"
-
-[[tool.bumpversion.files]]
-filename = "pyproject.toml"
-regex = true
-search = "^version = \"{current_version}\""
-replace = "version = \"{new_version}\""
-
-[[tool.bumpversion.files]]
-filename = "uv.lock"
-search = """
-[[package]]
-name = "castmail2list"
-version = "{current_version}"
-"""
-replace = """
-[[package]]
-name = "castmail2list"
-version = "{new_version}"
-"""

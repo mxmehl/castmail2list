@@ -213,6 +213,9 @@ __marimo__/
 # Custom
 # ----------------------------------
 
+# Gunicorn
+gunicorn.ctl
+
 # SCSS compiled files
 *.scss.css*
 # Config file
@@ -222,3 +225,4 @@ config.yaml
 # CSV and JSON files
 *.csv
 *.json
+!*release-please*.json
