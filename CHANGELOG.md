@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.3](https://github.com/mxmehl/castmail2list/compare/v0.7.2...v0.7.3) (2026-05-02)
+
+
+### 📦 CI Improvements
+
+* add zizmor workflow ([#155](https://github.com/mxmehl/castmail2list/issues/155)) ([60f0c01](https://github.com/mxmehl/castmail2list/commit/60f0c01d373ecc4c6972f169c0f564aa6531a72c))
+* restrict some workflows to only run upstream ([#156](https://github.com/mxmehl/castmail2list/issues/156)) ([6d20844](https://github.com/mxmehl/castmail2list/commit/6d20844eb56093ff67a8c45eb54cd44e8b8ad1d9))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#153](https://github.com/mxmehl/castmail2list/issues/153)) ([e9e85b3](https://github.com/mxmehl/castmail2list/commit/e9e85b3ae9ad4a724cc99074068cae57ccfba7ca))
+* **deps:** update googleapis/release-please-action action to v5 ([#152](https://github.com/mxmehl/castmail2list/issues/152)) ([4cc4dc8](https://github.com/mxmehl/castmail2list/commit/4cc4dc8b180ad6402d351924ca4d1205eed1a660))
+* **deps:** update mxmehl/latest-release-vulnerability-status action to v1.2.2 ([#157](https://github.com/mxmehl/castmail2list/issues/157)) ([99d9b9e](https://github.com/mxmehl/castmail2list/commit/99d9b9edb7769572762e26c01bb2323c68425c46))
+* **deps:** update mxmehl/latest-release-vulnerability-status action to v1.2.3 ([#158](https://github.com/mxmehl/castmail2list/issues/158)) ([b7ed523](https://github.com/mxmehl/castmail2list/commit/b7ed5232472db8493284d8b0a4a22a09dae828e2))
+
 ## [0.7.2](https://github.com/mxmehl/castmail2list/compare/v0.7.1...v0.7.2) (2026-04-20)
 
 
