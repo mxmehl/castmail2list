@@ -13,6 +13,9 @@ from castmail2list.utils import get_log_entries
 
 logs = Blueprint("logs", __name__, url_prefix="/logs")
 
+# Columns allowed in log search to prevent probing of arbitrary DB columns
+LOG_SEARCH_FIELDS = {"level", "event", "message", "list_id"}
+
 
 @logs.before_request
 @login_required
@@ -30,8 +33,12 @@ def index() -> str:
     # Apply search filter if both field and text are provided
     if search_field and search_text:
         column = search_field.lower()
-        # Dynamic column name requires type: ignore for kwargs
-        log_entries = get_log_entries(exact=False, days=0, **{column: search_text})
+        if column not in LOG_SEARCH_FIELDS:
+            flash(_("Invalid search field."), "error")
+            log_entries = get_log_entries()
+        else:
+            # Dynamic column name requires type: ignore for kwargs
+            log_entries = get_log_entries(exact=False, days=0, **{column: search_text})
     else:
         # No search query, get all entries
         log_entries = get_log_entries()

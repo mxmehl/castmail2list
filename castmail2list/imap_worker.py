@@ -29,6 +29,7 @@ from .utils import (
     is_email_a_list,
     is_expanded_address_the_mailing_list,
     parse_bounce_address,
+    redact,
     remove_plus_suffix,
     run_only_once,
 )
@@ -178,7 +179,7 @@ class IncomingEmail:
                         "Sender <%s> provided valid authentication password for list <%s>: %s",
                         sender_email,
                         self.ml.address,
-                        plus_suffix,
+                        redact(plus_suffix),
                     )
                     return True
         return False

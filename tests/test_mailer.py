@@ -16,6 +16,7 @@ from imap_tools import MailMessage
 
 from castmail2list.mailer import (
     OutgoingEmail,
+    _rejection_notification_timestamps,
     send_msg_to_subscribers,
     send_rejection_notification,
     should_notify_sender,
@@ -891,6 +892,28 @@ def test_send_rejection_notification_dry_mode(client, smtp_mock):
 
     assert result is True  # Function returns True in DRY mode
     assert len(smtp_mock) == 0  # But no actual email sent
+
+
+def test_send_rejection_notification_hourly_limit(client, smtp_mock):
+    """send_rejection_notification should be suppressed after exceeding hourly limit."""
+    client.application.config["NOTIFY_REJECTED_SENDERS"] = True
+    client.application.config["NOTIFY_REJECTED_KNOWN_ONLY"] = False
+    client.application.config["NOTIFY_REJECTED_HOURLY_LIMIT"] = 2
+    client.application.config["DOMAIN"] = "lists.example.com"
+    client.application.config["SYSTEM_EMAIL"] = "noreply@lists.example.com"
+
+    # Clear any state from other tests
+    _rejection_notification_timestamps.clear()
+
+    kwargs = {
+        "app": client.application,
+        "sender_email": "attacker@evil.com",
+        "recipient": "list@example.com",
+        "reason": "not authorized",
+    }
+    assert send_rejection_notification(**kwargs) is True  # 1st: allowed
+    assert send_rejection_notification(**kwargs) is True  # 2nd: allowed (at limit)
+    assert send_rejection_notification(**kwargs) is False  # 3rd: suppressed
 
 
 def test_umlaut_in_display_name_encoding(client, broadcast_list: MailingList):

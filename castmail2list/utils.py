@@ -67,6 +67,24 @@ def flash_form_errors(form: MailingListForm | SubscriberAddForm) -> None:
             flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
 
+def redact(value: str) -> str:
+    """Partially redact a sensitive string for safe logging.
+
+    Exposes the first ~50% of the string and replaces the rest with asterisks,
+    so log readers can identify the value without seeing it in full.
+
+    Args:
+        value (str): The sensitive string to redact.
+
+    Returns:
+        str: The partially redacted string (e.g. "se***" for "secret").
+    """
+    if not value:
+        return "***"
+    visible = max(1, len(value) // 2)
+    return value[:visible] + "*" * (len(value) - visible)
+
+
 def get_version_info(debug: bool = False) -> str:
     """
     Get the current version information of the application. If in debug mode, include git commit
@@ -545,6 +563,9 @@ def create_email_account(host_type: str, email: str, password: str) -> bool:
         bool: True if the email account was created successfully, False otherwise
     """
     logging.info("Creating email account %s on host type %s", email, host_type)
+    if password.startswith("-"):
+        logging.error("Password for %s must not start with '-' (CLI flag injection risk)", email)
+        return False
     try:
         if host_type == "uberspace7":
             cmd = [
@@ -554,10 +575,11 @@ def create_email_account(host_type: str, email: str, password: str) -> bool:
                 "add",
                 "-p",
                 password,
+                "--",
                 split_email_address(email)[0],
             ]
         elif host_type == "uberspace8":
-            cmd = ["uberspace", "mail", "address", "add", "--password", password, email]
+            cmd = ["uberspace", "mail", "address", "add", "--password", password, "--", email]
         else:
             logging.error("Unsupported host type for email account creation: %s", host_type)
             return False

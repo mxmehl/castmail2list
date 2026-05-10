@@ -151,6 +151,11 @@ class MailingListForm(CM2LBaseForm):
     imap_pass = PasswordField(_("IMAP Password"), validators=[Optional()])
     submit = SubmitField(_("Save List"))
 
+    def validate_imap_pass(self, field: PasswordField) -> None:
+        """Reject passwords starting with '-' to prevent CLI flag injection."""
+        if field.data and field.data.startswith("-"):
+            raise ValidationError(_("IMAP password must not start with '-'."))
+
 
 class SubscriberAddForm(CM2LBaseForm):
     """Form for adding new subscribers."""

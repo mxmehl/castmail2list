@@ -6,11 +6,12 @@
 
 import logging
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
 from werkzeug.security import check_password_hash
 from werkzeug.wrappers import Response
 
+from castmail2list.extensions import limiter
 from castmail2list.forms import LoginForm
 from castmail2list.models import User
 from castmail2list.utils import create_log_entry
@@ -18,7 +19,13 @@ from castmail2list.utils import create_log_entry
 auth = Blueprint("auth", __name__)
 
 
+def _login_rate_limit() -> str:
+    """Return the login rate limit string from app config."""
+    return current_app.config["RATE_LIMIT_LOGIN"]
+
+
 @auth.route("/login", methods=["GET", "POST"])
+@limiter.limit(_login_rate_limit, methods=["POST"])
 def login() -> str | Response:
     """Handle user login requests."""
     form = LoginForm()
@@ -49,7 +56,12 @@ def login() -> str | Response:
             message=f"Successful login by {username}",
             details={"ip": request.remote_addr},
         )
-        return redirect(request.args.get("next") or url_for("general.index"))
+        next_url = request.args.get("next")
+        # Only allow relative redirects to prevent open redirect attacks.
+        # Reject anything that starts with "//" (protocol-relative) or contains "://".
+        if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
+        return redirect(url_for("general.index"))
 
     return render_template("login.html", form=form)
 

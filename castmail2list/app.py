@@ -11,10 +11,8 @@ from logging.config import dictConfig
 from pathlib import Path
 from shutil import copy2
 
-from flask import Flask
+from flask import Flask, Response
 from flask_babel import Babel
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_migrate import Migrate, check, downgrade, migrate, upgrade
 from flask_wtf import CSRFProtect
@@ -24,6 +22,7 @@ from werkzeug.security import generate_password_hash
 
 from . import __version__
 from .config import AppConfig
+from .extensions import limiter
 from .imap_worker import initialize_imap_polling
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
@@ -35,6 +34,7 @@ from .utils import (
     get_user_config_path,
     get_version_info,
     is_email_a_list,
+    redact,
 )
 from .views.api import api1
 from .views.auth import auth
@@ -134,6 +134,14 @@ def create_app(  # noqa: PLR0915
     if config_overrides:
         app.config.update(config_overrides)
 
+    # Fail fast if SECRET_KEY is not set — an empty key makes sessions and CSRF trivially forgeable
+    if not app.config.get("TESTING") and not app.config.get("SECRET_KEY"):
+        msg = (
+            "SECRET_KEY must be set and non-empty. "
+            "Set it in your config.yaml or as the SECRET_KEY environment variable."
+        )
+        raise ValueError(msg)
+
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
     logging.info("Language set to: %s", app.config.get("LANGUAGE", "en"))
@@ -157,7 +165,15 @@ def create_app(  # noqa: PLR0915
 
     # Secure session cookie config
     app.config.update(
-        SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="Lax"
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        # Remember-me cookie must be secured explicitly — it is separate from the session cookie
+        # and does not inherit SESSION_COOKIE_SAMESITE. Without this, it may default to
+        # SameSite=None and be sent cross-origin, enabling CSRF against the API.
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
     )
 
     # Enable CSRF protection
@@ -191,6 +207,14 @@ def create_app(  # noqa: PLR0915
             "version_info": get_version_info(debug=app.debug),
         }
 
+    # Add HTTP security headers to every response
+    @app.after_request
+    def set_security_headers(response: Response) -> Response:
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
     app.jinja_env.globals.update(
         get_list_recipients_recursive=get_list_recipients_recursive,  # type: ignore[ty:invalid-argument-type]
         is_email_a_list=is_email_a_list,  # type: ignore[ty:invalid-argument-type]
@@ -208,18 +232,11 @@ def create_app(  # noqa: PLR0915
     # Set up rate limiting
     app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
     app.config.setdefault("RATE_LIMIT_API", "200 per 1 minute")
-    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
+    app.config.setdefault("RATE_LIMIT_API_AUTH", "10 per minute, 30 per hour")
+    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds, 50 per hour")
     app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
-    limiter = Limiter(
-        get_remote_address,
-        default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
-        storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
-    )
+    app.config.setdefault("RATELIMIT_DEFAULT", app.config["RATE_LIMIT_DEFAULT"])
     limiter.init_app(app)
-
-    # Exempt API blueprint from default limits and apply custom API limit
-    limiter.exempt(api1)
-    limiter.limit(app.config.get("RATE_LIMIT_API", "200 per 1 minute"))(api1)
 
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
         logging.warning(
@@ -232,8 +249,13 @@ def create_app(  # noqa: PLR0915
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
 
-    # Debug logging of config
-    logging.debug("App configuration:\n%s", app.config)
+    # Debug logging of config (sensitive values are redacted)
+    sensitive_keys = {"SECRET", "PASS", "KEY"}
+    redacted_config = {
+        k: redact(str(v)) if any(s in k.upper() for s in sensitive_keys) else v
+        for k, v in app.config.items()
+    }
+    logging.debug("App configuration:\n%s", redacted_config)
 
     return app
 
