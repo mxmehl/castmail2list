@@ -41,6 +41,7 @@ CONFIG_SCHEMA = {
         "NOTIFY_REJECTED_SENDERS": {"type": "boolean"},
         "NOTIFY_REJECTED_KNOWN_ONLY": {"type": "boolean"},
         "NOTIFY_REJECTED_TRUSTED_DOMAINS": {"type": "array", "items": {"type": "string"}},
+        "NOTIFY_REJECTED_HOURLY_LIMIT": {"type": "integer", "minimum": 0},
     },
     "required": ["SECRET_KEY", "DOMAIN", "SYSTEM_EMAIL", "HOST_TYPE", "SMTP_HOST"],
     "additionalProperties": False,
@@ -87,6 +88,7 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     NOTIFY_REJECTED_SENDERS: bool = False
     NOTIFY_REJECTED_KNOWN_ONLY: bool = True
     NOTIFY_REJECTED_TRUSTED_DOMAINS: ClassVar[list[str]] = []
+    NOTIFY_REJECTED_HOURLY_LIMIT: int = 20
 
     @classmethod
     def validate_config_schema(cls, cfg: dict, schema: dict) -> None:

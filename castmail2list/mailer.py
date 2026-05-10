@@ -7,8 +7,9 @@
 import logging
 import smtplib
 import tempfile
+from collections import deque
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -498,6 +499,30 @@ def should_notify_sender(app: Flask, sender_email: str) -> bool:
     return True
 
 
+# Rolling window counter for outbound rejection notifications.
+# Prevents the SMTP server being used as a spam relay when NOTIFY_REJECTED_KNOWN_ONLY=False.
+_rejection_notification_timestamps: deque[datetime] = deque()
+
+
+def _rejection_notification_allowed(hourly_limit: int) -> bool:
+    """Return True if sending a rejection notification is within the hourly limit.
+
+    Args:
+        hourly_limit (int): Maximum number of rejection notifications allowed per hour.
+
+    Returns:
+        bool: True if the notification can be sent, False if the limit is exceeded.
+    """
+    now = datetime.now(tz=timezone.utc)
+    cutoff = now - timedelta(hours=1)
+    while _rejection_notification_timestamps and _rejection_notification_timestamps[0] < cutoff:
+        _rejection_notification_timestamps.popleft()
+    if len(_rejection_notification_timestamps) >= hourly_limit:
+        return False
+    _rejection_notification_timestamps.append(now)
+    return True
+
+
 def send_rejection_notification(  # pylint: disable=too-many-arguments
     app: Flask,
     sender_email: str,
@@ -521,6 +546,16 @@ def send_rejection_notification(  # pylint: disable=too-many-arguments
     # Check if we should notify this sender
     if not should_notify_sender(app, sender_email):
         logging.debug("Skipping rejection notification for %s", sender_email)
+        return False
+
+    # Enforce global hourly cap to prevent SMTP reputation damage via spam relay abuse.
+    hourly_limit = int(app.config.get("NOTIFY_REJECTED_HOURLY_LIMIT", 20))
+    if not _rejection_notification_allowed(hourly_limit):
+        logging.warning(
+            "Rejection notification rate limit (%d/hour) exceeded; suppressing notification to %s",
+            hourly_limit,
+            sender_email,
+        )
         return False
 
     # Log sending attempt

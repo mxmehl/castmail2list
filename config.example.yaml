@@ -49,9 +49,18 @@ SMTP_STARTTLS: true # Default: true
 # Sender notification settings
 # Send rejection notifications to senders whose messages could not be delivered
 NOTIFY_REJECTED_SENDERS: false # Default: false
-# Only notify senders who are already in the database (subscribers)
+# Only notify senders who are already in the database (subscribers).
+# SECURITY: Setting this to false while NOTIFY_REJECTED_SENDERS is true allows
+# the SMTP server to be used as a spam relay: an attacker can send email to a
+# list address with a forged From header, causing the app to send rejection
+# notifications to arbitrary third-party addresses. Keep this true unless you
+# have a specific reason to notify unknown senders.
 NOTIFY_REJECTED_KNOWN_ONLY: true # Default: true
 # Always notify senders from these domains (even if not in database)
 NOTIFY_REJECTED_TRUSTED_DOMAINS: # Default: []
   - "example.com"
   - "trusted-domain.org"
+# Maximum rejection notifications sent per hour across all lists (global cap).
+# Prevents SMTP reputation damage if an attacker floods list addresses with
+# forged From headers. Default: 20
+NOTIFY_REJECTED_HOURLY_LIMIT: 20
