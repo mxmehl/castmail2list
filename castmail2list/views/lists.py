@@ -6,7 +6,7 @@
 
 import logging
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import login_required
 from werkzeug.wrappers import Response
@@ -280,28 +280,50 @@ def edit(list_id: str) -> str | Response:  # noqa: C901
     return render_template("lists/edit.html", mailing_list=mailing_list, form=form)
 
 
-@lists.route("/<list_id>/deactivate", methods=["GET"])
-def deactivate(list_id: str) -> Response:
+@lists.route("/<list_id>/deactivate", methods=["GET", "POST"])
+def deactivate(list_id: str) -> str | Response:
     """Deactivate a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(
         id=list_id, deleted=False
     ).first_or_404()
-    mailing_list.deactivate()  # Use the soft_delete method from the model
-    db.session.commit()
-    flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.display), "success")
-    logging.info('Mailing list "%s" deactivated', mailing_list.address)
-    return redirect(url_for("lists.index"))
+    if request.method == "POST":
+        mailing_list.deactivate()  # Use the soft_delete method from the model
+        db.session.commit()
+        flash(_('List "%(name)s" deactivated successfully!', name=mailing_list.display), "success")
+        logging.info('Mailing list "%s" deactivated', mailing_list.address)
+        return redirect(url_for("lists.index"))
+    return render_template(
+        "confirm_action.html",
+        action_url=url_for("lists.deactivate", list_id=list_id),
+        action_label=_("Deactivate"),
+        confirmation_text=_(
+            'Are you sure you want to deactivate the list "%(name)s"?',
+            name=mailing_list.display,
+        ),
+        cancel_url=url_for("lists.index"),
+    )
 
 
-@lists.route("/<list_id>/reactivate", methods=["GET"])
-def reactivate(list_id: str) -> Response:
+@lists.route("/<list_id>/reactivate", methods=["GET", "POST"])
+def reactivate(list_id: str) -> str | Response:
     """Reactivate a mailing list."""
     mailing_list: MailingList = MailingList.query.filter_by(id=list_id, deleted=True).first_or_404()
-    mailing_list.reactivate()  # Use the reactivate method from the model
-    db.session.commit()
-    flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.display), "success")
-    logging.info('Mailing list "%s" reactivated', mailing_list.address)
-    return redirect(url_for("lists.index"))
+    if request.method == "POST":
+        mailing_list.reactivate()  # Use the reactivate method from the model
+        db.session.commit()
+        flash(_('List "%(name)s" reactivated successfully!', name=mailing_list.display), "success")
+        logging.info('Mailing list "%s" reactivated', mailing_list.address)
+        return redirect(url_for("lists.index"))
+    return render_template(
+        "confirm_action.html",
+        action_url=url_for("lists.reactivate", list_id=list_id),
+        action_label=_("Reactivate"),
+        confirmation_text=_(
+            'Are you sure you want to reactivate the list "%(name)s"?',
+            name=mailing_list.display,
+        ),
+        cancel_url=url_for("lists.deactivated"),
+    )
 
 
 # -----------------------------------------------------------------
@@ -360,18 +382,32 @@ def subscribers_manage(list_id: str) -> str | Response:
     )
 
 
-@lists.route("/<list_id>/subscribers/<subscriber_email>/delete", methods=["GET"])
-def subscriber_delete(list_id: str, subscriber_email: str) -> Response:
+@lists.route("/<list_id>/subscribers/<subscriber_email>/delete", methods=["GET", "POST"])
+def subscriber_delete(list_id: str, subscriber_email: str) -> str | Response:
     """Delete a subscriber from a mailing list."""
-    # Use service layer to delete subscriber
-    error = delete_subscriber_from_list(list_id, subscriber_email)
-    if error:
-        flash(_(error), "error")
-    else:
-        flash(
-            _('Successfully removed "%(email)s" from the list!', email=subscriber_email), "success"
-        )
-    return redirect(url_for("lists.subscribers_manage", list_id=list_id))
+    if request.method == "POST":
+        # Use service layer to delete subscriber
+        error = delete_subscriber_from_list(list_id, subscriber_email)
+        if error:
+            flash(_(error), "error")
+        else:
+            flash(
+                _('Successfully removed "%(email)s" from the list!', email=subscriber_email),
+                "success",
+            )
+        return redirect(url_for("lists.subscribers_manage", list_id=list_id))
+    return render_template(
+        "confirm_action.html",
+        action_url=url_for(
+            "lists.subscriber_delete", list_id=list_id, subscriber_email=subscriber_email
+        ),
+        action_label=_("Delete subscriber"),
+        confirmation_text=_(
+            'Are you sure you want to remove "%(email)s" from this list?',
+            email=subscriber_email,
+        ),
+        cancel_url=url_for("lists.subscribers_manage", list_id=list_id),
+    )
 
 
 @lists.route("/<list_id>/subscribers/<subscriber_email>/edit", methods=["GET", "POST"])

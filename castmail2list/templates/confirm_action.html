@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Confirm Action') }}{% endblock %}
+
+{% block content %}
+<h2>{{ _('Confirm Action') }}</h2>
+
+{%- include "flash.html" %}
+
+<p>{{ confirmation_text }}</p>
+
+<form method="POST" action="{{ action_url }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div role="group">
+    <a href="{{ cancel_url }}" role="button" class="secondary">{{ _('Cancel') }}</a>
+    <button type="submit" class="danger">{{ action_label }}</button>
+  </div>
+</form>
+{% endblock %}
