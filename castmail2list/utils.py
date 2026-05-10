@@ -67,6 +67,24 @@ def flash_form_errors(form: MailingListForm | SubscriberAddForm) -> None:
             flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
 
+def redact(value: str) -> str:
+    """Partially redact a sensitive string for safe logging.
+
+    Exposes the first ~50% of the string and replaces the rest with asterisks,
+    so log readers can identify the value without seeing it in full.
+
+    Args:
+        value (str): The sensitive string to redact.
+
+    Returns:
+        str: The partially redacted string (e.g. "se***" for "secret").
+    """
+    if not value:
+        return "***"
+    visible = max(1, len(value) // 2)
+    return value[:visible] + "*" * (len(value) - visible)
+
+
 def get_version_info(debug: bool = False) -> str:
     """
     Get the current version information of the application. If in debug mode, include git commit

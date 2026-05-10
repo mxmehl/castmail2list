@@ -35,6 +35,7 @@ from .utils import (
     get_user_config_path,
     get_version_info,
     is_email_a_list,
+    redact,
 )
 from .views.api import api1
 from .views.auth import auth
@@ -232,8 +233,13 @@ def create_app(  # noqa: PLR0915
     # Compile SCSS files on startup
     app.config["SCSS_FILES"] = compile_scss_on_startup(scss_files=SCSS_FILES)
 
-    # Debug logging of config
-    logging.debug("App configuration:\n%s", app.config)
+    # Debug logging of config (sensitive values are redacted)
+    sensitive_keys = {"SECRET", "PASS", "KEY"}
+    redacted_config = {
+        k: redact(str(v)) if any(s in k.upper() for s in sensitive_keys) else v
+        for k, v in app.config.items()
+    }
+    logging.debug("App configuration:\n%s", redacted_config)
 
     return app
 
