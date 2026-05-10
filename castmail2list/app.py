@@ -222,6 +222,11 @@ def create_app(  # noqa: PLR0915
     limiter.exempt(api1)
     limiter.limit(app.config.get("RATE_LIMIT_API", "200 per 1 minute"))(api1)
 
+    # Apply tighter limit on the login route specifically
+    from .views.auth import login as login_view  # noqa: PLC0415
+
+    limiter.limit(app.config.get("RATE_LIMIT_LOGIN", "2 per 10 seconds"))(login_view)
+
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
         logging.warning(
             "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
