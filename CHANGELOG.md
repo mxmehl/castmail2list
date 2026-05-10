@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/mxmehl/castmail2list/compare/v0.7.3...v0.8.0) (2026-05-10)
+
+
+### 🚀 New Features
+
+* improve several aspects regarding security and abuse prevention ([#162](https://github.com/mxmehl/castmail2list/issues/162)) ([881f4cf](https://github.com/mxmehl/castmail2list/commit/881f4cf93626e4935fad0087614df8c57c7d0bb5))
+
 ## [0.7.3](https://github.com/mxmehl/castmail2list/compare/v0.7.2...v0.7.3) (2026-05-10)
 
 
