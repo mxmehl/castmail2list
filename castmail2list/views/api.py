@@ -9,7 +9,6 @@ from functools import wraps
 from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify, request
-from flask_login import current_user
 
 from castmail2list.models import User
 from castmail2list.services import (
@@ -26,14 +25,10 @@ api1 = Blueprint("api1", __name__, url_prefix="/api/v1")
 
 
 def api_auth_required(f: Callable) -> Callable:
-    """Decorator to require either Flask-Login session or API key authentication."""
+    """Decorator to require API key (Bearer token) authentication."""
 
     @wraps(f)
     def decorated_function(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-        # Check if user is already authenticated via Flask-Login session
-        if current_user.is_authenticated:
-            return f(*args, **kwargs)
-
         # Check for API key in Authorization header
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
