@@ -226,3 +226,6 @@ config.yaml
 *.csv
 *.json
 !*release-please*.json
+
+# Sensitive documentation
+/SECURITY_*.md
