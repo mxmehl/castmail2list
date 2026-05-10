@@ -49,7 +49,12 @@ def login() -> str | Response:
             message=f"Successful login by {username}",
             details={"ip": request.remote_addr},
         )
-        return redirect(request.args.get("next") or url_for("general.index"))
+        next_url = request.args.get("next")
+        # Only allow relative redirects to prevent open redirect attacks.
+        # Reject anything that starts with "//" (protocol-relative) or contains "://".
+        if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
+        return redirect(url_for("general.index"))
 
     return render_template("login.html", form=form)
 
