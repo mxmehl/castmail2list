@@ -166,7 +166,15 @@ def create_app(  # noqa: PLR0915
 
     # Secure session cookie config
     app.config.update(
-        SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="Lax"
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        # Remember-me cookie must be secured explicitly — it is separate from the session cookie
+        # and does not inherit SESSION_COOKIE_SAMESITE. Without this, it may default to
+        # SameSite=None and be sent cross-origin, enabling CSRF against the API.
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
     )
 
     # Enable CSRF protection
