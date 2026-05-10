@@ -10,6 +10,7 @@ from typing import Any
 
 from flask import Blueprint, Response, abort, jsonify, request
 
+from castmail2list.extensions import limiter
 from castmail2list.models import User
 from castmail2list.services import (
     add_subscriber_to_list,
@@ -22,6 +23,15 @@ from castmail2list.status import status_complete
 from castmail2list.utils import get_list_by_id, get_list_recipients_recursive, get_list_subscribers
 
 api1 = Blueprint("api1", __name__, url_prefix="/api/v1")
+
+# Apply rate limits directly on the blueprint (override_defaults=True is the default,
+# so this replaces the app-wide default limit for all API routes).
+# 1. General throughput limit for all requests.
+# 2. Stricter limit that only counts failed auth attempts (HTTP 401).
+_HTTP_UNAUTHORIZED = 401
+_is_auth_failure = lambda resp: resp.status_code == _HTTP_UNAUTHORIZED  # noqa: E731
+limiter.limit("200 per 1 minute")(api1)
+limiter.limit("10 per minute, 30 per hour", deduct_when=_is_auth_failure)(api1)
 
 
 def api_auth_required(f: Callable) -> Callable:

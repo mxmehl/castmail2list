@@ -237,10 +237,6 @@ def create_app(  # noqa: PLR0915
     app.config.setdefault("RATELIMIT_DEFAULT", app.config["RATE_LIMIT_DEFAULT"])
     limiter.init_app(app)
 
-    # Exempt API blueprint from default limits and apply custom API limit
-    limiter.exempt(api1)
-    limiter.limit(app.config.get("RATE_LIMIT_API", "200 per 1 minute"))(api1)
-
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
         logging.warning(
             "Rate limiting is using in-memory storage. Limits may not work with multiple processes."
