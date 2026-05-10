@@ -11,7 +11,7 @@ from logging.config import dictConfig
 from pathlib import Path
 from shutil import copy2
 
-from flask import Flask
+from flask import Flask, Response
 from flask_babel import Babel
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -191,6 +191,14 @@ def create_app(  # noqa: PLR0915
         return {
             "version_info": get_version_info(debug=app.debug),
         }
+
+    # Add HTTP security headers to every response
+    @app.after_request
+    def set_security_headers(response: Response) -> Response:
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     app.jinja_env.globals.update(
         get_list_recipients_recursive=get_list_recipients_recursive,  # type: ignore[ty:invalid-argument-type]
