@@ -16,7 +16,7 @@ CONFIG_SCHEMA = {
     "type": "object",
     "properties": {
         "DATABASE_URI": {"type": "string"},
-        "SECRET_KEY": {"type": "string"},
+        "SECRET_KEY": {"type": "string", "minLength": 32},
         "LANGUAGE": {"type": "string"},
         "DOMAIN": {"type": "string"},
         "HOST_TYPE": {"type": "string"},

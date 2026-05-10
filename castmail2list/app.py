@@ -135,6 +135,14 @@ def create_app(  # noqa: PLR0915
     if config_overrides:
         app.config.update(config_overrides)
 
+    # Fail fast if SECRET_KEY is not set — an empty key makes sessions and CSRF trivially forgeable
+    if not app.config.get("TESTING") and not app.config.get("SECRET_KEY"):
+        msg = (
+            "SECRET_KEY must be set and non-empty. "
+            "Set it in your config.yaml or as the SECRET_KEY environment variable."
+        )
+        raise ValueError(msg)
+
     # Translations
     Babel(app, default_locale=app.config.get("LANGUAGE", "en"))
     logging.info("Language set to: %s", app.config.get("LANGUAGE", "en"))
