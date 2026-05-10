@@ -11,6 +11,7 @@ from flask_login import login_required, login_user, logout_user
 from werkzeug.security import check_password_hash
 from werkzeug.wrappers import Response
 
+from castmail2list.extensions import limiter
 from castmail2list.forms import LoginForm
 from castmail2list.models import User
 from castmail2list.utils import create_log_entry
@@ -19,6 +20,7 @@ auth = Blueprint("auth", __name__)
 
 
 @auth.route("/login", methods=["GET", "POST"])
+@limiter.limit("2 per 10 seconds, 50 per hour", methods=["POST"])
 def login() -> str | Response:
     """Handle user login requests."""
     form = LoginForm()

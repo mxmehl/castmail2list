@@ -13,8 +13,6 @@ from shutil import copy2
 
 from flask import Flask, Response
 from flask_babel import Babel
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_migrate import Migrate, check, downgrade, migrate, upgrade
 from flask_wtf import CSRFProtect
@@ -24,6 +22,7 @@ from werkzeug.security import generate_password_hash
 
 from . import __version__
 from .config import AppConfig
+from .extensions import limiter
 from .imap_worker import initialize_imap_polling
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
@@ -233,23 +232,14 @@ def create_app(  # noqa: PLR0915
     # Set up rate limiting
     app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
     app.config.setdefault("RATE_LIMIT_API", "200 per 1 minute")
-    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds")
+    app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds, 50 per hour")
     app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
-    limiter = Limiter(
-        get_remote_address,
-        default_limits=[app.config.get("RATE_LIMIT_DEFAULT", "")],
-        storage_uri=app.config.get("RATE_LIMIT_STORAGE_URI"),
-    )
+    app.config.setdefault("RATELIMIT_DEFAULT", app.config["RATE_LIMIT_DEFAULT"])
     limiter.init_app(app)
 
     # Exempt API blueprint from default limits and apply custom API limit
     limiter.exempt(api1)
     limiter.limit(app.config.get("RATE_LIMIT_API", "200 per 1 minute"))(api1)
-
-    # Apply tighter limit on the login route specifically
-    from .views.auth import login as login_view  # noqa: PLC0415
-
-    limiter.limit(app.config.get("RATE_LIMIT_LOGIN", "2 per 10 seconds"))(login_view)
 
     if app.config.get("RATE_LIMIT_STORAGE_URI") == "memory://" and not app.debug:
         logging.warning(
