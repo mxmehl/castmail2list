@@ -504,6 +504,61 @@ def test_simple_text_message(client, broadcast_list: MailingList):
     assert "Simple text body" in msg_str
 
 
+def test_attachment_non_ascii_filename_is_encoded(client, broadcast_list: MailingList):
+    """Test that attachments with non-ASCII filenames are properly encoded in outgoing headers.
+
+    Regression test: MS Outlook encodes attachment filenames with RFC 2047 encoded-words.
+    imap_tools decodes these to Unicode. The outgoing Content-Disposition header must not
+    contain raw non-ASCII bytes — it must use RFC 2231 encoding instead.
+    """
+    # Build a raw MIME message with an attachment whose filename contains a non-ASCII char (ü).
+    # This mirrors what MS Outlook sends (decoded by imap_tools to Unicode before we see it).
+    raw = (
+        b"From: sender@example.com\n"
+        b"To: broadcast@example.com\n"
+        b"Subject: Non-ASCII attachment\n"
+        b"MIME-Version: 1.0\n"
+        b'Content-Type: multipart/mixed; boundary="bound"\n'
+        b"\n"
+        b"--bound\n"
+        b"Content-Type: text/plain\n"
+        b"\n"
+        b"body\n"
+        b"--bound\n"
+        b"Content-Type: application/pdf\n"
+        b"Content-Transfer-Encoding: base64\n"
+        b"Content-Disposition: attachment;"
+        b' filename="=?iso-8859-1?Q?einladung_fr=FChlingsfest=2Epdf?="\n'
+        b"\n"
+        b"JVBERi0=\n"
+        b"--bound--\n"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "non-ascii-attachment"  # type: ignore[attr-defined]
+
+    mail = OutgoingEmail(
+        app=client.application,
+        ml=broadcast_list,
+        msg=msg,
+        message_id="<new-msg-id@example.com>",
+    )
+
+    assert mail.composed_msg is not None
+    # Serialise to bytes — this is what gets put on the wire
+    serialised: bytes = mail.composed_msg.as_bytes()
+
+    # Parse back and check the attachment part
+    import email as _email
+
+    parsed = _email.message_from_bytes(serialised)
+    filenames = [part.get_filename() for part in parsed.walk() if part.get_filename()]
+    assert filenames, "No filename found in any part of the outgoing message"
+    # The decoded filename must be present and correct (with the non-ASCII ü)
+    assert any(
+        "einladung" in (fn or "").lower() and "hlingsfest" in (fn or "").lower() for fn in filenames
+    ), f"Expected decoded filename not found; got: {filenames}"
+
+
 # ==================== Tests for send_msg_to_subscribers Integration ====================
 
 

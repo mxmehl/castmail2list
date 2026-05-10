@@ -263,8 +263,11 @@ class OutgoingEmail:
                     encoders.encode_base64(part)
                     part.add_header(
                         "Content-Disposition",
-                        f'{attachment.content_disposition}; filename="{attachment.filename}"',
+                        attachment.content_disposition or "attachment",
+                        filename=attachment.filename or None,
                     )
+                    if attachment.filename:
+                        part.set_param("name", attachment.filename, header="Content-Type")
                     self.composed_msg.attach(part)
 
     def send_email_to_recipient(
