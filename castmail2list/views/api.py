@@ -8,7 +8,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from flask import Blueprint, Response, abort, jsonify, request
+from flask import Blueprint, Response, abort, current_app, jsonify, request
 
 from castmail2list.extensions import limiter
 from castmail2list.models import User
@@ -24,14 +24,24 @@ from castmail2list.utils import get_list_by_id, get_list_recipients_recursive, g
 
 api1 = Blueprint("api1", __name__, url_prefix="/api/v1")
 
+def _api_rate_limit() -> str:
+    """Return the API rate limit string from app config."""
+    return current_app.config["RATE_LIMIT_API"]
+
+
+def _api_auth_rate_limit() -> str:
+    """Return the API auth-failure rate limit string from app config."""
+    return current_app.config["RATE_LIMIT_API_AUTH"]
+
+
 # Apply rate limits directly on the blueprint (override_defaults=True is the default,
 # so this replaces the app-wide default limit for all API routes).
 # 1. General throughput limit for all requests.
 # 2. Stricter limit that only counts failed auth attempts (HTTP 401).
 _HTTP_UNAUTHORIZED = 401
 _is_auth_failure = lambda resp: resp.status_code == _HTTP_UNAUTHORIZED  # noqa: E731
-limiter.limit("200 per 1 minute")(api1)
-limiter.limit("10 per minute, 30 per hour", deduct_when=_is_auth_failure)(api1)
+limiter.limit(_api_rate_limit)(api1)
+limiter.limit(_api_auth_rate_limit, deduct_when=_is_auth_failure)(api1)
 
 
 def api_auth_required(f: Callable) -> Callable:

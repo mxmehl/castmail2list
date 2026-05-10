@@ -232,6 +232,7 @@ def create_app(  # noqa: PLR0915
     # Set up rate limiting
     app.config.setdefault("RATE_LIMIT_DEFAULT", "20 per 1 minute")
     app.config.setdefault("RATE_LIMIT_API", "200 per 1 minute")
+    app.config.setdefault("RATE_LIMIT_API_AUTH", "10 per minute, 30 per hour")
     app.config.setdefault("RATE_LIMIT_LOGIN", "2 per 10 seconds, 50 per hour")
     app.config.setdefault("RATELIMIT_STORAGE_URI", "memory://")
     app.config.setdefault("RATELIMIT_DEFAULT", app.config["RATE_LIMIT_DEFAULT"])
