@@ -86,6 +86,39 @@ def test_detect_bounce_via_flufl_scan(monkeypatch, incoming_message_factory):
     assert "test-3" in bounced_mid
 
 
+def test_detect_bounce_flufl_attribute_error_is_handled(
+    monkeypatch, incoming_message_factory, caplog
+):
+    """_detect_bounce should handle AttributeError from flufl.bounce gracefully.
+
+    Regression test: flufl.bounce raises AttributeError when a message part has a
+    non-ASCII Content-Description header (e.g. 'Kündigungsbestätigung.pdf'). Python's
+    email parser returns such headers as Header objects; flufl.bounce calls .lower() on
+    them and crashes. The message must be treated as a non-bounce in this case.
+    """
+    raw = (
+        b"Subject: Test\nTo: list@example.com\n"
+        b"From: sender@example.com\nMessage-ID: test-attr-err\n\nBody"
+    )
+    msg = MailMessage.from_bytes(raw)
+    msg.uid = "flufl-attr-err"
+    incoming: IncomingEmail = incoming_message_factory(msg)
+
+    def _raise_attribute_error(_msg):
+        msg = "'Header' object has no attribute 'lower'"
+        raise AttributeError(msg)
+
+    monkeypatch.setattr(imap_worker_mod, "scan_message", _raise_attribute_error)
+
+    bounced_rec, bounced_mid = incoming._detect_bounce()
+
+    # Must degrade gracefully: treat as non-bounce
+    assert bounced_rec == ""
+    assert bounced_mid == []
+    # Must log a warning so the operator knows something went wrong
+    assert "AttributeError" in caplog.text
+
+
 def test_incoming_message_no_bounce(incoming_message_factory):
     """Minimal non-bounce message should return empty string."""
     raw = (
