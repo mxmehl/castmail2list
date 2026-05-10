@@ -9,6 +9,12 @@
 # https://docs.sqlalchemy.org/en/20/core/engines.html
 # Default: sqlite:///{XDG_CONFIG_HOME}/castmail2list.db
 DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
+# SECURITY: The database contains plaintext credentials (IMAP passwords, sender
+# auth tokens). Protect it accordingly:
+#   - Store it outside the web server's document root (never inside a directory
+#     served by nginx/Apache/etc.)
+#   - Restrict filesystem permissions so only the application user can read it
+#   - Treat any database backups as sensitive — encrypt them or restrict access
 
 # General settings
 SECRET_KEY: "" # Default: ""
