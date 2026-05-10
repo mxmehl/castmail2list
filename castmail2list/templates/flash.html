@@ -3,7 +3,7 @@
 <div class="flashes">
   {%- for category, message in messages %}
   <div class="flash {{ category }}">
-    {{ message | safe }}
+    {{ message }}
   </div>
   {%- endfor %}
 </div>

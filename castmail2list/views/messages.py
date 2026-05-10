@@ -7,6 +7,7 @@
 from flask import Blueprint, flash, render_template, url_for
 from flask_babel import _
 from flask_login import login_required
+from markupsafe import Markup
 
 from castmail2list.models import EmailIn, EmailOut
 from castmail2list.utils import (
@@ -87,10 +88,12 @@ def show_unique(message_id: str, list_id: str) -> str:
     if len(msgs) > 1:
         msg_unique = get_message_id_in_db([message_id], list_id=list_id)[0]
         flash(
-            _(
-                "Multiple messages found with the same Message-ID. Showing message for the "
-                "selected list. See <a href='%(link)s'>here</a> for the other messages.",
-                link=url_for("messages.show", message_id=message_id),
+            Markup(  # noqa: S704 — hardcoded template with safe url_for() link, not user input
+                _(
+                    "Multiple messages found with the same Message-ID. Showing message for the "
+                    "selected list. See <a href='%(link)s'>here</a> for the other messages.",
+                    link=url_for("messages.show", message_id=message_id),
+                )
             ),
             "message",
         )
