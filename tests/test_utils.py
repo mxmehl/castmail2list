@@ -667,9 +667,9 @@ def test_get_all_outgoing_messages(client) -> None:
 def test_redact_helper() -> None:
     """redact() exposes ~50% of the value and masks the rest."""
     assert utils.redact("secret") == "sec***"  # 6 chars: 3 visible, 3 masked
-    assert utils.redact("ab") == "a*"           # 2 chars: 1 visible, 1 masked
-    assert utils.redact("x") == "x"             # 1 char: 1 visible, 0 masked
-    assert utils.redact("") == "***"            # empty: fully masked
+    assert utils.redact("ab") == "a*"  # 2 chars: 1 visible, 1 masked
+    assert utils.redact("x") == "x"  # 1 char: 1 visible, 0 masked
+    assert utils.redact("") == "***"  # empty: fully masked
 
 
 def test_create_app_raises_on_missing_secret_key() -> None:

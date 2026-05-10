@@ -911,8 +911,8 @@ def test_send_rejection_notification_hourly_limit(client, smtp_mock):
         "recipient": "list@example.com",
         "reason": "not authorized",
     }
-    assert send_rejection_notification(**kwargs) is True   # 1st: allowed
-    assert send_rejection_notification(**kwargs) is True   # 2nd: allowed (at limit)
+    assert send_rejection_notification(**kwargs) is True  # 1st: allowed
+    assert send_rejection_notification(**kwargs) is True  # 2nd: allowed (at limit)
     assert send_rejection_notification(**kwargs) is False  # 3rd: suppressed
 
 

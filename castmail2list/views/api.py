@@ -24,6 +24,7 @@ from castmail2list.utils import get_list_by_id, get_list_recipients_recursive, g
 
 api1 = Blueprint("api1", __name__, url_prefix="/api/v1")
 
+
 def _api_rate_limit() -> str:
     """Return the API rate limit string from app config."""
     return current_app.config["RATE_LIMIT_API"]
