@@ -32,6 +32,24 @@ cp config.example.yaml config.yaml
 uv run castmail2list-cli --config config.yaml --debug
 ```
 
+## Configuration changes
+
+When you add, remove, or edit a configuration item (including default values), keep all config
+sources in sync in the same PR.
+
+Checklist:
+
+1. Update the runtime default in `AppConfig` in `castmail2list/config.py`.
+2. Update the schema in `castmail2list/config_schema.json`:
+   - Keep the `type`/validation constraints aligned with runtime behavior.
+   - Update `description` text.
+   - Update `default` to match `AppConfig`.
+3. Update `config.example.yaml`:
+   - Add or update the setting value.
+   - Add or update the preceding comment with description and default value.
+4. If behavior or recommended values changed, update user-facing docs (at least `README.md`, and
+   related files in `doc/` where applicable).
+
 ## Quality checks
 
 The project uses the following tools for code quality:
