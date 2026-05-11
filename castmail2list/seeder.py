@@ -35,7 +35,7 @@ def _load_local_seed(seed_file: str) -> dict[str, Any]:
         sys.exit(1)
 
 
-def seed_database(app: Flask, seed_file: str) -> None:
+def seed_database(app: Flask, seed_file: str) -> None:  # noqa: C901, PLR0915
     """Create tables and seed DB if empty, using local overrides when present.
 
     Accepts an optional Flask `app`. If provided, this function will push `app.app_context()`
@@ -46,7 +46,7 @@ def seed_database(app: Flask, seed_file: str) -> None:
         seed_file (str): Path to a seed file (.py file)
     """
 
-    def _do_seed() -> None:
+    def _do_seed() -> None:  # noqa: C901, PLR0912, PLR0915
         # ensure tables exist (app caller should have context)
         db.create_all()
 
@@ -54,48 +54,93 @@ def seed_database(app: Flask, seed_file: str) -> None:
             logging.warning("Database already has lists — skipping seed.")
             return
 
-        cfg: dict[str, list] = _load_local_seed(seed_file=seed_file)
+        cfg: dict[str, Any] = _load_local_seed(seed_file=seed_file)
 
         logging.info("Seeding database with initial data from %s...", seed_file)
 
-        cfg_lists: list[dict[str, str | int | list]] = cfg.get("lists", [])
+        cfg_lists_raw = cfg.get("lists", [])
+        cfg_lists: list[dict[str, Any]] = cfg_lists_raw if isinstance(cfg_lists_raw, list) else []
         for lst_cfg in cfg_lists:
-            new_list = MailingList(
-                id=lst_cfg.get("id"),
-                address=lst_cfg.get("address"),
-                display=lst_cfg.get("display"),
-                mode=lst_cfg.get("mode"),
-                imap_host=lst_cfg.get("imap_host"),
-                imap_port=lst_cfg.get("imap_port"),
-                imap_user=lst_cfg.get("imap_user"),
-                imap_pass=lst_cfg.get("imap_pass"),
-                from_addr=lst_cfg.get("from_addr"),
-                allowed_senders=lst_cfg.get("allowed_senders"),
-                only_subscribers_send=lst_cfg.get("only_subscribers_send", True),
+            if not isinstance(lst_cfg, dict):
+                continue
+
+            list_kwargs: dict[str, str | int | bool | list] = {}
+            for field in (
+                "id",
+                "address",
+                "display",
+                "mode",
+                "imap_host",
+                "imap_port",
+                "imap_user",
+                "imap_pass",
+                "from_addr",
+                "allowed_senders",
+            ):
+                value = lst_cfg.get(field)
+                if isinstance(value, (str, int, bool, list)):
+                    list_kwargs[field] = value
+
+            only_subscribers_send = lst_cfg.get("only_subscribers_send", True)
+            list_kwargs["only_subscribers_send"] = (
+                only_subscribers_send if isinstance(only_subscribers_send, bool) else True
             )
 
-            cfg_subs: list[dict[str, str]] = lst_cfg.get("subscribers", [])  # type: ignore[assignment]
-            subs = [
-                Subscriber(
-                    name=s.get("name"),
-                    email=s.get("email"),
-                    subscriber_type=s.get("subscriber_type"),
-                    list_id=new_list.id,
-                )
-                for s in cfg_subs
-            ]
+            new_list = MailingList(**list_kwargs)
+
+            cfg_subs_raw = lst_cfg.get("subscribers", [])
+            cfg_subs: list[dict[str, Any]] = cfg_subs_raw if isinstance(cfg_subs_raw, list) else []
+            subs: list[Subscriber] = []
+            for s in cfg_subs:
+                if not isinstance(s, dict):
+                    continue
+
+                email = s.get("email")
+                if not isinstance(email, str):
+                    continue
+
+                sub_kwargs: dict[str, str | int] = {
+                    "email": email,
+                    "list_id": new_list.id,
+                }
+
+                name = s.get("name")
+                if isinstance(name, str):
+                    sub_kwargs["name"] = name
+
+                subscriber_type = s.get("subscriber_type")
+                if isinstance(subscriber_type, str):
+                    sub_kwargs["subscriber_type"] = subscriber_type
+
+                subs.append(Subscriber(**sub_kwargs))
 
             db.session.add(new_list)
             if subs:
                 db.session.add_all(subs)
 
-        cfg_user: list[dict[str, str]] = cfg.get("users", [])
+        cfg_user_raw = cfg.get("users", [])
+        cfg_user: list[dict[str, Any]] = cfg_user_raw if isinstance(cfg_user_raw, list) else []
         for user_cfg in cfg_user:
-            new_user = User(
-                username=user_cfg.get("username"),
-                password=generate_password_hash(password=user_cfg.get("password", "")),
-                api_key=user_cfg.get("api_key"),
-            )
+            if not isinstance(user_cfg, dict):
+                continue
+
+            username = user_cfg.get("username")
+            if not isinstance(username, str):
+                continue
+
+            password = user_cfg.get("password", "")
+            password_str = password if isinstance(password, str) else ""
+
+            user_kwargs: dict[str, str | int] = {
+                "username": username,
+                "password": generate_password_hash(password=password_str),
+            }
+
+            api_key = user_cfg.get("api_key")
+            if isinstance(api_key, str):
+                user_kwargs["api_key"] = api_key
+
+            new_user = User(**user_kwargs)
             db.session.add(new_user)
 
         # Get the latest alembic revision and write it into DB
