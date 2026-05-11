@@ -4,7 +4,7 @@
 
 [project]
 name = "castmail2list"
-version = "0.8.0"
+version = "0.8.1"
 description = "Simple mailing list software with IMAP mailbox backend, web interface, and multiple list modes."
 authors = [{ name = "Max Mehl", email = "mail@mehl.mx" }]
 requires-python = ">=3.10,<4"

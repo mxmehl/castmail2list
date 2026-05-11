@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.1](https://github.com/mxmehl/castmail2list/compare/v0.8.0...v0.8.1) (2026-05-11)
+
+
+### ⚙️ Chores
+
+* **config:** improve config schema and documentation around it ([#165](https://github.com/mxmehl/castmail2list/issues/165)) ([51a4e0b](https://github.com/mxmehl/castmail2list/commit/51a4e0be1ae6012859a73841f4bcb9bac131edbb))
+* **deps:** lock file maintenance ([#164](https://github.com/mxmehl/castmail2list/issues/164)) ([f389f46](https://github.com/mxmehl/castmail2list/commit/f389f46100603da8aa29a056b34e2b0c5fb18f50))
+* **translations:** update translations ([#166](https://github.com/mxmehl/castmail2list/issues/166)) ([545d658](https://github.com/mxmehl/castmail2list/commit/545d658d4137cfc4ba00ff6eccc4607b6d81fabf))
+
 ## [0.8.0](https://github.com/mxmehl/castmail2list/compare/v0.7.3...v0.8.0) (2026-05-10)
 
 
