@@ -95,19 +95,9 @@ Run `castmail2list --help` or `castmail2list-cli --help` for all available optio
 
 ## Configuration
 
-CastMail2List is configured via a YAML file. Key settings include:
+CastMail2List is configured via a YAML file. See [`config.example.yaml`](config.example.yaml) for the full reference.
 
-| Setting | Description |
-|---|---|
-| `DATABASE_URI` | SQLAlchemy database URI (default: SQLite in XDG config dir) |
-| `SECRET_KEY` | Flask secret key for session security |
-| `DOMAIN` | Domain shown in list headers |
-| `IMAP_DEFAULT_*` | Default IMAP connection settings for new lists |
-| `SMTP_*` | SMTP server settings (shared across all lists) |
-| `POLL_INTERVAL_SECONDS` | How often to check mailboxes (default: 60) |
-| `CREATE_LISTS_AUTOMATICALLY` | Auto-create lists from incoming mail (default: false) |
-
-See [`config.example.yaml`](config.example.yaml) for the full reference.
+The configuration file is validated against a JSON schema (`castmail2list/config_schema.json`) to ensure all required fields are present and correctly formatted. This is the single source of truth for configuration options, their types, and default values. The application will fail to start if the configuration file is invalid.
 
 ## Documentation
 

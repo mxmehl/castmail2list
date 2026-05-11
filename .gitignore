@@ -225,6 +225,7 @@ config.yaml
 # CSV and JSON files
 *.csv
 *.json
+!*config_schema.json
 !*release-please*.json
 
 # Sensitive documentation

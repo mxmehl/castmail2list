@@ -4,6 +4,7 @@
 
 """Configuration for CastMail2List."""
 
+import json
 import logging
 from pathlib import Path
 from typing import Any, ClassVar
@@ -12,54 +13,33 @@ import yaml
 from jsonschema import FormatChecker, validate
 from jsonschema.exceptions import ValidationError
 
-CONFIG_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "DATABASE_URI": {"type": "string"},
-        "SECRET_KEY": {"type": "string", "minLength": 32},
-        "LANGUAGE": {"type": "string"},
-        "DOMAIN": {"type": "string"},
-        "HOST_TYPE": {"type": "string"},
-        "CREATE_LISTS_AUTOMATICALLY": {"type": "boolean"},
-        "POLL_INTERVAL_SECONDS": {"type": "integer"},
-        "IMAP_DEFAULT_HOST": {"type": "string"},
-        "IMAP_DEFAULT_PORT": {"type": "integer"},
-        "IMAP_DEFAULT_USER_DOMAIN": {"type": "string"},
-        "IMAP_DEFAULT_PASS": {"type": "string"},
-        "IMAP_FOLDER_INBOX": {"type": "string"},
-        "IMAP_FOLDER_PROCESSED": {"type": "string"},
-        "IMAP_FOLDER_SENT": {"type": "string"},
-        "IMAP_FOLDER_BOUNCES": {"type": "string"},
-        "IMAP_FOLDER_DENIED": {"type": "string"},
-        "IMAP_FOLDER_DUPLICATE": {"type": "string"},
-        "SMTP_HOST": {"type": "string"},
-        "SMTP_PORT": {"type": "integer"},
-        "SMTP_USER": {"type": "string"},
-        "SMTP_PASS": {"type": "string"},
-        "SMTP_STARTTLS": {"type": "boolean"},
-        "SYSTEM_EMAIL": {"type": "string"},
-        "NOTIFY_REJECTED_SENDERS": {"type": "boolean"},
-        "NOTIFY_REJECTED_KNOWN_ONLY": {"type": "boolean"},
-        "NOTIFY_REJECTED_TRUSTED_DOMAINS": {"type": "array", "items": {"type": "string"}},
-        "NOTIFY_REJECTED_HOURLY_LIMIT": {"type": "integer", "minimum": 0},
-    },
-    "required": ["SECRET_KEY", "DOMAIN", "SYSTEM_EMAIL", "HOST_TYPE", "SMTP_HOST"],
-    "additionalProperties": False,
-}
+
+def _load_config_schema() -> dict:
+    """Load the configuration schema from JSON file.
+
+    Returns:
+        Dictionary with the configuration schema
+    """
+    schema_path = Path(__file__).parent / "config_schema.json"
+    with schema_path.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+CONFIG_SCHEMA = _load_config_schema()
 
 
 class AppConfig:  # pylint: disable=too-few-public-methods
     """Flask configuration from YAML file with some defaults."""
 
     # App settings
-    DATABASE_URI: str = ""
-    SECRET_KEY: str = ""
+    DATABASE_URI: str = ""  # Empty here; app setup falls back to SQLite in XDG config dir.
+    SECRET_KEY: str = ""  # Empty here; production startup requires a non-empty value.
 
     # General settings
     LANGUAGE: str = "en"  # Supported languages: "en", "de"
-    DOMAIN: str = ""
+    DOMAIN: str = ""  # Email domain used for list addresses and related headers.
     SYSTEM_EMAIL: str = ""
-    HOST_TYPE = ""  # used for auto list creation. Can be: empty, uberspace7, uberspace8
+    HOST_TYPE: str = ""  # Used for auto list creation. Can be: empty, uberspace7, uberspace8.
     CREATE_LISTS_AUTOMATICALLY: bool = False
     POLL_INTERVAL_SECONDS: int = 60
 
@@ -82,7 +62,7 @@ class AppConfig:  # pylint: disable=too-few-public-methods
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
-    SMTP_STARTTLS = True
+    SMTP_STARTTLS: bool = True
 
     # Sender notification settings
     NOTIFY_REJECTED_SENDERS: bool = False
