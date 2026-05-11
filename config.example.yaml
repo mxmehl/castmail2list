@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mxmehl/castmail2list/refs/heads/main/castmail2list/config_schema.json
 # SPDX-FileCopyrightText: 2025 Max Mehl <https://mehl.mx>
 # SPDX-License-Identifier: CC0-1.0
 
@@ -5,9 +6,8 @@
 # Copy this file to config.yaml and adjust the values to your needs
 
 # Database settings
-# Configure the database connection URI, according to SQLAlchemy format:
-# https://docs.sqlalchemy.org/en/20/core/engines.html
-# Default: sqlite:///{XDG_CONFIG_HOME}/castmail2list.db
+# SQLAlchemy database URI. Format: https://docs.sqlalchemy.org/en/20/core/engines.html
+# AppConfig default: "". Runtime fallback if unset: sqlite:///{XDG_CONFIG_HOME}/castmail2list.db
 DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
 # SECURITY: The database contains plaintext credentials (IMAP passwords, sender
 # auth tokens). Protect it accordingly:
@@ -17,50 +17,71 @@ DATABASE_URI: "sqlite:////absolute/path/to/sqlite.db"
 #   - Treat any database backups as sensitive — encrypt them or restrict access
 
 # General settings
-SECRET_KEY: "" # Default: ""
-LANGUAGE: "en" # Supported languages: "en", "de". Default: "en"
-DOMAIN: "lists.example.com" # Default: ""
-SYSTEM_EMAIL: "noreply@lists.example.com" # Default: ""
-HOST_TYPE: "uberspace7" # Can be: uberspace7, uberspace8. Default: ""
-CREATE_LISTS_AUTOMATICALLY: true # Default: false
-POLL_INTERVAL_SECONDS: 60 # Default: 60
+# Flask secret key for session security. Must be at least 32 characters. AppConfig default: ""; production requires non-empty.
+SECRET_KEY: ""
+# Language for the web interface. Supported values: "en", "de". Default: "en"
+LANGUAGE: "en"
+# Email domain for all lists and related headers. Does not need to match the web interface domain. Default: ""
+DOMAIN: "example.com"
+# System email for notifications and automated messages. Default: ""
+SYSTEM_EMAIL: "noreply@example.com"
+# Automatically create the corresponding IMAP account for new lists using HOST_TYPE. Default: false
+CREATE_LISTS_AUTOMATICALLY: true
+# Host type for automatic IMAP account creation. Allowed values: "", "uberspace7", "uberspace8". Default: ""
+HOST_TYPE: "uberspace7"
+# Poll interval for checking IMAP mailboxes in seconds. Default: 60
+POLL_INTERVAL_SECONDS: 60
 
 # IMAP settings and defaults (used as defaults for new lists)
-IMAP_DEFAULT_HOST: "imap.example.com" # Default: ""
-IMAP_DEFAULT_PORT: 993 # Default: 993
-IMAP_DEFAULT_USER_DOMAIN: "example.com" # Default: ""
-IMAP_DEFAULT_PASS: "your-password-here" # Default: ""
+# Default IMAP server hostname. Used as a default when creating new lists. Default: ""
+IMAP_DEFAULT_HOST: "imap.example.com"
+# Default IMAP server port. Typically 993 for IMAP over SSL/TLS. Default: 993
+IMAP_DEFAULT_PORT: 993
+# Default domain suffix for IMAP usernames (for example, list@example.com). Default: ""
+IMAP_DEFAULT_USER_DOMAIN: "example.com"
+# Default IMAP password used when creating new lists. Can be overridden per list. Default: ""
+IMAP_DEFAULT_PASS: "your-secure-password-here"
 
 # IMAP folder names
-IMAP_FOLDER_INBOX: "INBOX" # Default: "INBOX"
-IMAP_FOLDER_PROCESSED: "Processed" # Default: "Processed"
-IMAP_FOLDER_SENT: "Sent" # Default: "Sent"
-IMAP_FOLDER_BOUNCES: "Bounces" # Default: "Bounces"
-IMAP_FOLDER_DENIED: "Denied" # Default: "Denied"
-IMAP_FOLDER_DUPLICATE: "Duplicate" # Default: "Duplicate"
+# IMAP folder name where incoming messages are initially stored. Default: "INBOX"
+IMAP_FOLDER_INBOX: "INBOX"
+# IMAP folder name where successfully processed messages are moved. Default: "Processed"
+IMAP_FOLDER_PROCESSED: "Processed"
+# IMAP folder name where outgoing messages sent to subscribers are stored. Default: "Sent"
+IMAP_FOLDER_SENT: "Sent"
+# IMAP folder name where bounce messages are stored. Default: "Bounces"
+IMAP_FOLDER_BOUNCES: "Bounces"
+# IMAP folder name where rejected messages are stored. Default: "Denied"
+IMAP_FOLDER_DENIED: "Denied"
+# IMAP folder name where duplicate messages are stored. Default: "Duplicate"
+IMAP_FOLDER_DUPLICATE: "Duplicate"
 
 # SMTP settings (all lists use the same SMTP server)
-SMTP_HOST: "smtp.example.com" # Default: ""
-SMTP_PORT: 587 # Default: 587
-SMTP_USER: "list@example.com" # Default: ""
-SMTP_PASS: "your-password-here" # Default: ""
-SMTP_STARTTLS: true # Default: true
+# SMTP server hostname used by all lists. Default: ""
+SMTP_HOST: "smtp.example.com"
+# SMTP server port. Typically 587 for SMTP with STARTTLS. Default: 587
+SMTP_PORT: 587
+# SMTP authentication username. Leave empty if authentication is not required. Default: ""
+SMTP_USER: "sender@example.com"
+# SMTP authentication password. Leave empty if authentication is not required. Default: ""
+SMTP_PASS: "your-secure-password-here"
+# Use STARTTLS for SMTP connection encryption. Default: true
+SMTP_STARTTLS: true
 
 # Sender notification settings
-# Send rejection notifications to senders whose messages could not be delivered
-NOTIFY_REJECTED_SENDERS: false # Default: false
+# Send rejection notifications to senders whose messages could not be delivered. Default: false
+NOTIFY_REJECTED_SENDERS: false
 # Only notify senders who are already in the database (subscribers).
 # SECURITY: Setting this to false while NOTIFY_REJECTED_SENDERS is true allows
 # the SMTP server to be used as a spam relay: an attacker can send email to a
 # list address with a forged From header, causing the app to send rejection
 # notifications to arbitrary third-party addresses. Keep this true unless you
-# have a specific reason to notify unknown senders.
-NOTIFY_REJECTED_KNOWN_ONLY: true # Default: true
-# Always notify senders from these domains (even if not in database)
-NOTIFY_REJECTED_TRUSTED_DOMAINS: # Default: []
+# have a specific reason to notify unknown senders. Default: true
+NOTIFY_REJECTED_KNOWN_ONLY: true
+# Always notify senders from these domains (even if not in database). Default: []
+NOTIFY_REJECTED_TRUSTED_DOMAINS:
   - "example.com"
   - "trusted-domain.org"
 # Maximum rejection notifications sent per hour across all lists (global cap).
-# Prevents SMTP reputation damage if an attacker floods list addresses with
-# forged From headers. Default: 20
+# Prevents SMTP reputation damage if an attacker floods list addresses with forged From headers. Default: 20
 NOTIFY_REJECTED_HOURLY_LIMIT: 20

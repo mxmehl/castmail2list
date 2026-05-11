@@ -1,0 +1,157 @@
+{
+  "type": "object",
+  "properties": {
+    "DATABASE_URI": {
+      "type": "string",
+      "description": "SQLAlchemy database URI. Format: https://docs.sqlalchemy.org/en/20/core/engines.html. AppConfig default: empty string; if still empty at app initialization, CastMail2List falls back to SQLite in the XDG config directory. SECURITY: The database contains plaintext credentials and must be stored outside the web server's document root with restricted filesystem permissions.",
+      "default": ""
+    },
+    "SECRET_KEY": {
+      "type": "string",
+      "minLength": 32,
+      "description": "Flask secret key for session security. Must be at least 32 characters long. AppConfig default: empty string, but production startup requires a non-empty value. Generate a strong random value.",
+      "default": ""
+    },
+    "LANGUAGE": {
+      "type": "string",
+      "description": "Language for the web interface. Supported values: 'en' (English), 'de' (German). Default: 'en'.",
+      "default": "en"
+    },
+    "DOMAIN": {
+      "type": "string",
+      "description": "The email domain for all lists, so where the emails are sent to and from. Used for proper email headers and list identification. This does not need to be the same domain as the web interface.",
+      "default": ""
+    },
+    "HOST_TYPE": {
+      "type": "string",
+      "enum": [
+        "",
+        "uberspace7",
+        "uberspace8"
+      ],
+      "description": "Host type for automatic IMAP account creation. Empty string = no auto-creation, 'uberspace7' or 'uberspace8' for Uberspace environments. Used with CREATE_LISTS_AUTOMATICALLY.",
+      "default": ""
+    },
+    "CREATE_LISTS_AUTOMATICALLY": {
+      "type": "boolean",
+      "description": "When adding a new list, automatically create the corresponding IMAP account using HOST_TYPE. If false, lists are created in the database but the IMAP mailbox must be created manually on the host.",
+      "default": false
+    },
+    "POLL_INTERVAL_SECONDS": {
+      "type": "integer",
+      "description": "How often (in seconds) to check IMAP mailboxes for new messages. Default: 60.",
+      "default": 60
+    },
+    "IMAP_DEFAULT_HOST": {
+      "type": "string",
+      "description": "Default IMAP server hostname. Used as a default when creating new lists.",
+      "default": ""
+    },
+    "IMAP_DEFAULT_PORT": {
+      "type": "integer",
+      "description": "Default IMAP server port. Typically 993 for IMAP over SSL/TLS. Default: 993.",
+      "default": 993
+    },
+    "IMAP_DEFAULT_USER_DOMAIN": {
+      "type": "string",
+      "description": "Default domain suffix for IMAP usernames. If set, IMAP usernames are constructed as 'list@domain'. Used as default when creating new lists.",
+      "default": ""
+    },
+    "IMAP_DEFAULT_PASS": {
+      "type": "string",
+      "description": "Default IMAP password. Used as default when creating new lists. Can be overridden per list.",
+      "default": ""
+    },
+    "IMAP_FOLDER_INBOX": {
+      "type": "string",
+      "description": "IMAP folder name where incoming messages are initially stored. Default: 'INBOX'.",
+      "default": "INBOX"
+    },
+    "IMAP_FOLDER_PROCESSED": {
+      "type": "string",
+      "description": "IMAP folder name where successfully processed messages are moved. Default: 'Processed'.",
+      "default": "Processed"
+    },
+    "IMAP_FOLDER_SENT": {
+      "type": "string",
+      "description": "IMAP folder name where outgoing messages sent to subscribers are stored. Default: 'Sent'.",
+      "default": "Sent"
+    },
+    "IMAP_FOLDER_BOUNCES": {
+      "type": "string",
+      "description": "IMAP folder name where bounce messages (delivery failures) are stored. Default: 'Bounces'.",
+      "default": "Bounces"
+    },
+    "IMAP_FOLDER_DENIED": {
+      "type": "string",
+      "description": "IMAP folder name where rejected messages are stored. Default: 'Denied'.",
+      "default": "Denied"
+    },
+    "IMAP_FOLDER_DUPLICATE": {
+      "type": "string",
+      "description": "IMAP folder name where duplicate messages are stored. Default: 'Duplicate'.",
+      "default": "Duplicate"
+    },
+    "SMTP_HOST": {
+      "type": "string",
+      "description": "SMTP server hostname. All lists use the same SMTP server for sending messages to subscribers.",
+      "default": ""
+    },
+    "SMTP_PORT": {
+      "type": "integer",
+      "description": "SMTP server port. Typically 587 for SMTP with STARTTLS. Default: 587.",
+      "default": 587
+    },
+    "SMTP_USER": {
+      "type": "string",
+      "description": "SMTP authentication username. Leave empty if the server does not require authentication.",
+      "default": ""
+    },
+    "SMTP_PASS": {
+      "type": "string",
+      "description": "SMTP authentication password. Leave empty if the server does not require authentication.",
+      "default": ""
+    },
+    "SMTP_STARTTLS": {
+      "type": "boolean",
+      "description": "Whether to use STARTTLS for SMTP connection encryption. Default: true.",
+      "default": true
+    },
+    "SYSTEM_EMAIL": {
+      "type": "string",
+      "description": "System email address used for notifications and automated messages (e.g., bounce notifications, rejection notices).",
+      "default": ""
+    },
+    "NOTIFY_REJECTED_SENDERS": {
+      "type": "boolean",
+      "description": "Send rejection notifications to senders whose messages could not be delivered to the list. Default: false.",
+      "default": false
+    },
+    "NOTIFY_REJECTED_KNOWN_ONLY": {
+      "type": "boolean",
+      "description": "When NOTIFY_REJECTED_SENDERS is true, only notify senders who are already in the database (subscribers). SECURITY: Setting to false allows SMTP to be used as a spam relay. Default: true.",
+      "default": true
+    },
+    "NOTIFY_REJECTED_TRUSTED_DOMAINS": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of email domains to always notify when their messages are rejected, even if individual senders are not in the database. Default: [].",
+      "default": []
+    },
+    "NOTIFY_REJECTED_HOURLY_LIMIT": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum number of rejection notifications sent per hour across all lists (global rate limit). Prevents SMTP reputation damage from attacker spam. Default: 20.",
+      "default": 20
+    }
+  },
+  "required": [
+    "SECRET_KEY",
+    "DOMAIN",
+    "SYSTEM_EMAIL",
+    "HOST_TYPE",
+    "SMTP_HOST"
+  ]
+}
