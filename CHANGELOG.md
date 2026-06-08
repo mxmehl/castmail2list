@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.2](https://github.com/mxmehl/castmail2list/compare/v0.8.1...v0.8.2) (2026-06-08)
+
+
+### 📦 CI Improvements
+
+* harden release-please app token permissions ([#168](https://github.com/mxmehl/castmail2list/issues/168)) ([2aba60e](https://github.com/mxmehl/castmail2list/commit/2aba60ea9d2ba4729619143b3d0a7a8f150a43f0))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#172](https://github.com/mxmehl/castmail2list/issues/172)) ([ed6b123](https://github.com/mxmehl/castmail2list/commit/ed6b123cd2b83256778e742a54e62089d294ceec))
+* **deps:** update github actions group ([#170](https://github.com/mxmehl/castmail2list/issues/170)) ([fc81336](https://github.com/mxmehl/castmail2list/commit/fc81336cf70e8bc737fcec27bae3a602b2d9d438))
+
 ## [0.8.1](https://github.com/mxmehl/castmail2list/compare/v0.8.0...v0.8.1) (2026-05-11)
 
 
