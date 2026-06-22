@@ -199,7 +199,7 @@ def fixture_bounce_samples() -> dict[str, tuple[MailMessage, str, list[str]]]:
         with path.open("rb") as fh:
             msg = MailMessage.from_bytes(fh.read())
             # Ensure a uid attribute exists (normally added by imap_tools when fetching)
-            msg.uid = path.name  # type: ignore[attr-defined]
+            msg.uid = path.name
             result[path.name] = (msg, *expected_map.get(path.name, ("", [])))
     return result
 
