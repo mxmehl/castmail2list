@@ -14,7 +14,7 @@ from email.utils import make_msgid
 from flask import Flask
 from flask_babel import gettext as _
 from flufl.bounce import scan_message
-from imap_tools import MailBox, MailboxLoginError
+from imap_tools import AND, MailBox, MailboxLoginError
 from imap_tools.message import MailMessage
 
 from .mailer import send_msg_to_subscribers, send_rejection_notification
@@ -29,6 +29,7 @@ from .utils import (
     is_email_a_list,
     is_expanded_address_the_mailing_list,
     parse_bounce_address,
+    parse_older_than,
     redact,
     remove_plus_suffix,
     run_only_once,
@@ -620,3 +621,60 @@ def check_all_lists_for_messages(app: Flask) -> None:
             logging.exception("Error processing list %s", ml.display)
 
     logging.debug("Finished checking for new messages")
+
+
+def cleanup_sent_emails(app: Flask, older_than: str) -> None:
+    """Delete sent emails from the IMAP Sent folder older than a threshold.
+
+    Iterates all active mailing lists, connects to their IMAP accounts, and
+    permanently deletes messages in the configured Sent folder whose date is
+    older than the given threshold.
+
+    Args:
+        app: Flask application instance.
+        older_than: Duration string (e.g. '7days', '24hours', '3months').
+    """
+    dry = app.config.get("DRY", False)
+    td = parse_older_than(older_than)
+    cutoff = datetime.now(tz=timezone.utc) - td
+    sent_folder = app.config["IMAP_FOLDER_SENT"]
+
+    logging.info("Cleaning sent emails older than %s (cutoff date: %s)", older_than, cutoff.date())
+
+    maillists: list[MailingList] = MailingList.query.filter_by(deleted=False).all()
+    for ml in maillists:
+        logging.info("Cleanup: processing list '%s' (%s)", ml.display, ml.address)
+        try:
+            with MailBox(host=ml.imap_host, port=int(ml.imap_port)).login(
+                username=ml.imap_user, password=ml.imap_pass
+            ) as mailbox:
+                if not mailbox.folder.exists(sent_folder):
+                    logging.info(
+                        "Sent folder '%s' does not exist for %s, skipping",
+                        sent_folder,
+                        ml.address,
+                    )
+                    continue
+                mailbox.folder.set(sent_folder)
+                logging.debug(
+                    "Searching for messages in Sent folder with date before %s for list '%s'",
+                    cutoff.date(),
+                    ml.display,
+                )
+                uids = mailbox.uids(AND(date_lt=cutoff.date()))
+                if not uids:
+                    logging.info("No messages to delete for '%s'", ml.display)
+                    continue
+                if dry:
+                    logging.info(
+                        "[DRY] Would delete %d message(s) from Sent for '%s'",
+                        len(uids),
+                        ml.display,
+                    )
+                else:
+                    mailbox.delete(uids)
+                    logging.info("Deleted %d message(s) from Sent for '%s'", len(uids), ml.display)
+        except MailboxLoginError:
+            logging.exception("IMAP login failed for list %s (%s)", ml.display, ml.address)
+        except Exception:
+            logging.exception("Error cleaning sent folder for list %s", ml.display)

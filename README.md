@@ -99,6 +99,22 @@ CastMail2List is configured via a YAML file. See [`config.example.yaml`](config.
 
 The configuration file is validated against a JSON schema (`castmail2list/config_schema.json`) to ensure all required fields are present and correctly formatted. This is the single source of truth for configuration options, their types, and default values. The application will fail to start if the configuration file is invalid.
 
+## Maintenance
+
+### Clean up sent emails
+
+Over time, the IMAP Sent folder can grow large, especially for lists with many subscribers. Use the `--cleanup imap-sent` command to permanently delete sent emails older than a given threshold:
+
+```sh
+# Delete all sent emails older than 7 days (dry run first)
+castmail2list-cli --config config.yaml --cleanup imap-sent --older-than 7days --dry
+
+# Actually delete them
+castmail2list-cli --config config.yaml --cleanup imap-sent --older-than 7days
+```
+
+Supported duration formats (case-insensitive): `1hour` / `24hours`, `1day` / `7days`, `1month` / `3months`. The `--dry` flag logs what would be deleted without making any changes.
+
 ## Documentation
 
 - [Mailing list modes and headers](doc/modes_and_headers.md) — how broadcast and group modes differ
