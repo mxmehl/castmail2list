@@ -190,7 +190,7 @@ def test_duplicate_detection_same_list(incoming_message_factory, mailbox_stub: M
 
     # Second processing of the same message should be detected as duplicate
     msg2 = MailMessage.from_bytes(raw)
-    msg2.uid = "dup-2"  # type: ignore[attr-defined]
+    msg2.uid = "dup-2"
     incoming2: IncomingEmail = incoming_message_factory(msg2)
     res2 = incoming2.process_incoming_msg()
     assert res2 is False
@@ -261,7 +261,7 @@ def test_duplicate_detection_different_list(client, mailbox_stub: MailboxStub):
         app=client.application,
         mailbox=mailbox_stub,
         msg=msg1,
-        ml=ml1,  # type: ignore[arg-type]
+        ml=ml1,
     )
     res1 = incoming1.process_incoming_msg()
     assert res1 is True
@@ -273,7 +273,7 @@ def test_duplicate_detection_different_list(client, mailbox_stub: MailboxStub):
         app=client.application,
         mailbox=mailbox_stub,
         msg=msg2,
-        ml=ml2,  # type: ignore[arg-type]
+        ml=ml2,
     )
     res2 = incoming2.process_incoming_msg()
     assert res2 is True
@@ -584,7 +584,7 @@ def test_processed_message_stored_and_moved(incoming_message_factory, mailbox_st
         b"\nTo: list@example.com\nFrom: sender@example.com\n\nBody"
     )
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "store-1"  # type: ignore[attr-defined]
+    msg.uid = "store-1"
     incoming: IncomingEmail = incoming_message_factory(msg)
 
     res = incoming.process_incoming_msg()
@@ -676,7 +676,7 @@ def test_create_required_folders_calls_create(client):
             self.folder = FakeFolder()
 
     mb = FakeMailbox()
-    create_required_folders(client.application, mb)  # type: ignore[arg-type]
+    create_required_folders(client.application, mb)
     assert mb.folder.created is True
 
 

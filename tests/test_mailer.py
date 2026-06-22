@@ -54,7 +54,7 @@ def create_test_message(
     raw = "\n".join(raw_parts).encode()
 
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "test-uid"  # type: ignore[attr-defined]
+    msg.uid = "test-uid"
     return msg
 
 
@@ -320,7 +320,7 @@ def test_group_no_from_values_error(client, group_list: MailingList, caplog):
     # Create a message without proper From header
     raw = b"To: group@example.com\nSubject: No From\n\nBody"
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "no-from"  # type: ignore[attr-defined]
+    msg.uid = "no-from"
 
     OutgoingEmail(
         app=client.application,
@@ -375,7 +375,7 @@ def test_threading_headers(client, broadcast_list: MailingList):
         b"Reply body"
     )
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "reply"  # type: ignore[attr-defined]
+    msg.uid = "reply"
 
     mail = OutgoingEmail(
         app=client.application,
@@ -472,7 +472,7 @@ def test_multipart_alternative_text_and_html(client, broadcast_list: MailingList
         b"--boundary123--\n"
     )
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "multipart"  # type: ignore[attr-defined]
+    msg.uid = "multipart"
 
     mail = OutgoingEmail(
         app=client.application,
@@ -535,7 +535,7 @@ def test_attachment_non_ascii_filename_is_encoded(client, broadcast_list: Mailin
         b"--bound--\n"
     )
     msg = MailMessage.from_bytes(raw)
-    msg.uid = "non-ascii-attachment"  # type: ignore[attr-defined]
+    msg.uid = "non-ascii-attachment"
 
     mail = OutgoingEmail(
         app=client.application,

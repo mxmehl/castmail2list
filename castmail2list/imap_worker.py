@@ -131,7 +131,7 @@ class IncomingEmail:
 
         # Use flufl.bounce to scan message
         try:
-            bounced_recipients_flufl: set[bytes] = scan_message(self.msg.obj)  # type: ignore[arg-type]
+            bounced_recipients_flufl: frozenset[bytes] = scan_message(self.msg.obj)
         except AttributeError:
             # flufl.bounce can fail with AttributeError when a message part has a non-ASCII
             # Content-Description header (Python's email parser returns a Header object instead
@@ -142,7 +142,7 @@ class IncomingEmail:
                 "likely a non-ASCII Content-Description header. Treating as non-bounce.",
                 self.msg.uid,
             )
-            bounced_recipients_flufl = set()
+            bounced_recipients_flufl = frozenset()
         if bounced_recipients_flufl:
             logging.debug(
                 "Bounce detected by flufl.bounce.scan_message() for message %s, recipients: %s",
