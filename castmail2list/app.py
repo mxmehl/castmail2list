@@ -23,7 +23,10 @@ from werkzeug.security import generate_password_hash
 from . import __version__
 from .config import AppConfig
 from .extensions import limiter
-from .imap_worker import initialize_imap_polling
+from .imap_worker import (
+    cleanup_sent_emails,
+    initialize_imap_polling,
+)
 from .models import AlembicVersion, User, db
 from .seeder import seed_database
 from .utils import (
@@ -269,7 +272,7 @@ def create_app_wrapper(app_config_path: str, debug: bool, dry: bool, one_off: bo
     return create_app(yaml_config_path=app_config_path, one_off_call=one_off, debug=debug, dry=dry)
 
 
-def run_one_off_commands(app: Flask, args: argparse.Namespace) -> None:
+def run_one_off_commands(app: Flask, args: argparse.Namespace) -> None:  # noqa: PLR0911, C901
     """
     Run one-off commands like DB migrations or admin user creation.
 
@@ -322,6 +325,16 @@ def run_one_off_commands(app: Flask, args: argparse.Namespace) -> None:
     if args.db_seed:
         seed_database(app, seed_file=args.db_seed)
         return
+    # Cleanup IMAP folders if requested
+    if args.cleanup:
+        if not args.older_than:
+            msg = "--cleanup requires --older-than (e.g. '1day' or '3months')"
+            logging.error(msg)
+            return
+
+        with app.app_context():
+            cleanup_sent_emails(app, args.older_than)
+        return
 
 
 def main() -> None:
@@ -357,6 +370,22 @@ def main() -> None:
         metavar="SEED_FILE",
         help="Seed the database with a seed file and exit",
     )
+    # Cleanup commands
+    parser.add_argument(
+        "--cleanup",
+        choices=["imap-sent"],
+        metavar="TARGET",
+        help="Cleanup target (e.g. 'imap-sent'). Use with --older-than.",
+    )
+    parser.add_argument(
+        "--older-than",
+        type=str,
+        metavar="DURATION",
+        help=(
+            "Delete items older than DURATION (e.g. '7days', '3months', "
+            "'24hours'). Used with --cleanup."
+        ),
+    )
     parser.add_argument(
         "--dry", action="store_true", help="Run in dry mode (no changes to emails or DB)"
     )
@@ -368,7 +397,7 @@ def main() -> None:
 
     # Create the Flask application
     one_off = False
-    if args.db or args.create_admin or args.db_seed or args.db_migrate:
+    if args.db or args.create_admin or args.db_seed or args.db_migrate or args.cleanup:
         # one-off call for most CLI commands
         one_off = True
     app = create_app_wrapper(

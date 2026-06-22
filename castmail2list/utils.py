@@ -6,6 +6,7 @@
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import uuid
@@ -858,3 +859,51 @@ def validate_email(email: str, allow_smtputf8: bool = True) -> bool:
         return False
     else:
         return True
+
+
+def parse_older_than(value: str) -> timedelta:
+    """Parse a duration string into a timedelta.
+
+    Supported formats (case-insensitive):
+        1hour, 24hours, 7day, 3days, 1month, 2months
+
+    Args:
+        value: Duration string.
+
+    Returns:
+        The parsed timedelta.
+
+    Raises:
+        ValueError: If the format is not recognized.
+    """
+    older_than_re = re.compile(r"^(\d+)\s*(hour|hours|day|days|month|months)$", re.IGNORECASE)
+    m = older_than_re.match(value.strip())
+    if not m:
+        msg = (
+            f"Invalid --older-than value '{value}'. "
+            "Use e.g. '1day', '24hours', '1month', '3months'."
+        )
+        raise ValueError(msg)
+    n = int(m.group(1))
+    unit = m.group(2).lower()
+    # Normalize to single char
+    unit_map = {
+        "hour": "h",
+        "hours": "h",
+        "day": "d",
+        "days": "d",
+        "month": "m",
+        "months": "m",
+    }
+    unit = unit_map.get(unit)
+    if unit is None:
+        msg = (
+            f"Invalid --older-than value '{value}'. "
+            "Use e.g. '1day', '24hours', '1month', '3months'."
+        )
+        raise ValueError(msg)
+    return {
+        "h": timedelta(hours=n),
+        "d": timedelta(days=n),
+        "m": timedelta(days=n * 30),
+    }[unit]

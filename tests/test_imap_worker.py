@@ -11,11 +11,15 @@ from imap_tools import MailboxLoginError, MailMessage
 
 import castmail2list.imap_worker as imap_worker_mod
 from castmail2list import mailer
-from castmail2list.imap_worker import IncomingEmail, create_required_folders
+from castmail2list.imap_worker import (
+    IncomingEmail,
+    cleanup_sent_emails,
+    create_required_folders,
+)
 from castmail2list.models import EmailIn, Logs, MailingList, Subscriber, db
 from castmail2list.utils import create_bounce_address
 
-from .conftest import MailboxStub
+from .conftest import MailboxStub, make_mailbox_context
 
 
 def _call_detect_bounce(incoming: IncomingEmail) -> tuple[str, list[str]]:
@@ -918,3 +922,66 @@ def test_rejection_notification_integration_unknown_sender(
 
     # Verify NO SMTP send was attempted (notification was not sent)
     assert len(smtp_mock) == 0
+
+
+def test_cleanup_sent_emails_deletes_old_messages(client, monkeypatch):
+    """cleanup_sent_emails should delete UIDs returned by mailbox.uids()."""
+    stub = MailboxStub()
+    stub._uids_to_return = ["uid-1", "uid-2", "uid-3"]
+
+    monkeypatch.setattr(imap_worker_mod, "MailBox", make_mailbox_context(stub))
+
+    with client.application.app_context():
+        client.application.config["DRY"] = False
+        cleanup_sent_emails(client.application, "7days")
+
+    assert stub._deleted == ["uid-1", "uid-2", "uid-3"]
+
+
+def test_cleanup_sent_emails_dry_mode_skips_deletion(client, monkeypatch):
+    """cleanup_sent_emails in DRY mode must not call delete()."""
+    stub = MailboxStub()
+    stub._uids_to_return = ["uid-1", "uid-2"]
+
+    monkeypatch.setattr(imap_worker_mod, "MailBox", make_mailbox_context(stub))
+
+    with client.application.app_context():
+        client.application.config["DRY"] = True
+        cleanup_sent_emails(client.application, "1month")
+
+    assert stub._deleted == []
+
+
+def test_cleanup_sent_emails_no_messages(client, monkeypatch, caplog):
+    """cleanup_sent_emails should log and skip when there are no old messages."""
+    import logging
+
+    stub = MailboxStub()
+    stub._uids_to_return = []
+
+    monkeypatch.setattr(imap_worker_mod, "MailBox", make_mailbox_context(stub))
+
+    with caplog.at_level(logging.INFO), client.application.app_context():
+        client.application.config["DRY"] = False
+        cleanup_sent_emails(client.application, "24hours")
+
+    assert stub._deleted == []
+    assert "No messages to delete" in caplog.text
+
+
+def test_cleanup_sent_emails_skips_missing_sent_folder(client, monkeypatch, caplog):
+    """cleanup_sent_emails should skip a list whose Sent folder does not exist."""
+    import logging
+
+    stub = MailboxStub()
+    stub.folder._exists = False  # type: ignore[attr-defined]
+    stub._uids_to_return = ["uid-1"]
+
+    monkeypatch.setattr(imap_worker_mod, "MailBox", make_mailbox_context(stub))
+
+    with caplog.at_level(logging.INFO), client.application.app_context():
+        client.application.config["DRY"] = False
+        cleanup_sent_emails(client.application, "7days")
+
+    assert stub._deleted == []
+    assert "does not exist" in caplog.text

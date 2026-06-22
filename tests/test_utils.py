@@ -17,7 +17,7 @@ from flask import Flask
 from castmail2list import utils
 from castmail2list.app import create_app
 from castmail2list.models import EmailIn, EmailOut, MailingList, Subscriber, db
-from castmail2list.utils import create_bounce_address, parse_bounce_address
+from castmail2list.utils import create_bounce_address, parse_bounce_address, parse_older_than
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch
@@ -57,6 +57,54 @@ def test_create_bounce_address_special_chars() -> None:
 
     bounce_address = create_bounce_address(list_address, original_email)
     assert bounce_address == "list1+bounces--jane.doe=wäb.de@list.example.com"
+
+
+@pytest.mark.parametrize(
+    ("value", "expected_seconds"),
+    [
+        ("1hour", 3600),
+        ("24hours", 86400),
+        ("1day", 86400),
+        ("7days", 7 * 86400),
+        ("1month", 30 * 86400),
+        ("3months", 90 * 86400),
+        # case-insensitive
+        ("1HOUR", 3600),
+        ("3Days", 3 * 86400),
+        ("2MONTHS", 60 * 86400),
+        # leading/trailing whitespace
+        ("  7days  ", 7 * 86400),
+    ],
+)
+def test_parse_older_than_valid(value: str, expected_seconds: int) -> None:
+    """parse_older_than should return correct timedelta for valid inputs."""
+    result = parse_older_than(value)
+    assert isinstance(result, timedelta)
+    assert result.total_seconds() == pytest.approx(expected_seconds)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "7d",  # short form no longer accepted
+        "24h",  # short form no longer accepted
+        "3w",  # weeks not supported
+        "1week",  # weeks not supported
+        "0days",  # zero is technically valid — ensure it parses (timedelta(0))
+        "foobar",
+        "",
+        "3",
+        "days3",
+    ],
+)
+def test_parse_older_than_invalid(value: str) -> None:
+    """parse_older_than should raise ValueError for unrecognised formats."""
+    if value == "0days":
+        # Zero should parse without error, just yields a zero timedelta
+        assert parse_older_than(value).total_seconds() == 0
+    else:
+        with pytest.raises(ValueError, match="Invalid --older-than"):
+            parse_older_than(value)
 
 
 def test_parse_bounce_address_normal() -> None:
