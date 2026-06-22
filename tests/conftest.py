@@ -7,7 +7,7 @@
 Provides application/client fixtures plus IMAP worker related helpers.
 """
 
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from pathlib import Path
 
 import pytest
@@ -140,17 +140,28 @@ class MailboxStub:
         """Initialize."""
         self._flags: dict[str, tuple[list[str], bool]] = {}
         self._moves: dict[str, str] = {}
+        self._deleted: list[str] = []
+        self._uids_to_return: list[str] = []
 
         class Folder:
             """Stub folder handler for MailboxStub."""
 
-            def exists(self, _name) -> bool:  # always pretend folder exists
-                """Pretend an IMAP folder exists."""
-                return True
+            def __init__(self) -> None:
+                """Initialize."""
+                self._current: str = ""
+                self._exists: bool = True
 
-            def create(self, _folder) -> None:  # no-op
+            def exists(self, _name) -> bool:
+                """Pretend an IMAP folder exists (configurable via _exists)."""
+                return self._exists
+
+            def create(self, _folder) -> None:
                 """No-op folder creation for tests."""
                 return
+
+            def set(self, folder: str) -> None:
+                """Record current folder selection."""
+                self._current = folder
 
         self.folder = Folder()
 
@@ -161,6 +172,36 @@ class MailboxStub:
     def move(self, uid_list: str, destination_folder: str):  # mimic MailBox.move signature
         """Record a move operation (UID -> target folder) for assertions."""
         self._moves[uid_list] = destination_folder
+
+    def uids(self, criteria=None) -> list[str]:  # mimic MailBox.uids signature
+        """Return pre-configured list of UIDs for assertions."""
+        return self._uids_to_return
+
+    def delete(self, uids: list[str]) -> None:  # mimic MailBox.delete signature
+        """Record UIDs that were deleted for assertions."""
+        self._deleted.extend(uids)
+
+
+def make_mailbox_context(stub: MailboxStub):
+    """Return a fake MailBox class whose login() context manager yields stub.
+
+    This is the connection-level companion to MailboxStub: MailboxStub stubs the
+    open session; make_mailbox_context wraps it in a MailBox-shaped shell so code
+    under test can call MailBox(host, port).login(user, pass) and receive the stub.
+    """
+
+    @contextmanager
+    def _login_ctx(*_a, **_kw):
+        yield stub
+
+    class _FakeMailBox:
+        def __init__(self, *_a, **_kw) -> None:
+            pass
+
+        def login(self, *_a, **_kw):
+            return _login_ctx()
+
+    return _FakeMailBox
 
 
 @pytest.fixture(name="mailbox_stub")
