@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0](https://github.com/mxmehl/castmail2list/compare/v0.8.2...v0.9.0) (2026-06-22)
+
+
+### 🚀 New Features
+
+* add a cleanup CLI command to delete old sent mails from IMAP ([#178](https://github.com/mxmehl/castmail2list/issues/178)) ([4774bce](https://github.com/mxmehl/castmail2list/commit/4774bce5d7499ce0675c66b98b0c575ea520b474))
+
+
+### 🔥 Bug Fixes
+
+* **deps:** update dependency flufl-bounce to v5 ([#171](https://github.com/mxmehl/castmail2list/issues/171)) ([f610c19](https://github.com/mxmehl/castmail2list/commit/f610c1914b00155684994b344cc49b15c0ff2e58))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#173](https://github.com/mxmehl/castmail2list/issues/173)) ([fdd40c0](https://github.com/mxmehl/castmail2list/commit/fdd40c0974d6e3e0d25d3b41fb75c124beddfe02))
+* **deps:** lock file maintenance ([#176](https://github.com/mxmehl/castmail2list/issues/176)) ([ea390f6](https://github.com/mxmehl/castmail2list/commit/ea390f64386901465ac1a254e167992659da6611))
+* **deps:** update github actions group to v7 ([#175](https://github.com/mxmehl/castmail2list/issues/175)) ([0985786](https://github.com/mxmehl/castmail2list/commit/09857866fcfd4a2d9ad3a52ec2a9da3b7be8e933))
+
 ## [0.8.2](https://github.com/mxmehl/castmail2list/compare/v0.8.1...v0.8.2) (2026-06-08)
 
 
