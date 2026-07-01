@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.1](https://github.com/mxmehl/castmail2list/compare/v0.9.0...v0.9.1) (2026-07-01)
+
+
+### 🔥 Bug Fixes
+
+* reduce loading time of status page ([#183](https://github.com/mxmehl/castmail2list/issues/183)) ([cebb368](https://github.com/mxmehl/castmail2list/commit/cebb368d74765f27ff7179562e7399d4aa4766d8))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#182](https://github.com/mxmehl/castmail2list/issues/182)) ([1dd76cc](https://github.com/mxmehl/castmail2list/commit/1dd76cc6e1e209f911935da5c21bb06435332c67))
+* **deps:** update actions/setup-python action to v6.3.0 ([#181](https://github.com/mxmehl/castmail2list/issues/181)) ([93bc9cb](https://github.com/mxmehl/castmail2list/commit/93bc9cbd333c58d34be3fa513e393c8a6eea36ab))
+* **deps:** update github actions group ([#179](https://github.com/mxmehl/castmail2list/issues/179)) ([1d13ac9](https://github.com/mxmehl/castmail2list/commit/1d13ac95eb946d3dc187afae655835343d274e34))
+
 ## [0.9.0](https://github.com/mxmehl/castmail2list/compare/v0.8.2...v0.9.0) (2026-06-22)
 
 
