@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import ForeignKeyConstraint, MetaData, PrimaryKeyConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, validates
+from sqlalchemy.orm import DeclarativeBase, Mapped, deferred, validates
 
 
 class Base(DeclarativeBase):
@@ -244,8 +244,8 @@ class EmailIn(Model):
     )
     subject: str = db.Column(db.String, nullable=True)
     from_addr: str = db.Column(db.String, nullable=True)
-    headers: str = db.Column(db.Text, nullable=False)
-    raw: str = db.Column(db.Text)  # store full RFC822 text
+    headers: Mapped[str] = deferred(db.Column(db.Text, nullable=False))
+    raw: Mapped[str] = deferred(db.Column(db.Text))  # store full RFC822 text
     received_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     status: str = db.Column(
         db.String
@@ -288,7 +288,7 @@ class EmailOut(Model):
     )
     subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
-    raw: str = db.Column(db.Text)  # store full RFC822 text
+    raw: Mapped[str] = deferred(db.Column(db.Text))  # store full RFC822 text
     sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     sent_successful: list = db.Column(db.JSON, default=list)
     sent_failed: list = db.Column(db.JSON, default=list)
