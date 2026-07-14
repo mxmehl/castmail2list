@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/mxmehl/castmail2list/compare/v0.9.1...v0.10.0) (2026-07-14)
+
+
+### 🚀 New Features
+
+* improve dashboard and status overview ([#190](https://github.com/mxmehl/castmail2list/issues/190)) ([8a13ad1](https://github.com/mxmehl/castmail2list/commit/8a13ad1e144f1080219f354bccf801bfcb084b58))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#184](https://github.com/mxmehl/castmail2list/issues/184)) ([c32c419](https://github.com/mxmehl/castmail2list/commit/c32c419c8b6f54956b839cdc99de9b5ecc9ee6bc))
+* **deps:** lock file maintenance ([#189](https://github.com/mxmehl/castmail2list/issues/189)) ([f003ddd](https://github.com/mxmehl/castmail2list/commit/f003dddf55bbcb905fd95b4d85e6ef8dfc4107f3))
+* **deps:** update astral-sh/setup-uv action to v8.3.0 ([#186](https://github.com/mxmehl/castmail2list/issues/186)) ([88885e5](https://github.com/mxmehl/castmail2list/commit/88885e5ee1d8c01b4b1ab96c2da9ad76c42585e1))
+* **deps:** update astral-sh/setup-uv action to v8.3.1 ([#187](https://github.com/mxmehl/castmail2list/issues/187)) ([7894ac5](https://github.com/mxmehl/castmail2list/commit/7894ac5163de6368dc6cad8c9245552e55fd0cb0))
+* **deps:** update astral-sh/setup-uv action to v8.3.2 ([#188](https://github.com/mxmehl/castmail2list/issues/188)) ([10fc7da](https://github.com/mxmehl/castmail2list/commit/10fc7da24ce2a27da69ee9e419308bd2cca5c012))
+
 ## [0.9.1](https://github.com/mxmehl/castmail2list/compare/v0.9.0...v0.9.1) (2026-07-01)
 
 
