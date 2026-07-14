@@ -4,6 +4,7 @@
 
 """Functions and operations to collect reports about different parts of Castmail2List."""
 
+from . import __version__
 from .models import MailingList
 from .utils import (
     get_all_incoming_messages,
@@ -61,6 +62,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
     warnings_last_5 = get_log_entries(exact=True, level="warning")[:5]
 
     status: dict = {
+        "_version_app": __version__,
         "lists": {
             "count": lists_count(),
         },
