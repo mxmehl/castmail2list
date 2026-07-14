@@ -4,6 +4,7 @@
 
 """Functions and operations to collect reports about different parts of Castmail2List."""
 
+from . import __version__
 from .models import MailingList
 from .utils import (
     get_all_incoming_messages,
@@ -61,6 +62,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
     warnings_last_5 = get_log_entries(exact=True, level="warning")[:5]
 
     status: dict = {
+        "_version_app": __version__,
         "lists": {
             "count": lists_count(),
         },
@@ -70,15 +72,30 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
         "email_in": {
             "count": len(email_in_all),
             "hours_24": [
-                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "received_at": msg.received_at,
+                }
                 for msg in email_in_hours_24
             ],
             "days_7": [
-                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "received_at": msg.received_at,
+                }
                 for msg in email_in_days_7
             ],
             "last_5": [
-                {"mid": msg.message_id, "list_id": msg.list_id, "subject": msg.subject}
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "subject": msg.subject,
+                    "received_at": msg.received_at,
+                }
                 for msg in email_in_all[:5]
             ],
         },
@@ -90,6 +107,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "list_id": msg.list_id,
                     "subject": msg.subject,
                     "status": msg.status,
+                    "received_at": msg.received_at,
                 }
                 for msg in email_in_fail_hours_24
             ],
@@ -99,6 +117,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "list_id": msg.list_id,
                     "subject": msg.subject,
                     "status": msg.status,
+                    "received_at": msg.received_at,
                 }
                 for msg in email_in_fail_days_7
             ],
@@ -108,16 +127,39 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "list_id": msg.list_id,
                     "subject": msg.subject,
                     "status": msg.status,
+                    "received_at": msg.received_at,
                 }
                 for msg in email_in_fail_all[:5]
             ],
         },
         "bounces": {
             "hours_24": [
-                {"mid": msg.message_id, "subject": msg.subject} for msg in bounce_hours_24
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
+                    "received_at": msg.received_at,
+                }
+                for msg in bounce_hours_24
             ],
-            "days_7": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_days_7],
-            "last_5": [{"mid": msg.message_id, "subject": msg.subject} for msg in bounce_last_5],
+            "days_7": [
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
+                    "received_at": msg.received_at,
+                }
+                for msg in bounce_days_7
+            ],
+            "last_5": [
+                {
+                    "mid": msg.message_id,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
+                    "received_at": msg.received_at,
+                }
+                for msg in bounce_last_5
+            ],
         },
         "email_out": {
             "count": len(email_out_all),
@@ -127,6 +169,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "subject": msg.subject,
                     "sent_successful": len(msg.sent_successful),
                     "sent_failed": len(msg.sent_failed),
+                    "sent_at": msg.sent_at,
                 }
                 for msg in email_out_hours_24
             ],
@@ -136,6 +179,7 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "subject": msg.subject,
                     "sent_successful": len(msg.sent_successful),
                     "sent_failed": len(msg.sent_failed),
+                    "sent_at": msg.sent_at,
                 }
                 for msg in email_out_days_7
             ],
@@ -145,13 +189,14 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
                     "subject": msg.subject,
                     "sent_successful": len(msg.sent_successful),
                     "sent_failed": len(msg.sent_failed),
+                    "sent_at": msg.sent_at,
                 }
                 for msg in email_out_all[:5]
             ],
         },
         "errors": {
-            "hours_24": [log.id for log in errors_hours_24],
-            "days_7": [log.id for log in errors_days_7],
+            "hours_24": [{"id": log.id, "timestamp": log.timestamp} for log in errors_hours_24],
+            "days_7": [{"id": log.id, "timestamp": log.timestamp} for log in errors_days_7],
             "last_5": [
                 {
                     "id": log.id,
@@ -163,8 +208,8 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
             ],
         },
         "warnings": {
-            "hours_24": [log.id for log in warnings_hours_24],
-            "days_7": [log.id for log in warnings_days_7],
+            "hours_24": [{"id": log.id, "timestamp": log.timestamp} for log in warnings_hours_24],
+            "days_7": [{"id": log.id, "timestamp": log.timestamp} for log in warnings_days_7],
             "last_5": [
                 {
                     "id": log.id,

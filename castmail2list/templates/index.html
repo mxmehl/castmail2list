@@ -19,6 +19,7 @@
         {%- for msg in stats.email_in.last_5 %}
         <li>
           <a href="{{ url_for('messages.show_unique', message_id=msg.mid, list_id=msg.list_id) }}">{{ msg.subject }}</a>
+          (<abbr title="{{ msg.received_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ msg.received_at | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>
@@ -37,6 +38,7 @@
         {%- for msg in stats.email_out.last_5 %}
         <li>
           <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+          (<abbr title="{{ msg.sent_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ msg.sent_at | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>
@@ -53,10 +55,9 @@
       <ul>
         {%- for error in stats.errors.last_5 %}
         <li>
-          <a href="{{ url_for('logs.detail', log_id=error.id) }}">
-            {{ error.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") -}}
-          </a>
+          <a href="{{ url_for('logs.detail', log_id=error.id) }}">{{ error.message | truncate(80) }}</a>
           ({{ error.event }})
+          (<abbr title="{{ error.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ error.timestamp | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>
@@ -73,10 +74,9 @@
       <ul>
         {%- for warning in stats.warnings.last_5 %}
         <li>
-          <a href="{{ url_for('logs.detail', log_id=warning.id) }}">
-            {{ warning.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC") -}}
-          </a>
+          <a href="{{ url_for('logs.detail', log_id=warning.id) }}">{{ warning.message | truncate(80) }}</a>
           ({{ warning.event }})
+          (<abbr title="{{ warning.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ warning.timestamp | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>
@@ -93,7 +93,8 @@
       <ul>
         {%- for msg in stats.email_in_failures.last_5 %}
         <li>
-          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+          <a href="{{ url_for('messages.show_unique', message_id=msg.mid, list_id=msg.list_id) }}">{{ msg.subject }}</a>
+          (<abbr title="{{ msg.received_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ msg.received_at | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>
@@ -110,7 +111,8 @@
       <ul>
         {%- for msg in stats.bounces.last_5 %}
         <li>
-          <a href="{{ url_for('messages.show', message_id=msg.mid) }}">{{ msg.subject }}</a>
+          <a href="{{ url_for('messages.show_unique', message_id=msg.mid, list_id=msg.list_id) }}">{{ msg.bounced_recipient }}</a>
+          (<abbr title="{{ msg.received_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}">{{ msg.received_at | time_ago }}</abbr>)
         </li>
         {%- endfor %}
       </ul>

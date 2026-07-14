@@ -7,6 +7,15 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "ago"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/3e/e69f3d5ff15f0dd779b79ba21d6862fba4bf8674f5ead618fc188832a148/ago-0.1.1.tar.gz", hash = "sha256:7b09d70d3b698bd7dd6ed952583430943b91569068deb2a180480e411bc90c47", size = 8903, upload-time = "2026-07-02T17:17:01.478Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/78/ae7a7f44bbdfea219e982d834a96d0428e7afbaafd55e4e19db3020fde20/ago-0.1.1-py3-none-any.whl", hash = "sha256:3db9b39b212c0e035d6aaa0a00e738438820b7df40b3e327f395897c457b900c", size = 7449, upload-time = "2026-07-02T17:17:00.567Z" },
+]
+
+[[package]]
 name = "alembic"
 version = "1.18.5"
 source = { registry = "https://pypi.org/simple" }
@@ -84,6 +93,7 @@ name = "castmail2list"
 version = "0.9.1"
 source = { editable = "." }
 dependencies = [
+    { name = "ago" },
     { name = "email-validator" },
     { name = "flask" },
     { name = "flask-babel" },
@@ -114,6 +124,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ago", specifier = ">=0.1.1" },
     { name = "email-validator", specifier = ">=2.3.0,<3" },
     { name = "flask", specifier = ">=3.1.2,<4" },
     { name = "flask-babel", specifier = ">=4.0.0,<5" },
