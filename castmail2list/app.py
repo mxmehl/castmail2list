@@ -38,6 +38,7 @@ from .utils import (
     get_version_info,
     is_email_a_list,
     redact,
+    time_ago,
 )
 from .views.api import api1
 from .views.auth import auth
@@ -223,6 +224,7 @@ def create_app(  # noqa: PLR0915
         is_email_a_list=is_email_a_list,  # type: ignore[ty:invalid-argument-type]
         get_list_by_id=get_list_by_id,  # type: ignore[ty:invalid-argument-type]
     )
+    app.jinja_env.filters["time_ago"] = time_ago
 
     # Register error handlers
     register_error_handlers(app)

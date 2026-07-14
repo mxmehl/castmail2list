@@ -51,6 +51,7 @@ dependencies = [
     "jsonschema>=4.25.1,<5",
     "gunicorn>=26,<27",
     "platformdirs>=4.5.0,<5",
+    "ago>=0.1.1",
 ]
 
 [project.urls]

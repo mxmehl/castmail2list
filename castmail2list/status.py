@@ -134,7 +134,8 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
             "hours_24": [
                 {
                     "mid": msg.message_id,
-                    "subject": msg.subject,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
                     "received_at": msg.received_at,
                 }
                 for msg in bounce_hours_24
@@ -142,7 +143,8 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
             "days_7": [
                 {
                     "mid": msg.message_id,
-                    "subject": msg.subject,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
                     "received_at": msg.received_at,
                 }
                 for msg in bounce_days_7
@@ -150,7 +152,8 @@ def status_complete() -> dict:  # pylint: disable=too-many-locals
             "last_5": [
                 {
                     "mid": msg.message_id,
-                    "subject": msg.subject,
+                    "list_id": msg.list_id,
+                    "bounced_recipient": msg.error_info.get("bounced_recipients", ""),
                     "received_at": msg.received_at,
                 }
                 for msg in bounce_last_5

@@ -629,6 +629,22 @@ def get_app_bin_dir() -> Path:
     return Path(sys.executable).parent
 
 
+def time_ago(dt: datetime) -> str:
+    """Return a human-readable relative time string for a datetime, e.g. '2 days ago'.
+
+    Args:
+        dt (datetime): The datetime to compare against now.
+
+    Returns:
+        str: A human-readable relative time string.
+    """
+    from ago import human  # noqa: PLC0415
+
+    # ago uses naive datetime.now() internally; strip tzinfo to avoid TypeError
+    naive_dt = dt.replace(tzinfo=None) if dt.tzinfo else dt
+    return human(naive_dt, precision=1)
+
+
 def get_user_config_path(name: str = "castmail2list", file: str = "") -> str:
     """
     Get the user configuration directory for the application.
