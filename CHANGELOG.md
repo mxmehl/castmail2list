@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/mxmehl/castmail2list/compare/v0.10.1...v0.10.2) (2026-07-15)
+
+
+### 🔥 Bug Fixes
+
+* derive correct bin dir ([#195](https://github.com/mxmehl/castmail2list/issues/195)) ([e270823](https://github.com/mxmehl/castmail2list/commit/e27082333eb4e0c577fe0b0ec3f7d814503dcfc9))
+
 ## [0.10.1](https://github.com/mxmehl/castmail2list/compare/v0.10.0...v0.10.1) (2026-07-15)
 
 
