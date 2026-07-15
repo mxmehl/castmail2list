@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import uuid
 from datetime import datetime, timedelta, timezone
 from email.utils import formataddr
@@ -675,7 +676,11 @@ def check_recommended_list_setting(ml: MailingList) -> list[tuple[str, str]]:
 
 def get_app_bin_dir() -> Path:
     """Get the directory where this app's executable resides in the current Python environment."""
-    return Path(sys.executable).parent
+    if sys.prefix != sys.base_prefix:
+        # Running inside a virtualenv (including uv-managed venvs): scripts are in {prefix}/bin
+        return Path(sys.prefix) / ("Scripts" if sys.platform == "win32" else "bin")
+    # Outside a venv (user install via pip/uv): use the platform user-scripts dir (~/.local/bin)
+    return Path(sysconfig.get_path("scripts", sysconfig.get_preferred_scheme("user")))
 
 
 def time_ago(dt: datetime) -> str:
