@@ -11,6 +11,7 @@ Thank you for your interest in contributing! This guide covers the development s
 
 - Python 3.10 or newer
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management
+- [mise](https://mise.jdx.dev) (optional) to run the predefined `mise run <task>` commands used throughout this guide. Also installs the required tools above for you.
 
 ## Development setup
 
@@ -54,11 +55,11 @@ Checklist:
 
 The project uses the following tools for code quality:
 
-| Tool | Purpose |
-|---|---|
+| Tool                                 | Purpose                                                |
+| ------------------------------------ | ------------------------------------------------------ |
 | [ruff](https://docs.astral.sh/ruff/) | Linting and formatting (replaces pylint, black, isort) |
-| [ty](https://docs.astral.sh/ty/) | Type checking (replaces mypy) |
-| [pytest](https://docs.pytest.org/) | Unit tests with coverage |
+| [ty](https://docs.astral.sh/ty/)     | Type checking (replaces mypy)                          |
+| [pytest](https://docs.pytest.org/)   | Unit tests with coverage                               |
 
 ### Running checks individually
 
@@ -71,17 +72,18 @@ uv run ty check                     # Type checking
 
 ### Running all checks at once
 
-With Makefile:
+With mise:
 
 ```sh
-make test-all
+mise run test-all
 ```
 
 ### Auto-fixing issues
 
+With mise:
+
 ```sh
-uv run ruff check --fix     # Auto-fix lint issues
-uv run ruff format           # Auto-format code
+mise run fix-all
 ```
 
 ### Code style notes
@@ -100,7 +102,7 @@ CastMail2List uses [Flask-Babel](https://python-babel.github.io/flask-babel/) fo
 Translations must be compiled before they are available at runtime. **This step is required after cloning or after updating `.po` files:**
 
 ```sh
-make translations-compile
+mise run translations-compile
 # or: uv run pybabel compile -d castmail2list/translations
 ```
 
@@ -117,7 +119,7 @@ make translations-compile
 3. **Compile:**
 
    ```sh
-   make translations-compile
+   mise run translations-compile
    ```
 
 ### Updating existing translations
@@ -125,7 +127,7 @@ make translations-compile
 When translatable strings in the source code or templates change:
 
 ```sh
-make translations-update
+mise run translations-update
 ```
 
 This extracts new strings into `messages.pot` and merges them into the existing `.po` files. Review and translate any new or fuzzy entries, then compile.
@@ -162,5 +164,5 @@ scripts/                Utility scripts
 ## Submitting changes
 
 1. Create a branch for your changes
-2. Ensure all checks pass: `make test-all` (or run them individually)
+2. Ensure all checks pass: `mise run test-all` (or run them individually)
 3. Open a pull request — CI will run the same checks automatically

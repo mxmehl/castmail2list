@@ -117,8 +117,11 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/uvbuild
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          install: false
       - name: Check translations compilation
-        run: make translations-compile
+        run: mise run translations-compile
 
   # REUSE
   reuse:

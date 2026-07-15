@@ -21,8 +21,13 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/uvbuild
+      - name: Install mise for task execution
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
+        with:
+          install: false
+          cache: false
       - name: Compile translations
-        run: make translations-compile
+        run: mise run translations-compile
       - name: Build package
         run: uv build
       - name: Publish package to PyPI
