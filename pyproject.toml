@@ -52,6 +52,7 @@ dependencies = [
     "gunicorn>=26,<27",
     "platformdirs>=4.5.0,<5",
     "ago>=0.1.1",
+    "sass-embedded>=0.1.5",
 ]
 
 [project.urls]

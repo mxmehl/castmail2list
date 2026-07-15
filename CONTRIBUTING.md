@@ -157,7 +157,7 @@ scripts/                Utility scripts
 - Tests run with an in-memory SQLite database
 - The app is created with `one_off_call=True` to avoid starting background IMAP threads
 - IMAP interactions are mocked using the `MailboxStub` fixture in `tests/conftest.py`
-- SCSS compilation requires `sass` on PATH; tests skip this via `one_off_call=True`
+- SCSS compilation prefers `sass` on PATH but falls back to the bundled `sass-embedded` package if unavailable; tests skip both compiler paths entirely via `one_off_call=True`
 
 ## Submitting changes
 

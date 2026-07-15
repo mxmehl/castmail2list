@@ -58,6 +58,18 @@ wheels = [
 ]
 
 [[package]]
+name = "bbpb"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/74/e12935d1718c8020e2dcd18205ad949daef98931598fa9bdc88998676d6f/bbpb-1.4.2.tar.gz", hash = "sha256:03446991bc500cfc9dd2049e6cc9489979e157c5ecb793e27936ab3d579d3496", size = 36339, upload-time = "2025-03-14T15:18:12.098Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/f4/d37dcd3692c058942a64793b9d7f85979fd78fca92934e7ad4a95cec5a89/bbpb-1.4.2-py3-none-any.whl", hash = "sha256:ca5ae8c820a12616f0f33b5647d9889515b751ace5820741213fd3f85c7485c0", size = 50074, upload-time = "2025-03-14T15:18:10.388Z" },
+]
+
+[[package]]
 name = "beautifulsoup4"
 version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -108,6 +120,7 @@ dependencies = [
     { name = "jsonschema" },
     { name = "platformdirs" },
     { name = "pyyaml" },
+    { name = "sass-embedded" },
     { name = "wtforms", extra = ["email"] },
 ]
 
@@ -139,6 +152,7 @@ requires-dist = [
     { name = "jsonschema", specifier = ">=4.25.1,<5" },
     { name = "platformdirs", specifier = ">=4.5.0,<5" },
     { name = "pyyaml", specifier = ">=6.0.1,<7" },
+    { name = "sass-embedded", specifier = ">=0.1.5" },
     { name = "wtforms", extras = ["email"], specifier = ">=3.2.1,<4" },
 ]
 
@@ -850,6 +864,21 @@ wheels = [
 ]
 
 [[package]]
+name = "protobuf"
+version = "7.35.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/01/9ef0afd7999eb9badb3a768b4aedd78c86d4c65cfaf1958ab276199e76b4/protobuf-7.35.1.tar.gz", hash = "sha256:ce115a26fe0c39a2c29973d914d327e516a6455464489fe3cd1e51a1b354f81a", size = 458717, upload-time = "2026-06-11T21:55:40.257Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/03/8aeeb7458d22546bf64b5250ca1daeb5ff757d900e8e4a7476c6f0db843e/protobuf-7.35.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:24f857477359a85c0c235261b8ba905fd51b2562f4a64ca1df5473f29850cbf6", size = 433226, upload-time = "2026-06-11T21:55:31.719Z" },
+    { url = "https://files.pythonhosted.org/packages/37/4b/dfb89eb0e652a1ff073c39a59fb5e3a83cfe9b57a2c83fa6d78270101767/protobuf-7.35.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:11d6b0ec246892d85215b0a13ca6e0233cf5284b68f0ac02646427f4ff88a799", size = 328847, upload-time = "2026-06-11T21:55:34.035Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/58/dc12f2cd484951524af6e3382c785869b9b3fb5e52ee95ae23add53ee8f9/protobuf-7.35.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:b73f9489a4b8b1c9cb1f8ed951c736392592edb24b9d6819f36d2e10b171d5b4", size = 344030, upload-time = "2026-06-11T21:55:34.941Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/be/5b3cfe508bfab6761414ff944e3366eb13be4fd71efcd69450f89ba39f43/protobuf-7.35.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:74758715c53d7158fb76caf4f0cfdacc5329a4b1bb994f865d6cf302d413a1c4", size = 327130, upload-time = "2026-06-11T21:55:35.921Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/bc/6d6c7ba8709c85f8f2c390b2b118d6fb08a783676a572271851bf45a7d22/protobuf-7.35.1-cp310-abi3-win32.whl", hash = "sha256:353652e4efd0bca5b5fc2656abf8307ef351f0cf938c9eba09f0e09c20a25c30", size = 428945, upload-time = "2026-06-11T21:55:37.034Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/19/8d0cb6f20a1ef7b18f1c8986ad5783f22f84cce39c6ce9a6e645ea55192e/protobuf-7.35.1-cp310-abi3-win_amd64.whl", hash = "sha256:230a75ddfc2de4806e56696ce9640c1cdfdb6543b7cfce98d42a4c0a0e7bdb87", size = 439996, upload-time = "2026-06-11T21:55:38.123Z" },
+    { url = "https://files.pythonhosted.org/packages/19/c7/5f7c636ec43e0c545e28d1f1db71990108306f7bdcb89f069ba97e428e7f/protobuf-7.35.1-py3-none-any.whl", hash = "sha256:4bc97768d8fe4ad6743c8a19403e314511ed9f6d13205b687e52421c023ac1b9", size = 171659, upload-time = "2026-06-11T21:55:39.155Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1303,6 +1332,35 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/3c/37d0ecb729a7cc2d393ea7dce316fc585680f35d93b8d62139d7d0a3700c/ruff-0.15.21-py3-none-win32.whl", hash = "sha256:01f8d5be84823c172b389e123174f781f9daf86d6c58719d603f941932195cdd", size = 10896555, upload-time = "2026-07-09T20:01:26.941Z" },
     { url = "https://files.pythonhosted.org/packages/c0/b8/e43466b2a6067ce91e669068f6e28d6c719a920f014b070d5c8731725de3/ruff-0.15.21-py3-none-win_amd64.whl", hash = "sha256:d4b8d9a2f0f12b816b50447f6eccb9f4bb01a6b82c86b50fb3b5354b458dc6d3", size = 12038772, upload-time = "2026-07-09T20:01:29.497Z" },
     { url = "https://files.pythonhosted.org/packages/dd/75/e90ab9aeece218a9fc5a5bc3ec97d0ee6bb3c4ff95869463c1de58e29a1c/ruff-0.15.21-py3-none-win_arm64.whl", hash = "sha256:6e83115d4b9377c1cbc13abf0e051f069fab0ef815ea0504a8a008cee24dd0a8", size = 11375265, upload-time = "2026-07-09T20:01:31.772Z" },
+]
+
+[[package]]
+name = "sass-embedded"
+version = "0.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "bbpb" },
+    { name = "packaging" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d7/bf/3848a84a207a6239d04985ed9349bafe50fa463d89231d759f2847a1a410/sass_embedded-0.1.5.tar.gz", hash = "sha256:117ed468c2391cf7c7e8432da97837ce8939af2bf4015a01cefc0b2ffef7fb5c", size = 86135, upload-time = "2026-07-04T16:16:47.083Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/7f/87bd943883c7162818411e0cf9e18cd781f78d636ce1ab2b5c308cc02e20/sass_embedded-0.1.5-py3-none-any.whl", hash = "sha256:45996d9db2a8526b5005874ab2a413334a7e3e8672a780314cf26010f9adb2b8", size = 18785, upload-time = "2026-07-04T16:16:35.487Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/c1/ce91b6ddc19161ca9d31accb5d015056e01940ffafbb220faee7ada843bd/sass_embedded-0.1.5-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:a995cb114f1529328fd2298fed4650a35d4375a58c05cc8cae9c105d04583b3d", size = 4312328, upload-time = "2026-07-04T16:16:36.967Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/06/33dde44740e6a410e4a1aff431e275cd3724eafdbf23fb1e4f5475d841bd/sass_embedded-0.1.5-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:c1e9ff4ae682e73f823d85343f5c6b47fdad75fa55fd9f453444762c1c6b148c", size = 4469562, upload-time = "2026-07-04T16:16:38.716Z" },
+    { url = "https://files.pythonhosted.org/packages/92/ed/b9a2506db4aa2b0a531d0c8902c145a87ad5f82df42a7d061d1887da7461/sass_embedded-0.1.5-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:d28a69da01c8a2cd5a229bfe65a2ca3ba8aad55a081021d8869a68bf81abba5c", size = 4446160, upload-time = "2026-07-04T16:16:40.171Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/42/0c1ed69c187672776b9f2269c2ca366195669ef653b66b78fcaf7468b025/sass_embedded-0.1.5-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:2f2fa05a4f3f953b73dffcf310f14b2021f8d2be022b48de397fa6e60ede40d9", size = 4619994, upload-time = "2026-07-04T16:16:41.792Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/bc/eb0f5a81e6944e8498a6b245d5004f1a37fdd3be8ce58989560795caf47b/sass_embedded-0.1.5-py3-none-win_amd64.whl", hash = "sha256:30366da101b4bffde5b872beebbdf7b1ad50256aef2b8d60b3fa97cfe5061fdf", size = 4405400, upload-time = "2026-07-04T16:16:43.567Z" },
+    { url = "https://files.pythonhosted.org/packages/63/ce/fb385202a49081f13a31f1b39a56adc1d7ff7c0171d14506dfb7026288c1/sass_embedded-0.1.5-py3-none-win_arm64.whl", hash = "sha256:d2481ff762bf35e2e7b8a26c644c4d35b0f76301b19c53eef3555abf1afda180", size = 4283216, upload-time = "2026-07-04T16:16:45.358Z" },
+]
+
+[[package]]
+name = "six"
+version = "1.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
 ]
 
 [[package]]
