@@ -59,7 +59,7 @@ Read these before changing behaviour in those areas, and update them if you do.
 ## Pitfalls
 
 - **Background IMAP thread:** `initialize_imap_polling` is skipped when `app.config['TESTING']` is set. In tests always call `create_app(..., one_off_call=True)` — see `tests/conftest.py`.
-- **SCSS at startup:** The app shells out to `sass` on startup. `sass` must be on PATH for the production server but is not needed for tests (`one_off_call=True` skips it).
+- **SCSS at startup:** The app compiles SCSS on startup, preferring `sass` on PATH but falling back to the bundled `sass-embedded` package if it's not found. Not needed for tests (`one_off_call=True` skips it).
 - **EmailIn composite PK:** `email_in.(message_id, list_id)` is a composite PK. `email_out` holds a compound FK to both columns — handle carefully in queries and migrations.
 - **Soft-delete:** `MailingList` is never hard-deleted. Use `.deactivate()` / `.reactivate()`.
 - **IMAP in tests:** Use the `fixture_mailbox_stub` fixture (`MailboxStub`) — never open real IMAP connections in tests.

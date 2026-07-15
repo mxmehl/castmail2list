@@ -7,6 +7,7 @@
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import uuid
@@ -28,10 +29,16 @@ from . import __version__
 from .models import EmailIn, EmailOut, Logs, MailingList, Subscriber, db
 
 
-def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
-    """Compile SCSS files to CSS using an external compiler."""
+def _compile_scss_system(compiler: str, scss_input: str, css_output: str) -> None:
+    """Compile SCSS files to CSS using the system-installed Sass compiler.
+
+    Args:
+        compiler (str): Path/name of the system Sass executable (e.g. "sass").
+        scss_input (str): Absolute path to the SCSS input file.
+        css_output (str): Absolute path to the CSS output file.
+    """
     try:
-        logging.info("Compiling %s to %s", scss_input, css_output)
+        logging.info("Compiling %s to %s (system sass)", scss_input, css_output)
         subprocess.run([compiler, scss_input, css_output], check=True)  # noqa: S603
     except subprocess.CalledProcessError as e:
         logging.critical("Error compiling %s: %s", scss_input, e)
@@ -41,6 +48,48 @@ def compile_scss(compiler: str, scss_input: str, css_output: str) -> None:
             "Sass compiler not found. Please ensure '%s' is installed: %s", compiler, e
         )
         sys.exit(1)
+
+
+def _compile_scss_embedded(scss_input: str, css_output: str) -> None:
+    """Compile SCSS files to CSS using the bundled sass-embedded package.
+
+    Used as a fallback when no system Sass compiler is available on PATH. On first use, this
+    downloads a pinned Dart Sass binary into the virtual environment; subsequent calls reuse the
+    cached binary.
+
+    Args:
+        scss_input (str): Absolute path to the SCSS input file.
+        css_output (str): Absolute path to the CSS output file.
+    """
+    from sass_embedded import compile_file  # noqa: PLC0415
+    from sass_embedded.dart_sass.installer import install as install_dart_sass  # noqa: PLC0415
+
+    try:
+        logging.info("Compiling %s to %s (bundled sass-embedded)", scss_input, css_output)
+        install_dart_sass()  # idempotent; no-op if already cached in the venv
+        compile_file(Path(scss_input), Path(css_output))
+    except Exception as e:  # noqa: BLE001
+        logging.critical("Error compiling %s with sass-embedded: %s", scss_input, e)
+        sys.exit(1)
+
+
+def _compile_scss(scss_input: str, css_output: str) -> None:
+    """Compile SCSS to CSS, preferring a system Sass compiler if available.
+
+    If a `sass` executable is found on PATH, it is used. Otherwise, this falls back to the
+    bundled `sass-embedded` package, which downloads a pinned Dart Sass binary into the virtual
+    environment on first use.
+
+    Args:
+        scss_input (str): Absolute path to the SCSS input file.
+        css_output (str): Absolute path to the CSS output file.
+    """
+    if system_sass := shutil.which("sass"):
+        logging.info("Using system sass binary at %s", system_sass)
+        _compile_scss_system(system_sass, scss_input=scss_input, css_output=css_output)
+    else:
+        logging.info("System sass not found on PATH; falling back to bundled sass-embedded")
+        _compile_scss_embedded(scss_input=scss_input, css_output=css_output)
 
 
 def compile_scss_on_startup(scss_files: list[tuple[str, str]]) -> list[tuple[str, str]]:
@@ -56,7 +105,7 @@ def compile_scss_on_startup(scss_files: list[tuple[str, str]]) -> list[tuple[str
     for scss_input, css_output in scss_files:
         scss_input_abs = str(curpath / Path(scss_input))
         css_output_abs = str(curpath / Path(css_output))
-        compile_scss("sass", scss_input=scss_input_abs, css_output=css_output_abs)
+        _compile_scss(scss_input=scss_input_abs, css_output=css_output_abs)
         compiled_files.append((scss_input_abs, css_output_abs))
     return compiled_files
 

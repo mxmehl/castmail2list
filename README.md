@@ -49,6 +49,11 @@ CastMail2List is not a replacement for Mailman in large-scale or enterprise setu
 - **Internationalization** — UI available in English and German; extensible via standard gettext.
 - **Database migrations** — schema changes handled automatically via Alembic/Flask-Migrate.
 
+## Requirements
+
+- Python 3.10+
+- Optional: `sass`. CastMail2List compiles its bundled SCSS to CSS on startup. If no system-wide `sass` binary is found on `PATH`, it automatically falls back to the bundled [`sass-embedded`](https://pypi.org/project/sass-embedded/) Python package, which downloads a pinned Dart Sass binary into the virtual environment on first run (cached afterward, no repeated downloads). Installing system `sass` is optional but avoids that one-time download, keeps the virtual environment smaller, and allows the user to define which version is being used.
+
 ## Installation
 
 ### From PyPI

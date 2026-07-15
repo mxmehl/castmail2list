@@ -729,3 +729,135 @@ def test_create_app_raises_on_missing_secret_key() -> None:
             },
             one_off_call=True,
         )
+
+
+# ---------------------- SCSS Compilation Tests ----------------------
+
+
+def test_compile_scss_uses_system_sass_when_available(monkeypatch: MonkeyPatch) -> None:
+    """If a system sass binary is found on PATH, it should be used via subprocess."""
+    monkeypatch.setattr(utils.shutil, "which", lambda _name: "/usr/bin/sass")
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool) -> None:
+        calls.append(cmd)
+
+    monkeypatch.setattr(utils.subprocess, "run", fake_run)
+
+    utils._compile_scss(scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert calls == [["/usr/bin/sass", "/tmp/in.scss", "/tmp/out.css"]]
+
+
+def test_compile_scss_falls_back_to_embedded_when_no_system_sass(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """If no system sass binary is found on PATH, fall back to sass-embedded."""
+    monkeypatch.setattr(utils.shutil, "which", lambda _name: None)
+
+    embedded_calls: list[tuple[str, str]] = []
+
+    def fake_compile_scss_embedded(scss_input: str, css_output: str) -> None:
+        embedded_calls.append((scss_input, css_output))
+
+    monkeypatch.setattr(utils, "_compile_scss_embedded", fake_compile_scss_embedded)
+
+    utils._compile_scss(scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert embedded_calls == [("/tmp/in.scss", "/tmp/out.css")]
+
+
+def test_compile_scss_embedded_installs_and_compiles(monkeypatch: MonkeyPatch) -> None:
+    """compile_scss_embedded should install Dart Sass (idempotent), then compile via
+    sass_embedded.
+    """
+    install_calls = []
+    compile_calls = []
+
+    fake_sass_embedded = type(
+        "FakeModule",
+        (),
+        {"compile_file": staticmethod(lambda source, dest: compile_calls.append((source, dest)))},
+    )()
+    fake_installer = type(
+        "FakeInstaller", (), {"install": staticmethod(lambda: install_calls.append(True))}
+    )()
+
+    monkeypatch.setitem(__import__("sys").modules, "sass_embedded", fake_sass_embedded)
+    monkeypatch.setitem(
+        __import__("sys").modules, "sass_embedded.dart_sass.installer", fake_installer
+    )
+
+    utils._compile_scss_embedded(scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert install_calls == [True]
+    assert compile_calls == [(Path("/tmp/in.scss"), Path("/tmp/out.css"))]
+
+
+def test_compile_scss_system_exits_on_missing_compiler(monkeypatch: MonkeyPatch) -> None:
+    """compile_scss_system should log critical and exit if the compiler binary is not found."""
+
+    def fake_run(cmd: list[str], check: bool) -> NoReturn:
+        raise FileNotFoundError
+
+    monkeypatch.setattr(utils.subprocess, "run", fake_run)
+
+    with pytest.raises(SystemExit) as exc_info:
+        utils._compile_scss_system("sass", scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert exc_info.value.code == 1
+
+
+def test_compile_scss_system_exits_on_compile_error(monkeypatch: MonkeyPatch) -> None:
+    """compile_scss_system should log critical and exit if compilation fails."""
+
+    def fake_run(cmd: list[str], check: bool) -> NoReturn:
+        raise subprocess.CalledProcessError(returncode=1, cmd=cmd)
+
+    monkeypatch.setattr(utils.subprocess, "run", fake_run)
+
+    with pytest.raises(SystemExit) as exc_info:
+        utils._compile_scss_system("sass", scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert exc_info.value.code == 1
+
+
+def test_compile_scss_embedded_exits_on_compile_error(monkeypatch: MonkeyPatch) -> None:
+    """compile_scss_embedded should log critical and exit if sass-embedded compilation fails."""
+
+    def fake_compile_file(source: Path, dest: Path) -> NoReturn:
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    fake_sass_embedded = type("FakeModule", (), {"compile_file": staticmethod(fake_compile_file)})()
+    fake_installer = type("FakeInstaller", (), {"install": staticmethod(lambda: None)})()
+
+    monkeypatch.setitem(__import__("sys").modules, "sass_embedded", fake_sass_embedded)
+    monkeypatch.setitem(
+        __import__("sys").modules, "sass_embedded.dart_sass.installer", fake_installer
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        utils._compile_scss_embedded(scss_input="/tmp/in.scss", css_output="/tmp/out.css")
+
+    assert exc_info.value.code == 1
+
+
+def test_compile_scss_on_startup_resolves_paths_and_compiles(monkeypatch: MonkeyPatch) -> None:
+    """compile_scss_on_startup should resolve absolute paths and delegate to compile_scss."""
+    calls: list[tuple[str, str]] = []
+
+    def fake_compile_scss(scss_input: str, css_output: str) -> None:
+        calls.append((scss_input, css_output))
+
+    monkeypatch.setattr(utils, "_compile_scss", fake_compile_scss)
+
+    result = utils.compile_scss_on_startup([("static/scss/main.scss", "static/css/main.css")])
+
+    curpath = Path(utils.__file__).parent.resolve()
+    expected_input = str(curpath / "static/scss/main.scss")
+    expected_output = str(curpath / "static/css/main.css")
+
+    assert calls == [(expected_input, expected_output)]
+    assert result == [(expected_input, expected_output)]
