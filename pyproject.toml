@@ -10,6 +10,7 @@ authors = [{ name = "Max Mehl", email = "mail@mehl.mx" }]
 requires-python = ">=3.10,<4"
 readme = "README.md"
 license = "Apache-2.0"
+license-files = ["LICENSE", "LICENSES/*"]
 keywords = [
     "mailinglist",
     "flask",
@@ -57,6 +58,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/mxmehl/castmail2list"
+Changelog = "https://github.com/mxmehl/castmail2list/blob/main/CHANGELOG.md"
 
 [project.scripts]
 castmail2list-cli = "castmail2list.app:main"
