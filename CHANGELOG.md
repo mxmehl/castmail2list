@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/mxmehl/castmail2list/compare/v0.10.0...v0.10.1) (2026-07-15)
+
+
+### 🛠️ Build System
+
+* fall back to embedded SASS ([#192](https://github.com/mxmehl/castmail2list/issues/192)) ([144f3b2](https://github.com/mxmehl/castmail2list/commit/144f3b26a9df9e401d6e83c05b88697f5c6e89da))
+* replace Makefile with mise ([#194](https://github.com/mxmehl/castmail2list/issues/194)) ([9c49ad5](https://github.com/mxmehl/castmail2list/commit/9c49ad54e943d01a89ce31b98374aef535cdf2f9))
+
 ## [0.10.0](https://github.com/mxmehl/castmail2list/compare/v0.9.1...v0.10.0) (2026-07-14)
 
 
