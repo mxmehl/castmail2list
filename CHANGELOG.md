@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.3](https://github.com/mxmehl/castmail2list/compare/v0.10.2...v0.10.3) (2026-07-23)
+
+
+### ⚙️ Chores
+
+* add license-files, repository URL, and changelog URL to pyproject.toml ([#197](https://github.com/mxmehl/castmail2list/issues/197)) ([5360fb1](https://github.com/mxmehl/castmail2list/commit/5360fb1964bb166467cf5637bec5eaf8b25c8b28))
+* **deps:** update actions/checkout action to v7.0.1 ([#203](https://github.com/mxmehl/castmail2list/issues/203)) ([e21bceb](https://github.com/mxmehl/castmail2list/commit/e21bceb4137f2d76495d3dd90b384187f456547b))
+* **deps:** update actions/setup-python action to v7 ([#202](https://github.com/mxmehl/castmail2list/issues/202)) ([854b6b2](https://github.com/mxmehl/castmail2list/commit/854b6b2d478a6abd36a212c769bd24aeb31842af))
+* **deps:** update jdx/mise-action action to v4.2.1 ([#200](https://github.com/mxmehl/castmail2list/issues/200)) ([768fa68](https://github.com/mxmehl/castmail2list/commit/768fa686d5a867d5ecc1190a9406a2406a7c5e7b))
+* **deps:** update pypa/gh-action-pypi-publish action to v1.14.1 ([#201](https://github.com/mxmehl/castmail2list/issues/201)) ([200a971](https://github.com/mxmehl/castmail2list/commit/200a97172498d3f04b6b3484b2b96243fc06e3da))
+* **deps:** update zizmorcore/zizmor-action action to v0.6.0 ([#199](https://github.com/mxmehl/castmail2list/issues/199)) ([b295b4d](https://github.com/mxmehl/castmail2list/commit/b295b4d84875711a02b07cd744a74f4aaa92731b))
+
 ## [0.10.2](https://github.com/mxmehl/castmail2list/compare/v0.10.1...v0.10.2) (2026-07-15)
 
 
