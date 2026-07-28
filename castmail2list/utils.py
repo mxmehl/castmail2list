@@ -153,7 +153,7 @@ def get_version_info(debug: bool = False) -> str:
     # Get short git commit hash if available
     try:
         commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode().strip()  # noqa: S607
-    except Exception:  # noqa: BLE001
+    except Exception:
         logging.debug("Failed to get git commit hash.", exc_info=True)
         commit = "unknown commit"
 

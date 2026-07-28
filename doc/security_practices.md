@@ -24,6 +24,7 @@ Use the shared `confirm_action.html` template for this. See [Issue #3 in SECURIT
 def subscriber_delete(list_id, email):
     delete_subscriber(...)  # performs the action on GET
 
+
 # Correct
 @bp.route("/<list_id>/subscribers/<email>/delete", methods=["GET", "POST"])
 def subscriber_delete(list_id, email):
@@ -48,6 +49,7 @@ flash(f"Subscriber {subscriber_email} not found", "error")  # template must NOT 
 
 # Correct — intentional HTML: wrap only this specific message
 from markupsafe import Markup
+
 flash(Markup('See <a href="/help">help</a> for details'), "info")
 ```
 
@@ -101,10 +103,11 @@ cross-origin requests using the user's browser session.
 ```python
 # Wrong — session auth on a CSRF-exempt blueprint
 def api_auth_required(f):
-    if current_user.is_authenticated:   # accepts session cookies
+    if current_user.is_authenticated:  # accepts session cookies
         return f(*args, **kwargs)
     token = request.headers.get("Authorization")
     ...
+
 
 # Correct — Bearer token only, no session fallback
 def api_auth_required(f):
