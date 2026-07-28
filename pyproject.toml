@@ -109,6 +109,7 @@ ignore = [
     "TD003",
     "FIX002",
     "CPY",
+    "PLR0917",
 ]
 [tool.ruff.lint.extend-per-file-ignores]
 "castmail2list/migrations/*" = ["ALL"]
