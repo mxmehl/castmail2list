@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.10.3](https://github.com/mxmehl/castmail2list/compare/v0.10.2...v0.10.3) (2026-08-17)
+
+
+### ⚙️ Chores
+
+* add license-files, repository URL, and changelog URL to pyproject.toml ([#197](https://github.com/mxmehl/castmail2list/issues/197)) ([5360fb1](https://github.com/mxmehl/castmail2list/commit/5360fb1964bb166467cf5637bec5eaf8b25c8b28))
+* **deps:** lock file maintenance ([#206](https://github.com/mxmehl/castmail2list/issues/206)) ([5634ba6](https://github.com/mxmehl/castmail2list/commit/5634ba67b055745ba7d77a3e8d47feb431c287eb))
+* **deps:** lock file maintenance ([#212](https://github.com/mxmehl/castmail2list/issues/212)) ([d4000b2](https://github.com/mxmehl/castmail2list/commit/d4000b273bd1403ca0d15ae9c1db08f78829306d))
+* **deps:** lock file maintenance ([#216](https://github.com/mxmehl/castmail2list/issues/216)) ([3bada16](https://github.com/mxmehl/castmail2list/commit/3bada16a2899cf5d8d502f1b33c75377453cd137))
+* **deps:** lock file maintenance ([#219](https://github.com/mxmehl/castmail2list/issues/219)) ([ce4979b](https://github.com/mxmehl/castmail2list/commit/ce4979ba6dc8b86e1d090bf6f0d688cee4f2914d))
+* **deps:** update actions/checkout action to v7.0.1 ([#203](https://github.com/mxmehl/castmail2list/issues/203)) ([e21bceb](https://github.com/mxmehl/castmail2list/commit/e21bceb4137f2d76495d3dd90b384187f456547b))
+* **deps:** update actions/setup-python action to v7 ([#202](https://github.com/mxmehl/castmail2list/issues/202)) ([854b6b2](https://github.com/mxmehl/castmail2list/commit/854b6b2d478a6abd36a212c769bd24aeb31842af))
+* **deps:** update astral-sh/setup-uv action to v9 ([#204](https://github.com/mxmehl/castmail2list/issues/204)) ([54ce9b1](https://github.com/mxmehl/castmail2list/commit/54ce9b1b4365713263dbb70a8aa16bb721ca6378))
+* **deps:** update dependency python to v3.14.7 ([#215](https://github.com/mxmehl/castmail2list/issues/215)) ([7a1aa67](https://github.com/mxmehl/castmail2list/commit/7a1aa67b43a14086659c37c04028410020fd0c02))
+* **deps:** update dependency uv_build to &gt;=0.12.0,&lt;0.13.0 ([#210](https://github.com/mxmehl/castmail2list/issues/210)) ([193bc4b](https://github.com/mxmehl/castmail2list/commit/193bc4ba126b93e0e78b44d69d1a274eada64d7b))
+* **deps:** update github actions group ([#214](https://github.com/mxmehl/castmail2list/issues/214)) ([49fdeea](https://github.com/mxmehl/castmail2list/commit/49fdeea704be12775277526f89ec3095b348f215))
+* **deps:** update jdx/mise-action action to v4.2.1 ([#200](https://github.com/mxmehl/castmail2list/issues/200)) ([768fa68](https://github.com/mxmehl/castmail2list/commit/768fa686d5a867d5ecc1190a9406a2406a7c5e7b))
+* **deps:** update jdx/mise-action action to v4.2.2 ([#207](https://github.com/mxmehl/castmail2list/issues/207)) ([c5780fb](https://github.com/mxmehl/castmail2list/commit/c5780fbae77080d623e4879030c1d80fffb8b488))
+* **deps:** update jdx/mise-action action to v4.2.3 ([#209](https://github.com/mxmehl/castmail2list/issues/209)) ([69ab010](https://github.com/mxmehl/castmail2list/commit/69ab010bc926f35450157691b7dda8a83e412cc2))
+* **deps:** update jdx/mise-action action to v4.2.5 ([#218](https://github.com/mxmehl/castmail2list/issues/218)) ([1fde152](https://github.com/mxmehl/castmail2list/commit/1fde15209518084bc315206b2ba1fe39626baf57))
+* **deps:** update mxmehl/latest-release-vulnerability-status action to v1.3.0 ([#213](https://github.com/mxmehl/castmail2list/issues/213)) ([195f0de](https://github.com/mxmehl/castmail2list/commit/195f0def2ee8985d3f3471dd8200779e5e092f7a))
+* **deps:** update pypa/gh-action-pypi-publish action to v1.14.1 ([#201](https://github.com/mxmehl/castmail2list/issues/201)) ([200a971](https://github.com/mxmehl/castmail2list/commit/200a97172498d3f04b6b3484b2b96243fc06e3da))
+* **deps:** update pypa/gh-action-pypi-publish action to v1.14.2 ([#211](https://github.com/mxmehl/castmail2list/issues/211)) ([55097e0](https://github.com/mxmehl/castmail2list/commit/55097e0699aa0f6262d505ac00dd8dfeac2be4c6))
+* **deps:** update zizmorcore/zizmor-action action to v0.6.0 ([#199](https://github.com/mxmehl/castmail2list/issues/199)) ([b295b4d](https://github.com/mxmehl/castmail2list/commit/b295b4d84875711a02b07cd744a74f4aaa92731b))
+* **deps:** update zizmorcore/zizmor-action action to v0.6.1 ([#205](https://github.com/mxmehl/castmail2list/issues/205)) ([3635280](https://github.com/mxmehl/castmail2list/commit/36352801b8949f565fe85df76c070d217f11fcf8))
+* disable unnecessary ruff check ([#208](https://github.com/mxmehl/castmail2list/issues/208)) ([d512ad8](https://github.com/mxmehl/castmail2list/commit/d512ad89d91dec8b0c5d238b33ffe5cc53ef712a))
+
 ## [0.10.2](https://github.com/mxmehl/castmail2list/compare/v0.10.1...v0.10.2) (2026-07-15)
 
 
