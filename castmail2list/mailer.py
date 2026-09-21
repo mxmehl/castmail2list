@@ -331,13 +331,18 @@ class OutgoingEmail:
             )
             logging.info("Email sent to %s", recipient)
 
-        except Exception:
+        except Exception as exc:
             logging.exception("Failed to send email")
             create_log_entry(
                 level="error",
                 event="email_out",
-                message=f"Failed to send email to {recipient}",
-                details={"recipient": recipient, "message_id": self.message_id},
+                message=f"Failed to send email to {recipient}: {exc}",
+                details={
+                    "recipient": recipient,
+                    "message_id": self.message_id,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                },
                 list_id=self.ml.id,
             )
             return b""

@@ -592,6 +592,42 @@ def test_send_msg_to_subscribers_success(
     assert len(smtp_mock) == 2
 
 
+def test_send_msg_smtp_failure_logs_error_details(
+    client, broadcast_list: MailingList, mailbox_stub, smtp_mock, monkeypatch
+):
+    """Test that an SMTP send failure is logged with the underlying error details."""
+    import smtplib
+
+    from castmail2list.models import Logs
+
+    msg = create_test_message()
+
+    sub1 = Subscriber(list_id=broadcast_list.id, email="sub1@example.com")
+    db.session.add(sub1)
+    db.session.commit()
+
+    mailbox_stub.append = MagicMock()
+
+    def failing_sendmail(self, from_addr, to_addrs, msg) -> None:
+        raise smtplib.SMTPRecipientsRefused({"sub1@example.com": (550, b"Mailbox unavailable")})
+
+    monkeypatch.setattr("castmail2list.mailer.smtplib.SMTP.sendmail", failing_sendmail)
+
+    sent_successful, sent_failed = send_msg_to_subscribers(
+        app=client.application, msg=msg, ml=broadcast_list, mailbox=mailbox_stub
+    )
+
+    assert sent_successful == []
+    assert sent_failed == ["sub1@example.com"]
+
+    log_entry = Logs.query.filter_by(event="email_out").first()
+    assert log_entry is not None
+    # The log message must contain the underlying SMTP error, not just the generic text
+    assert "Mailbox unavailable" in log_entry.message
+    assert log_entry.details["error_type"] == "SMTPRecipientsRefused"
+    assert "Mailbox unavailable" in log_entry.details["error"]
+
+
 def test_send_msg_deepcopy_prevents_cross_contamination(
     client, broadcast_list: MailingList, mailbox_stub, smtp_mock
 ):
