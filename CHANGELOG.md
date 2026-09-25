@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.4](https://github.com/mxmehl/castmail2list/compare/v0.10.3...v0.10.4) (2026-09-25)
+
+
+### ⚙️ Chores
+
+* **deps:** update astral-sh/setup-uv action to v10.2.0 ([#233](https://github.com/mxmehl/castmail2list/issues/233)) ([14df1a3](https://github.com/mxmehl/castmail2list/commit/14df1a30b420437329b336bf953168491d085187))
+
 ## [0.10.3](https://github.com/mxmehl/castmail2list/compare/v0.10.2...v0.10.3) (2026-09-21)
 
 
