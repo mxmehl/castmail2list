@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.4](https://github.com/mxmehl/castmail2list/compare/v0.10.3...v0.10.4) (2026-10-04)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#235](https://github.com/mxmehl/castmail2list/issues/235)) ([c0032a6](https://github.com/mxmehl/castmail2list/commit/c0032a6ccb61562f164960adc99a7abda6a318d7))
+* **deps:** update astral-sh/setup-uv action to v10.2.0 ([#233](https://github.com/mxmehl/castmail2list/issues/233)) ([14df1a3](https://github.com/mxmehl/castmail2list/commit/14df1a30b420437329b336bf953168491d085187))
+* **deps:** update dependency python to v3.14.8 ([#237](https://github.com/mxmehl/castmail2list/issues/237)) ([351f87f](https://github.com/mxmehl/castmail2list/commit/351f87f7ff5749d324988d07eed6ab2b5b0c8d06))
+
 ## [0.10.3](https://github.com/mxmehl/castmail2list/compare/v0.10.2...v0.10.3) (2026-09-21)
 
 
