@@ -5,8 +5,8 @@
 use_versions_host_track = false
 
 [tools]
-python = "3.14.8"
-uv = "latest"
+python = "3.14"
+uv = "0.12"
 
 [vars]
 app_dir = "castmail2list"
