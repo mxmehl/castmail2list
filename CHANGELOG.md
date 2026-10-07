@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.4](https://github.com/mxmehl/castmail2list/compare/v0.10.3...v0.10.4) (2026-10-07)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#235](https://github.com/mxmehl/castmail2list/issues/235)) ([c0032a6](https://github.com/mxmehl/castmail2list/commit/c0032a6ccb61562f164960adc99a7abda6a318d7))
+* **deps:** lock file maintenance ([#238](https://github.com/mxmehl/castmail2list/issues/238)) ([78d0350](https://github.com/mxmehl/castmail2list/commit/78d0350661ad624bc0cb4a2150f836a1d7b538b3))
+* **deps:** update astral-sh/setup-uv action to v10.2.0 ([#233](https://github.com/mxmehl/castmail2list/issues/233)) ([14df1a3](https://github.com/mxmehl/castmail2list/commit/14df1a30b420437329b336bf953168491d085187))
+* **deps:** update dependency python to v3.14.8 ([#237](https://github.com/mxmehl/castmail2list/issues/237)) ([351f87f](https://github.com/mxmehl/castmail2list/commit/351f87f7ff5749d324988d07eed6ab2b5b0c8d06))
+* **deps:** update jdx/mise-action action to v5 ([#236](https://github.com/mxmehl/castmail2list/issues/236)) ([f36faa8](https://github.com/mxmehl/castmail2list/commit/f36faa8ccd0f5cd487bad0216e4563b313aec6ec))
+* **deps:** update jdx/mise-action action to v5.1.1 ([#240](https://github.com/mxmehl/castmail2list/issues/240)) ([ffbef4e](https://github.com/mxmehl/castmail2list/commit/ffbef4e965db1f3478c7ae8628f1fc875449460f))
+* pin tool versions to minor granularity in mise ([#239](https://github.com/mxmehl/castmail2list/issues/239)) ([d09d160](https://github.com/mxmehl/castmail2list/commit/d09d1603de03cdb30d92f8e4403ea3035a6cd20c))
+
 ## [0.10.3](https://github.com/mxmehl/castmail2list/compare/v0.10.2...v0.10.3) (2026-09-21)
 
 
