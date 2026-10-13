@@ -25,7 +25,7 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Optiona
 class CM2LBaseForm(FlaskForm):
     """Base form class for CastMail2List forms."""
 
-    class Meta:  # pylint: disable=too-few-public-methods
+    class Meta(FlaskForm.Meta):  # pylint: disable=too-few-public-methods  # type: ignore[ty:invalid-attribute-override]
         """Customize form field binding to add stripping filter."""
 
         def bind_field(self, form: Any, unbound_field: Any, options: Any) -> Any:  # noqa: ANN401
