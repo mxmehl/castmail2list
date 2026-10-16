@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.5](https://github.com/mxmehl/castmail2list/compare/v0.10.4...v0.10.5) (2026-10-16)
+
+
+### ⚙️ Chores
+
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#248](https://github.com/mxmehl/castmail2list/issues/248)) ([e85df13](https://github.com/mxmehl/castmail2list/commit/e85df138696b19e937eda98f45d3d0429236ff34))
+* **deps:** update dependency python to 3.15 ([#244](https://github.com/mxmehl/castmail2list/issues/244)) ([f4ff884](https://github.com/mxmehl/castmail2list/commit/f4ff884c9f0b9d9fa2f74c642c0d3bb5502c8b14))
+* **deps:** update jdx/mise-action action to v5.1.2 ([#247](https://github.com/mxmehl/castmail2list/issues/247)) ([cb109d4](https://github.com/mxmehl/castmail2list/commit/cb109d4a93ce31566766d9568f9bf2006881044a))
+
 ## [0.10.4](https://github.com/mxmehl/castmail2list/compare/v0.10.3...v0.10.4) (2026-10-13)
 
 
