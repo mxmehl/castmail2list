@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.5](https://github.com/mxmehl/castmail2list/compare/v0.10.4...v0.10.5) (2026-10-27)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#251](https://github.com/mxmehl/castmail2list/issues/251)) ([233479a](https://github.com/mxmehl/castmail2list/commit/233479ab9cc2220b68f5d95ca3d783f17828f7f1))
+* **deps:** lock file maintenance ([#257](https://github.com/mxmehl/castmail2list/issues/257)) ([a8bbf1f](https://github.com/mxmehl/castmail2list/commit/a8bbf1f5a928cb0123ef09e7d3e0a7d67751f54f))
+* **deps:** update actions/create-github-app-token action to v3.3.0 ([#248](https://github.com/mxmehl/castmail2list/issues/248)) ([e85df13](https://github.com/mxmehl/castmail2list/commit/e85df138696b19e937eda98f45d3d0429236ff34))
+* **deps:** update dependency python to 3.15 ([#244](https://github.com/mxmehl/castmail2list/issues/244)) ([f4ff884](https://github.com/mxmehl/castmail2list/commit/f4ff884c9f0b9d9fa2f74c642c0d3bb5502c8b14))
+* **deps:** update github actions group ([#256](https://github.com/mxmehl/castmail2list/issues/256)) ([0cfb5c5](https://github.com/mxmehl/castmail2list/commit/0cfb5c5ea40af2c942cbdb191a68df7c4820918a))
+* **deps:** update jdx/mise-action action to v5.1.2 ([#247](https://github.com/mxmehl/castmail2list/issues/247)) ([cb109d4](https://github.com/mxmehl/castmail2list/commit/cb109d4a93ce31566766d9568f9bf2006881044a))
+* **deps:** update jdx/mise-action action to v5.2.0 ([#252](https://github.com/mxmehl/castmail2list/issues/252)) ([d43148f](https://github.com/mxmehl/castmail2list/commit/d43148f1fa463ddf0ff42bb0cc19382c9cbd7a08))
+* **deps:** update jdx/mise-action action to v5.2.1 ([#253](https://github.com/mxmehl/castmail2list/issues/253)) ([75933d5](https://github.com/mxmehl/castmail2list/commit/75933d53d8070e47463add0486c0b5af42a51d77))
+* **deps:** update jdx/mise-action action to v5.2.2 ([#255](https://github.com/mxmehl/castmail2list/issues/255)) ([197febb](https://github.com/mxmehl/castmail2list/commit/197febbf2063c6382a15619ffd7993bb1b0cd94d))
+* **deps:** update jdx/mise-action action to v5.2.3 ([#259](https://github.com/mxmehl/castmail2list/issues/259)) ([df92ba5](https://github.com/mxmehl/castmail2list/commit/df92ba5843bb0be04aa6f2ef9404e00ae2d04584))
+* **deps:** update pypa/gh-action-pypi-publish action to v1.14.3 ([#254](https://github.com/mxmehl/castmail2list/issues/254)) ([64ab5f4](https://github.com/mxmehl/castmail2list/commit/64ab5f433ac04248c423471dfc0f9eb2d98e4ad5))
+* **deps:** update zizmorcore/zizmor-action action to v0.7.0 ([#249](https://github.com/mxmehl/castmail2list/issues/249)) ([7a9eb64](https://github.com/mxmehl/castmail2list/commit/7a9eb645b88ff30a559b05a62340215a9285addf))
+* **deps:** update zizmorcore/zizmor-action action to v0.7.1 ([#250](https://github.com/mxmehl/castmail2list/issues/250)) ([f1974eb](https://github.com/mxmehl/castmail2list/commit/f1974ebec849922ff59773d7f5cdd5107b1a5ef0))
+* **deps:** update zizmorcore/zizmor-action action to v0.8.0 ([#258](https://github.com/mxmehl/castmail2list/issues/258)) ([522bb36](https://github.com/mxmehl/castmail2list/commit/522bb3652cc796df2e3fa80f4ac713204466c6c7))
+
 ## [0.10.4](https://github.com/mxmehl/castmail2list/compare/v0.10.3...v0.10.4) (2026-10-13)
 
 
