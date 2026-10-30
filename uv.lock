@@ -123,7 +123,7 @@ wheels = [
 
 [[package]]
 name = "castmail2list"
-version = "0.10.5"
+version = "0.10.6"
 source = { editable = "." }
 default-groups = "all"
 dependencies = [
