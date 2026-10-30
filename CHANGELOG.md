@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.6](https://github.com/mxmehl/castmail2list/compare/v0.10.5...v0.10.6) (2026-10-30)
+
+
+### ⚙️ Chores
+
+* **deps:** update jdx/mise-action action to v5.2.4 ([#260](https://github.com/mxmehl/castmail2list/issues/260)) ([6d0d1ac](https://github.com/mxmehl/castmail2list/commit/6d0d1acc600a37ac6349822a0dd9ef27cfe0293f))
+
 ## [0.10.5](https://github.com/mxmehl/castmail2list/compare/v0.10.4...v0.10.5) (2026-10-27)
 
 
