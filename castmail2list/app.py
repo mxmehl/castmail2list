@@ -163,9 +163,7 @@ def create_app(  # noqa: PLR0915
     Migrate(app=app, db=db, directory=migrations_dir)
 
     # Trust headers from reverse proxy (1 layer by default)
-    app.wsgi_app = ProxyFix(  # type: ignore[ty:invalid-assignment]
-        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
-    )
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Secure session cookie config
     app.config.update(
