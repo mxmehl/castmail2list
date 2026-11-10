@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.6](https://github.com/mxmehl/castmail2list/compare/v0.10.5...v0.10.6) (2026-11-10)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#263](https://github.com/mxmehl/castmail2list/issues/263)) ([0db19c2](https://github.com/mxmehl/castmail2list/commit/0db19c2fb2d8238295111beebe013221734bcb32))
+* **deps:** lock file maintenance ([#267](https://github.com/mxmehl/castmail2list/issues/267)) ([13bad3a](https://github.com/mxmehl/castmail2list/commit/13bad3a9e2c20a961e380d0220751011abff2e66))
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#262](https://github.com/mxmehl/castmail2list/issues/262)) ([f36e51a](https://github.com/mxmehl/castmail2list/commit/f36e51af5f6a2810415222bc2e3e2581f243856a))
+* **deps:** update github actions group ([#266](https://github.com/mxmehl/castmail2list/issues/266)) ([50f2100](https://github.com/mxmehl/castmail2list/commit/50f2100a797d56b14cba4ca618d8a93016fd4ee9))
+* **deps:** update jdx/mise-action action to v5.2.4 ([#260](https://github.com/mxmehl/castmail2list/issues/260)) ([6d0d1ac](https://github.com/mxmehl/castmail2list/commit/6d0d1acc600a37ac6349822a0dd9ef27cfe0293f))
+* **deps:** update jdx/mise-action action to v5.2.5 ([#265](https://github.com/mxmehl/castmail2list/issues/265)) ([c1a48d6](https://github.com/mxmehl/castmail2list/commit/c1a48d607caa2f5b3c2fb652d8ef139d333f0678))
+* **deps:** update jdx/mise-action action to v5.2.7 ([#268](https://github.com/mxmehl/castmail2list/issues/268)) ([7d18865](https://github.com/mxmehl/castmail2list/commit/7d18865da2e35df8ef7f54153d59eca9ad91b755))
+
 ## [0.10.5](https://github.com/mxmehl/castmail2list/compare/v0.10.4...v0.10.5) (2026-10-27)
 
 
