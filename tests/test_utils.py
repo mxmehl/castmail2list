@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, NoReturn
 
@@ -599,7 +599,7 @@ def test_get_all_incoming_messages(client) -> None:
     del client  # ensure app and DB fixtures are active
 
     def _days_ago(days: int) -> datetime:
-        return datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        return datetime.now(tz=UTC).replace(tzinfo=None) - timedelta(days=days)
 
     bounce1: EmailIn = EmailIn(
         message_id="bounce-1",
@@ -676,7 +676,7 @@ def test_get_all_outgoing_messages(client) -> None:
     del client  # ensure app and DB fixtures are active
 
     def _days_ago(days: int) -> datetime:
-        return datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        return datetime.now(tz=UTC).replace(tzinfo=None) - timedelta(days=days)
 
     sent1: EmailOut = EmailOut(
         message_id="sent-1",

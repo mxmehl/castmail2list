@@ -6,7 +6,7 @@
 
 import argparse
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging.config import dictConfig
 from pathlib import Path
 from shutil import copy2
@@ -87,7 +87,7 @@ def backup_sqlite_database(config_database_uri: str) -> None:
         db_path = (app_path / db_path).resolve()
 
     # Create backup file path with timestamp
-    date = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+    date = datetime.now(tz=UTC).strftime("%Y%m%d_%H%M%S")
     backup_path = f"{db_path}.backup-{date}"
 
     # Copy database file to backup location

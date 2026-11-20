@@ -9,7 +9,7 @@ import smtplib
 import tempfile
 from collections import deque
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -388,7 +388,7 @@ def send_msg_to_subscribers(
         message_id=new_msgid,
         list_id=ml.id,
         recipients=subscribers_emails,
-        sent_at=datetime.now(timezone.utc),
+        sent_at=datetime.now(UTC),
     )
 
     # --- Sanity checks ---
@@ -434,7 +434,7 @@ def send_msg_to_subscribers(
                     "No sent message returned for subscriber %s, not storing in Sent folder",
                     subscriber,
                 )
-        except Exception:  # noqa: PERF203
+        except Exception:
             sent_failed.append(subscriber)
             logging.exception(
                 "Failed to send message to %s",
@@ -518,7 +518,7 @@ def _rejection_notification_allowed(hourly_limit: int) -> bool:
     Returns:
         bool: True if the notification can be sent, False if the limit is exceeded.
     """
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     cutoff = now - timedelta(hours=1)
     while _rejection_notification_timestamps and _rejection_notification_timestamps[0] < cutoff:
         _rejection_notification_timestamps.popleft()

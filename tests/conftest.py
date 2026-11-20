@@ -9,13 +9,13 @@ Provides application/client fixtures plus IMAP worker related helpers.
 
 from contextlib import contextmanager, suppress
 from pathlib import Path
+from typing import Self
 
 import pytest
 from flask import Flask
 from imap_tools import MailMessage
 from pytest import MonkeyPatch
 from sqlalchemy.exc import SQLAlchemyError
-from typing_extensions import Self
 from werkzeug.security import generate_password_hash
 
 from castmail2list.app import create_app

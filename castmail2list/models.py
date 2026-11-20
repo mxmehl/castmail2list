@@ -4,7 +4,7 @@
 
 """Database models for CastMail2List."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from flask_login import UserMixin
@@ -142,7 +142,7 @@ class MailingList(Model):
     def deactivate(self) -> None:
         """Mark the mailing list as deleted."""
         self.deleted = True
-        self.deleted_at = datetime.now(timezone.utc)
+        self.deleted_at = datetime.now(UTC)
 
     def reactivate(self) -> None:
         """Reactivate a soft-deleted mailing list."""
@@ -246,7 +246,7 @@ class EmailIn(Model):
     from_addr: str = db.Column(db.String, nullable=True)
     headers: Mapped[str] = deferred(db.Column(db.Text, nullable=False))
     raw: Mapped[str] = deferred(db.Column(db.Text))  # store full RFC822 text
-    received_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    received_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(UTC))
     status: str = db.Column(
         db.String
     )  # "ok", "bounce-msg", "sender-not-allowed", "sender-auth-failed", "duplicate"
@@ -289,7 +289,7 @@ class EmailOut(Model):
     subject: str = db.Column(db.String, nullable=True)
     recipients: list = db.Column(db.JSON, default=list)
     raw: Mapped[str] = deferred(db.Column(db.Text))  # store full RFC822 text
-    sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    sent_at: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(UTC))
     sent_successful: list = db.Column(db.JSON, default=list)
     sent_failed: list = db.Column(db.JSON, default=list)
 
@@ -326,7 +326,7 @@ class Logs(Model):
             setattr(self, key, value)
 
     id: int = db.Column(db.Integer, primary_key=True)
-    timestamp: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp: Mapped[datetime] = db.Column(db.DateTime, default=datetime.now(UTC))
     level: str = db.Column(db.String, nullable=False)  # Severity: "info", "warning", "error"
     event: str = db.Column(db.String, nullable=False)  # Event type: "sent-msg", "login-attempt"
     message: str = db.Column(db.Text, nullable=False)  # Short log message

@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import make_msgid
 
 from flask import Flask
@@ -512,7 +512,7 @@ class IncomingEmail:
         m.from_addr = self.msg.from_
         m.headers = str(dict(self.msg.headers.items()))
         m.raw = str(self.msg.obj)  # Get raw RFC822 message
-        m.received_at = datetime.now(timezone.utc)
+        m.received_at = datetime.now(UTC)
         m.status = status
         m.error_info = error_info or {}
         if self.app.config.get("DRY", False):
@@ -636,7 +636,7 @@ def cleanup_sent_emails(app: Flask, older_than: str) -> None:
     """
     dry = app.config.get("DRY", False)
     td = parse_older_than(older_than)
-    cutoff = datetime.now(tz=timezone.utc) - td
+    cutoff = datetime.now(tz=UTC) - td
     sent_folder = app.config["IMAP_FOLDER_SENT"]
 
     logging.info("Cleaning sent emails older than %s (cutoff date: %s)", older_than, cutoff.date())
