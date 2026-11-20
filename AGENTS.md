@@ -7,7 +7,7 @@
 
 Flask-based mailing-list service: polls IMAP mailboxes, stores messages in a SQLAlchemy-backed database, and serves a web UI with bounce handling. See [README.md](../README.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-- **Stack:** Python 3.10–3.14, Flask, SQLAlchemy, imap-tools
+- **Stack:** Python 3.11–3.14, Flask, SQLAlchemy, imap-tools
 - **Package manager:** uv — always use `uv run` / `uv sync`; never `pip` directly
 - **Entry points** (do not rename): `castmail2list-cli` (debug/CLI), `castmail2list` (gunicorn/WSGI)
 
