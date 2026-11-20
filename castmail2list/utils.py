@@ -12,7 +12,7 @@ import subprocess
 import sys
 import sysconfig
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import formataddr
 from pathlib import Path
 
@@ -743,7 +743,7 @@ def get_all_incoming_messages(only: str = "", days: int = 0) -> list[EmailIn]:
     if only == "ok":
         all_messages = [msg for msg in all_messages if msg.status == "ok"]
     if days > 0:
-        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        cutoff_date = datetime.now(tz=UTC).replace(tzinfo=None) - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.received_at >= cutoff_date]
     return all_messages
 
@@ -759,7 +759,7 @@ def get_all_outgoing_messages(days: int = 0) -> list[EmailOut]:
     """
     all_messages: list[EmailOut] = EmailOut.query.order_by(EmailOut.sent_at.desc()).all()
     if days > 0:
-        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        cutoff_date = datetime.now(tz=UTC).replace(tzinfo=None) - timedelta(days=days)
         all_messages = [msg for msg in all_messages if msg.sent_at >= cutoff_date]
     return all_messages
 
@@ -872,7 +872,7 @@ def create_log_entry(
         message=message,
         details=details or {},
         list_id=list_id,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
     db.session.add(log_entry)
@@ -907,7 +907,7 @@ def get_log_entries(exact: bool = False, days: int = 0, **kwargs: str) -> list[L
 
     log_entries: list[Logs] = query.order_by(Logs.timestamp.desc()).all()
     if days > 0:
-        cutoff_date = datetime.now(tz=timezone.utc).replace(tzinfo=None) - timedelta(days=days)
+        cutoff_date = datetime.now(tz=UTC).replace(tzinfo=None) - timedelta(days=days)
         log_entries = [log for log in log_entries if log.timestamp >= cutoff_date]
     return log_entries
 

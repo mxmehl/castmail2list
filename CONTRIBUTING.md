@@ -9,7 +9,7 @@ Thank you for your interest in contributing! This guide covers the development s
 
 ## Prerequisites
 
-- Python 3.10 or newer
+- Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management
 - [mise](https://mise.jdx.dev) (optional) to run the predefined `mise run <task>` commands used throughout this guide. Also installs the required tools above for you.
 

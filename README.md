@@ -26,7 +26,7 @@ CastMail2List is a lightweight, self-hosted mailing list application. It polls s
 
 **Compared to Mailman 3 or similar:**
 
-- Minimal dependencies — runs on Python 3.10+, SQLite, and any IMAP/SMTP provider
+- Minimal dependencies — runs on Python 3.11+, SQLite, and any IMAP/SMTP provider
 - No MTA integration required — works with any email provider that offers IMAP and SMTP
 - Simple YAML-based configuration
 - Hierarchical list support via nested lists (lists can subscribe to other lists)
@@ -51,7 +51,7 @@ CastMail2List is not a replacement for Mailman in large-scale or enterprise setu
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - Optional: `sass`. CastMail2List compiles its bundled SCSS to CSS on startup. If no system-wide `sass` binary is found on `PATH`, it automatically falls back to the bundled [`sass-embedded`](https://pypi.org/project/sass-embedded/) Python package, which downloads a pinned Dart Sass binary into the virtual environment on first run (cached afterward, no repeated downloads). Installing system `sass` is optional but avoids that one-time download, keeps the virtual environment smaller, and allows the user to define which version is being used.
 
 ## Installation
