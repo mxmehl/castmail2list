@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.11.0](https://github.com/mxmehl/castmail2list/compare/v0.10.5...v0.11.0) (2026-11-20)
+
+
+### 🚀 New Features
+
+* drop support for Python 3.10, add Python 3.15 ([#274](https://github.com/mxmehl/castmail2list/issues/274)) ([2263092](https://github.com/mxmehl/castmail2list/commit/2263092fb6762264d004fedc85267e0bfee6b877))
+
+
+### 🔥 Bug Fixes
+
+* **deps:** ensure recent 3.11 patch release to fix soupsieve vulnerability ([0ffcfa9](https://github.com/mxmehl/castmail2list/commit/0ffcfa90f8a53695b1629a00a3bee0e2940bd056))
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#263](https://github.com/mxmehl/castmail2list/issues/263)) ([0db19c2](https://github.com/mxmehl/castmail2list/commit/0db19c2fb2d8238295111beebe013221734bcb32))
+* **deps:** lock file maintenance ([#267](https://github.com/mxmehl/castmail2list/issues/267)) ([13bad3a](https://github.com/mxmehl/castmail2list/commit/13bad3a9e2c20a961e380d0220751011abff2e66))
+* **deps:** lock file maintenance ([#271](https://github.com/mxmehl/castmail2list/issues/271)) ([3ae7b3a](https://github.com/mxmehl/castmail2list/commit/3ae7b3a3c0e97362077321f7522176e7b9765772))
+* **deps:** lock file maintenance ([#273](https://github.com/mxmehl/castmail2list/issues/273)) ([2692452](https://github.com/mxmehl/castmail2list/commit/26924529af3a969cf7effd856facb5a1e5b90384))
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#262](https://github.com/mxmehl/castmail2list/issues/262)) ([f36e51a](https://github.com/mxmehl/castmail2list/commit/f36e51af5f6a2810415222bc2e3e2581f243856a))
+* **deps:** update github actions group ([#266](https://github.com/mxmehl/castmail2list/issues/266)) ([50f2100](https://github.com/mxmehl/castmail2list/commit/50f2100a797d56b14cba4ca618d8a93016fd4ee9))
+* **deps:** update jdx/mise-action action to v5.2.4 ([#260](https://github.com/mxmehl/castmail2list/issues/260)) ([6d0d1ac](https://github.com/mxmehl/castmail2list/commit/6d0d1acc600a37ac6349822a0dd9ef27cfe0293f))
+* **deps:** update jdx/mise-action action to v5.2.5 ([#265](https://github.com/mxmehl/castmail2list/issues/265)) ([c1a48d6](https://github.com/mxmehl/castmail2list/commit/c1a48d607caa2f5b3c2fb652d8ef139d333f0678))
+* **deps:** update jdx/mise-action action to v5.2.7 ([#268](https://github.com/mxmehl/castmail2list/issues/268)) ([7d18865](https://github.com/mxmehl/castmail2list/commit/7d18865da2e35df8ef7f54153d59eca9ad91b755))
+* **deps:** update jdx/mise-action action to v5.2.8 ([#270](https://github.com/mxmehl/castmail2list/issues/270)) ([4633db7](https://github.com/mxmehl/castmail2list/commit/4633db7aa81145a8d699a080fb22cfbf00cef0e9))
+* **deps:** update jdx/mise-action action to v5.2.9 ([#272](https://github.com/mxmehl/castmail2list/issues/272)) ([99fba84](https://github.com/mxmehl/castmail2list/commit/99fba846f77a22e2fc2f7e812c152e7caf5be0b9))
+
 ## [0.10.5](https://github.com/mxmehl/castmail2list/compare/v0.10.4...v0.10.5) (2026-10-27)
 
 
