@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.1](https://github.com/mxmehl/castmail2list/compare/v0.11.0...v0.11.1) (2026-11-27)
+
+
+### ⚙️ Chores
+
+* **deps:** lock file maintenance ([#277](https://github.com/mxmehl/castmail2list/issues/277)) ([4bba539](https://github.com/mxmehl/castmail2list/commit/4bba539ec91ac14377c13beaeea834ffa6f514c2))
+* **deps:** update astral-sh/setup-uv action to v10.4.0 ([#278](https://github.com/mxmehl/castmail2list/issues/278)) ([8e4e7ac](https://github.com/mxmehl/castmail2list/commit/8e4e7acbf08f9d42e66a826bc4bc35672632f494))
+* **deps:** update github actions group ([#275](https://github.com/mxmehl/castmail2list/issues/275)) ([ed5b0e7](https://github.com/mxmehl/castmail2list/commit/ed5b0e7e68178e7d2441416d77fee5e43bcb99b6))
+* **deps:** update jdx/mise-action action to v5.3.0 ([#279](https://github.com/mxmehl/castmail2list/issues/279)) ([9d04340](https://github.com/mxmehl/castmail2list/commit/9d04340c85294fc3ac7c7c8b8f76adf750c99dd3))
+* **deps:** update zizmorcore/zizmor-action action to v0.9.1 ([#280](https://github.com/mxmehl/castmail2list/issues/280)) ([dc824ca](https://github.com/mxmehl/castmail2list/commit/dc824ca9b6a52c424f0c22f0456a49b5cae08064))
+* **deps:** update zizmorcore/zizmor-action action to v0.9.2 ([#281](https://github.com/mxmehl/castmail2list/issues/281)) ([7c01db4](https://github.com/mxmehl/castmail2list/commit/7c01db420b75efdd728fba577347cd158f0bb2e1))
+
 ## [0.11.0](https://github.com/mxmehl/castmail2list/compare/v0.10.5...v0.11.0) (2026-11-20)
 
 
